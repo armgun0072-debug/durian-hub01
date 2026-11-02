@@ -1,0 +1,381 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = "mysql://root:password@localhost:3307/durian_hub"
+}
+
+enum RoleType {
+  SELLER
+  BUYER
+  CUTTER
+  ADMIN
+}
+
+enum UserStatus {
+  ACTIVE
+  SUSPENDED
+  BANNED
+}
+
+enum RoleStatus {
+  ACTIVE
+  PENDING_APPROVAL
+  REJECTED
+}
+
+enum VerificationDocType {
+  GAP_CERTIFICATE
+  FARMER_BOOK
+  COMMERCIAL_LICENSE
+  CUTTER_CERT_OR_PORT
+  NATIONAL_ID_WITH_PIC
+}
+
+enum RequestStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+enum PostType {
+  SELL
+  BUY
+  CUT_SERVICE
+}
+
+enum PriceUnit {
+  PER_KG
+  PER_TON
+  LUMP_SUM
+}
+
+enum PostStatus {
+  OPEN
+  CLOSED
+  HIDDEN_BY_ADMIN
+}
+
+enum ChatRoomStatus {
+  ACTIVE
+  DEAL_CLOSED
+  ARCHIVED
+}
+
+enum ChatMessageType {
+  TEXT
+  PRODUCT_CARD
+  QUICK_REPLY
+  IMAGE
+}
+
+enum ReportReason {
+  FAKE_PRICE
+  SPAM
+  SCAM
+  WRONG_INFO
+}
+
+enum DealStatus {
+  PENDING
+  ACCEPTED
+  COMPLETED
+  DISPUTED
+  CANCELLED
+}
+
+model User {
+  id            Int        @id @default(autoincrement())
+  email         String?    @unique
+  phone         String     @unique
+  passwordHash  String     @map("password_hash")
+  fullName      String     @map("full_name")
+  avatarUrl     String?    @map("avatar_url")
+  locationId    Int?       @map("location_id")
+  activeRole    RoleType   @default(SELLER) @map("active_role")
+  isKycVerified Boolean    @default(false) @map("is_kyc_verified")
+  trustScore    Int        @default(100) @map("trust_score")
+  ratingAvg     Decimal    @default(5.00) @db.Decimal(3, 2) @map("rating_avg")
+  ratingCount   Int        @default(0) @map("rating_count")
+  status        UserStatus @default(ACTIVE)
+  createdAt     DateTime   @default(now()) @map("created_at")
+  updatedAt     DateTime   @updatedAt @map("updated_at")
+
+  location             Location?                 @relation(fields: [locationId], references: [id])
+  roles                UserRole[]
+  roleRequests         RoleVerificationRequest[] @relation("UserRoleRequests")
+  reviewedRoleRequests RoleVerificationRequest[] @relation("AdminReviewedRequests")
+  posts                MarketplacePost[]
+  chatRoomsInitiated   ChatRoom[]                @relation("ChatInitiator")
+  chatRoomsOwned       ChatRoom[]                @relation("ChatOwner")
+  messagesSent         ChatMessage[]
+  reportsMade          PostReport[]
+  dealsInitiated       Deal[]                    @relation("DealInitiator")
+  dealsReceived        Deal[]                    @relation("DealReceiver")
+  reviewsGiven         UserReview[]              @relation("ReviewGiver")
+  reviewsReceived      UserReview[]              @relation("ReviewReceiver")
+
+  @@map("users")
+}
+
+model UserRole {
+  id            Int        @id @default(autoincrement())
+  userId        Int        @map("user_id")
+  roleType      RoleType   @map("role_type")
+  isPrimaryRole Boolean    @default(false) @map("is_primary_role")
+  businessName  String?    @map("business_name")
+  licenseNumber String?    @map("license_number")
+  description   String?    @db.Text
+  status        RoleStatus @default(ACTIVE)
+  isVerified    Boolean    @default(false) @map("is_verified")
+  createdAt     DateTime   @default(now()) @map("created_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, roleType])
+  @@map("user_roles")
+}
+
+model RoleVerificationRequest {
+  id                Int                 @id @default(autoincrement())
+  userId            Int                 @map("user_id")
+  requestedRole     RoleType            @map("requested_role")
+  businessName      String              @map("business_name")
+  licenseNumber     String?             @map("license_number")
+  documentType      VerificationDocType @map("document_type")
+  documentUrl       String              @map("document_url")
+  note              String?             @db.Text
+  status            RequestStatus       @default(PENDING)
+  reviewedByAdminId Int?                @map("reviewed_by_admin_id")
+  adminRemark       String?             @db.Text @map("admin_remark")
+  createdAt         DateTime            @default(now()) @map("created_at")
+  reviewedAt        DateTime?           @map("reviewed_at")
+
+  user            User  @relation("UserRoleRequests", fields: [userId], references: [id], onDelete: Cascade)
+  reviewedByAdmin User? @relation("AdminReviewedRequests", fields: [reviewedByAdminId], references: [id])
+
+  @@index([userId, status])
+  @@map("role_verification_requests")
+}
+
+model RegionalSeason {
+  id               Int        @id @default(autoincrement())
+  regionCode       String     @unique @map("region_code")
+  regionName       String     @map("region_name")
+  provincesSummary String     @db.Text @map("provinces_summary")
+  popularVarieties String     @map("popular_varieties")
+  harvestPeriod    String     @map("harvest_period")
+  highlightNote    String?    @db.Text @map("highlight_note")
+  locations        Location[]
+
+  @@map("regional_seasons")
+}
+
+model Location {
+  id               Int             @id @default(autoincrement())
+  province         String
+  district         String
+  region           String
+  regionalSeasonId Int?            @map("regional_season_id")
+  regionalSeason   RegionalSeason? @relation(fields: [regionalSeasonId], references: [id])
+
+  users       User[]
+  posts       MarketplacePost[]
+  marketStats DailyMarketStat[]
+
+  @@unique([province, district])
+  @@index([province])
+  @@map("locations")
+}
+
+model DurianVariety {
+  id          Int      @id @default(autoincrement())
+  nameTh      String   @unique @map("name_th")
+  nameEn      String   @map("name_en")
+  iconEmoji   String?  @map("icon_emoji")
+  description String?  @db.Text
+  isActive    Boolean  @default(true) @map("is_active")
+
+  posts       MarketplacePost[]
+  marketStats DailyMarketStat[]
+
+  @@map("durian_varieties")
+}
+
+model DurianGrade {
+  id          Int     @id @default(autoincrement())
+  gradeCode   String  @unique @map("grade_code")
+  nameTh      String  @map("name_th")
+  description String? @db.Text
+
+  posts       MarketplacePost[]
+  marketStats DailyMarketStat[]
+
+  @@map("durian_grades")
+}
+
+model MarketplacePost {
+  id             Int        @id @default(autoincrement())
+  userId         Int        @map("user_id")
+  postType       PostType   @map("post_type")
+  varietyId      Int?       @map("variety_id")
+  gradeId        Int?       @map("grade_id")
+  locationId     Int        @map("location_id")
+  title          String
+  content        String     @db.Text
+  price          Decimal    @db.Decimal(10, 2) @map("price")
+  pricePerKg     Decimal?   @db.Decimal(10, 2) @map("price_per_kg")
+  priceUnit      PriceUnit  @default(PER_KG) @map("price_unit")
+  quantityKg     Decimal?   @db.Decimal(12, 2) @map("quantity_kg")
+  dryMatterPct   Decimal?   @db.Decimal(4, 1) @map("dry_matter_pct")
+  availableDate  DateTime   @db.Date @map("available_date")
+  isPriceOutlier Boolean    @default(false) @map("is_price_outlier")
+  reportCount    Int        @default(0) @map("report_count")
+  viewCount      Int        @default(0) @map("view_count")
+  status         PostStatus @default(OPEN)
+  createdAt      DateTime   @default(now()) @map("created_at")
+  updatedAt      DateTime   @updatedAt @map("updated_at")
+
+  user      User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  variety   DurianVariety? @relation(fields: [varietyId], references: [id])
+  grade     DurianGrade?   @relation(fields: [gradeId], references: [id])
+  location  Location       @relation(fields: [locationId], references: [id])
+  images    PostImage[]
+  chatRooms ChatRoom[]
+  reports   PostReport[]
+  deals     Deal[]
+
+  @@index([postType, varietyId, gradeId, createdAt])
+  @@index([locationId, status])
+  @@map("marketplace_posts")
+}
+
+model PostImage {
+  id        Int      @id @default(autoincrement())
+  postId    Int      @map("post_id")
+  imageUrl  String   @map("image_url")
+  sortOrder Int      @default(0) @map("sort_order")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  post MarketplacePost @relation(fields: [postId], references: [id], onDelete: Cascade)
+
+  @@map("post_images")
+}
+
+model ChatRoom {
+  id            Int            @id @default(autoincrement())
+  postId        Int            @map("post_id")
+  initiatorId   Int            @map("initiator_id")
+  ownerId       Int            @map("owner_id")
+  status        ChatRoomStatus @default(ACTIVE)
+  lastMessageAt DateTime       @default(now()) @map("last_message_at")
+  createdAt     DateTime       @default(now()) @map("created_at")
+
+  post      MarketplacePost @relation(fields: [postId], references: [id], onDelete: Cascade)
+  initiator User            @relation("ChatInitiator", fields: [initiatorId], references: [id], onDelete: Cascade)
+  owner     User            @relation("ChatOwner", fields: [ownerId], references: [id], onDelete: Cascade)
+  messages  ChatMessage[]
+
+  @@unique([postId, initiatorId])
+  @@index([initiatorId, lastMessageAt])
+  @@index([ownerId, lastMessageAt])
+  @@map("chat_rooms")
+}
+
+model ChatMessage {
+  id          Int             @id @default(autoincrement())
+  roomId      Int             @map("room_id")
+  senderId    Int             @map("sender_id")
+  messageType ChatMessageType @default(TEXT) @map("message_type")
+  content     String          @db.Text
+  isRead      Boolean         @default(false) @map("is_read")
+  createdAt   DateTime        @default(now()) @map("created_at")
+
+  room   ChatRoom @relation(fields: [roomId], references: [id], onDelete: Cascade)
+  sender User     @relation(fields: [senderId], references: [id], onDelete: Cascade)
+
+  @@index([roomId, createdAt])
+  @@map("chat_messages")
+}
+
+model DailyMarketStat {
+  id                Int      @id @default(autoincrement())
+  statDate          DateTime @db.Date @map("stat_date")
+  varietyId         Int      @map("variety_id")
+  gradeId           Int      @map("grade_id")
+  locationId        Int      @map("location_id")
+  avgBuyPrice       Decimal? @db.Decimal(10, 2) @map("avg_buy_price")
+  avgSellPrice      Decimal? @db.Decimal(10, 2) @map("avg_sell_price")
+  minPrice          Decimal? @db.Decimal(10, 2) @map("min_price")
+  maxPrice          Decimal? @db.Decimal(10, 2) @map("max_price")
+  avgCutWagePerKg   Decimal? @db.Decimal(10, 2) @map("avg_cut_wage_per_kg")
+  officialRefPrice  Decimal? @db.Decimal(10, 2) @map("official_ref_price")
+  totalBuyVolumeKg  Decimal  @default(0) @db.Decimal(14, 2) @map("total_buy_volume_kg")
+  totalSellVolumeKg Decimal  @default(0) @db.Decimal(14, 2) @map("total_sell_volume_kg")
+  samplePostCount   Int      @default(0) @map("sample_post_count")
+  updatedAt         DateTime @updatedAt @map("updated_at")
+
+  variety  DurianVariety @relation(fields: [varietyId], references: [id])
+  grade    DurianGrade   @relation(fields: [gradeId], references: [id])
+  location Location      @relation(fields: [locationId], references: [id])
+
+  @@unique([statDate, varietyId, gradeId, locationId])
+  @@index([statDate, varietyId])
+  @@map("daily_market_stats")
+}
+
+model PostReport {
+  id         Int           @id @default(autoincrement())
+  postId     Int           @map("post_id")
+  reporterId Int           @map("reporter_id")
+  reason     ReportReason
+  detail     String?       @db.Text
+  status     RequestStatus @default(PENDING)
+  createdAt  DateTime      @default(now()) @map("created_at")
+
+  post     MarketplacePost @relation(fields: [postId], references: [id], onDelete: Cascade)
+  reporter User            @relation(fields: [reporterId], references: [id], onDelete: Cascade)
+
+  @@map("post_reports")
+}
+
+model Deal {
+  id               Int        @id @default(autoincrement())
+  postId           Int        @map("post_id")
+  initiatorId      Int        @map("initiator_id")
+  receiverId       Int        @map("receiver_id")
+  agreedPrice      Decimal    @db.Decimal(10, 2) @map("agreed_price")
+  agreedPricePerKg Decimal?   @db.Decimal(10, 2) @map("agreed_price_per_kg")
+  agreedQuantityKg Decimal?   @db.Decimal(12, 2) @map("agreed_quantity_kg")
+  cutDate          DateTime?  @db.Date @map("cut_date")
+  note             String?    @db.Text
+  status           DealStatus @default(PENDING)
+  createdAt        DateTime   @default(now()) @map("created_at")
+  updatedAt        DateTime   @updatedAt @map("updated_at")
+
+  post      MarketplacePost @relation(fields: [postId], references: [id])
+  initiator User            @relation("DealInitiator", fields: [initiatorId], references: [id])
+  receiver  User            @relation("DealReceiver", fields: [receiverId], references: [id])
+  reviews   UserReview[]
+
+  @@map("deals")
+}
+
+model UserReview {
+  id         Int      @id @default(autoincrement())
+  dealId     Int      @map("deal_id")
+  reviewerId Int      @map("reviewer_id")
+  revieweeId Int      @map("reviewee_id")
+  rating     Int
+  comment    String?  @db.Text
+  createdAt  DateTime @default(now()) @map("created_at")
+
+  deal     Deal @relation(fields: [dealId], references: [id], onDelete: Cascade)
+  reviewer User @relation("ReviewGiver", fields: [reviewerId], references: [id])
+  reviewee User @relation("ReviewReceiver", fields: [revieweeId], references: [id])
+
+  @@unique([dealId, reviewerId])
+  @@map("user_reviews")
+}

@@ -1,0 +1,150 @@
+[
+  {
+    "label": "login desktop light",
+    "width": 1440,
+    "scroll": 1430,
+    "theme": "light",
+    "background": "rgb(246, 248, 247)"
+  },
+  {
+    "label": "login desktop dark",
+    "width": 1440,
+    "scroll": 1430,
+    "theme": "dark",
+    "background": "rgb(16, 23, 21)"
+  },
+  {
+    "label": "theme persists after reload",
+    "passed": true
+  },
+  {
+    "label": "system theme follows OS changes",
+    "passed": true
+  },
+  {
+    "label": "login mobile dark",
+    "width": 390,
+    "scroll": 390,
+    "theme": "dark",
+    "background": "rgb(16, 23, 21)"
+  },
+  {
+    "label": "workspace mobile dark",
+    "width": 390,
+    "scroll": 390,
+    "theme": "dark",
+    "background": "rgb(16, 23, 21)"
+  },
+  {
+    "label": "workspace narrow mobile 320px",
+    "width": 320,
+    "scroll": 320,
+    "theme": "dark",
+    "background": "rgb(16, 23, 21)"
+  },
+  {
+    "label": "workspace tablet 1100px",
+    "width": 1100,
+    "scroll": 1090,
+    "theme": "dark",
+    "background": "rgb(16, 23, 21)"
+  },
+  {
+    "label": "workspace desktop light",
+    "width": 1440,
+    "scroll": 1430,
+    "theme": "light",
+    "background": "rgb(246, 248, 247)"
+  },
+  {
+    "label": "market desktop dark",
+    "width": 1440,
+    "scroll": 1430,
+    "theme": "dark",
+    "background": "rgb(16, 23, 21)"
+  },
+  {
+    "label": "primary button contrast dark",
+    "ratio": 5.48
+  },
+  {
+    "label": "primary button contrast light",
+    "ratio": 5.48
+  },
+  {
+    "label": "market mobile light",
+    "width": 390,
+    "scroll": 390,
+    "theme": "light",
+    "background": "rgb(246, 248, 247)"
+  },
+  {
+    "label": "search and clear filters",
+    "passed": true
+  },
+  {
+    "label": "create listing modal mobile",
+    "width": 390,
+    "scroll": 390,
+    "theme": "light",
+    "background": "rgb(246, 248, 247)"
+  },
+  {
+    "label": "dialog keyboard focus stays inside",
+    "passed": true
+  },
+  {
+    "label": "dialog takes focus and closes with Escape",
+    "passed": true
+  },
+  {
+    "label": "dashboard mobile",
+    "width": 390,
+    "scroll": 390,
+    "theme": "light",
+    "background": "rgb(246, 248, 247)"
+  },
+  {
+    "label": "inbox mobile",
+    "width": 390,
+    "scroll": 390,
+    "theme": "dark",
+    "background": "rgb(16, 23, 21)"
+  },
+  {
+    "label": "conversation mobile",
+    "width": 390,
+    "scroll": 390,
+    "theme": "dark",
+    "background": "rgb(16, 23, 21)"
+  },
+  {
+    "label": "mobile conversation back navigation",
+    "passed": true
+  },
+  {
+    "label": "admin login mobile",
+    "width": 390,
+    "scroll": 390,
+    "theme": "dark",
+    "background": "rgb(16, 23, 21)"
+  },
+  {
+    "label": "admin mobile dark",
+    "width": 390,
+    "scroll": 390,
+    "theme": "dark",
+    "background": "rgb(16, 23, 21)"
+  },
+  {
+    "label": "admin desktop light",
+    "width": 1440,
+    "scroll": 1430,
+    "theme": "light",
+    "background": "rgb(246, 248, 247)"
+  },
+  {
+    "label": "no browser runtime exceptions",
+    "passed": true
+  }
+]

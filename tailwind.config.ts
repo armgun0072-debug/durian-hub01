@@ -1,0 +1,58 @@
+import type { Config } from "tailwindcss";
+
+const config: Config = {
+  darkMode: ["selector", '[data-theme="dark"]'],
+  content: [
+    "./src/pages/**/*.{js,ts,jsx,tsx,mdx}",
+    "./src/components/**/*.{js,ts,jsx,tsx,mdx}",
+    "./src/app/**/*.{js,ts,jsx,tsx,mdx}",
+  ],
+  theme: {
+    extend: {
+      colors: {
+        canvas: "rgb(var(--canvas) / <alpha-value>)",
+        surface: "rgb(var(--surface) / <alpha-value>)",
+        subtle: "rgb(var(--subtle) / <alpha-value>)",
+        muted: "rgb(var(--muted) / <alpha-value>)",
+        hover: "rgb(var(--hover) / <alpha-value>)",
+        foreground: "rgb(var(--foreground) / <alpha-value>)",
+        secondary: "rgb(var(--secondary) / <alpha-value>)",
+        "muted-foreground": "rgb(var(--muted-foreground) / <alpha-value>)",
+        line: "rgb(var(--line) / <alpha-value>)",
+        "line-strong": "rgb(var(--line-strong) / <alpha-value>)",
+        "brand-ink": "rgb(var(--brand-ink) / <alpha-value>)",
+        "brand-soft": "rgb(var(--brand-soft) / <alpha-value>)",
+        "brand-line": "rgb(var(--brand-line) / <alpha-value>)",
+        "info-ink": "rgb(var(--info-ink) / <alpha-value>)",
+        "info-soft": "rgb(var(--info-soft) / <alpha-value>)",
+        "info-line": "rgb(var(--info-line) / <alpha-value>)",
+        "warning-ink": "rgb(var(--warning-ink) / <alpha-value>)",
+        "warning-soft": "rgb(var(--warning-soft) / <alpha-value>)",
+        "warning-line": "rgb(var(--warning-line) / <alpha-value>)",
+        "danger-ink": "rgb(var(--danger-ink) / <alpha-value>)",
+        "danger-soft": "rgb(var(--danger-soft) / <alpha-value>)",
+        "danger-line": "rgb(var(--danger-line) / <alpha-value>)",
+        "accent-ink": "rgb(var(--accent-ink) / <alpha-value>)",
+        "accent-soft": "rgb(var(--accent-soft) / <alpha-value>)",
+        "accent-line": "rgb(var(--accent-line) / <alpha-value>)",
+        durian: {
+          50: "#f7fee7",
+          100: "#ecfccb",
+          200: "#d9f99d",
+          300: "#bef264",
+          400: "#a3e635",
+          500: "#84cc16",
+          600: "#65a30d",
+          700: "#4d7c0f",
+          800: "#3f6212",
+          900: "#365314",
+        },
+      },
+      fontFamily: { sans: ['"Noto Sans Thai"', '"Leelawadee UI"', 'Tahoma', 'system-ui', 'sans-serif'] },
+      fontSize: { xs: ["0.8125rem", { lineHeight: "1.5" }], sm: ["0.9375rem", { lineHeight: "1.6" }] },
+      boxShadow: { panel: "0 8px 32px rgb(0 0 0 / 0.07)" },
+    },
+  },
+  plugins: [],
+};
+export default config;

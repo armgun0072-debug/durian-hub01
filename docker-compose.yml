@@ -1,0 +1,50 @@
+version: '3.8'
+
+services:
+  # 1. เว็บแอปพลิเคชัน Next.js (Durian Hub)
+  web:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: durian_hub_web
+    restart: always
+    ports:
+      - "3000:3000"
+    environment:
+      - DATABASE_URL=mysql://root:password@mysql:3306/durian_hub
+      - JWT_SECRET=982e3b536b620ea0ea9feee685316f7fca80c11937f3db601ed60f2cba8aa2c3612d23e7bb9bcb5e4d2899930c31726b
+      - SMTP_HOST=mailpit
+      - SMTP_PORT=1025
+      - SMTP_USER=
+      - SMTP_PASS=
+      - MAIL_FROM=Durian Hub <no-reply@durianhub.local>
+      - NEXT_PUBLIC_APP_URL=http://localhost:3000
+    depends_on:
+      - mysql
+      - mailpit
+
+  # 2. ฐานข้อมูล MySQL 8.0
+  mysql:
+    image: mysql:8.0
+    container_name: durian_hub_mysql
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: password
+      MYSQL_DATABASE: durian_hub
+    ports:
+      # แมปพอร์ต 3307 ออกมาข้างนอก เผื่อต้องการต่อ Prisma Studio หรือโปรแกรมฐานข้อมูล
+      - "3307:3306"
+    volumes:
+      - durian_mysql_data:/var/lib/mysql
+
+  # 3. กล่องอีเมลจำลอง Mailpit สำหรับทดสอบ OTP / ลืมรหัสผ่าน (เปิดดูที่ http://localhost:8025)
+  mailpit:
+    image: axllent/mailpit:latest
+    container_name: durian_hub_mailpit
+    restart: always
+    ports:
+      - "1025:1025" # SMTP (ส่งอีเมลเข้าพอร์ตนี้)
+      - "8025:8025" # Web UI หน้ากล่องจดหมาย
+
+volumes:
+  durian_mysql_data:

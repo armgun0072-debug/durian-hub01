@@ -1,0 +1,44 @@
+{
+  "name": "durian-hub",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "next lint",
+    "seed": "prisma db seed",
+    "test": "node --test tests/*.test.cjs",
+    "test:db": "node --env-file=.env --test tests/database.integration.cjs",
+    "test:ui": "node --env-file=.env tests/ui-browser.cjs",
+    "stats:refresh": "node --env-file=.env scripts/refresh-market-stats.cjs",
+    "db:audit": "node --env-file=.env scripts/repair-database.cjs",
+    "db:repair": "node --env-file=.env scripts/repair-database.cjs --apply"
+  },
+  "prisma": {
+    "seed": "tsx prisma/seed.ts"
+  },
+  "dependencies": {
+    "bcryptjs": "^3.0.3",
+    "jose": "^6.2.13",
+    "lucide-react": "^0.475.0",
+    "next": "^15.2.0",
+    "nodemailer": "^10.2.1",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0"
+  },
+  "devDependencies": {
+    "@prisma/client": "^6.4.0",
+    "@types/bcryptjs": "^2.4.6",
+    "@types/node": "^22.0.0",
+    "@types/nodemailer": "^8.0.2",
+    "@types/react": "^19.0.0",
+    "@types/react-dom": "^19.0.0",
+    "autoprefixer": "^10.4.20",
+    "postcss": "^8.5.0",
+    "prisma": "^6.4.0",
+    "tailwindcss": "^3.4.17",
+    "tsx": "^4.23.15",
+    "typescript": "^5.7.0"
+  }
+}
