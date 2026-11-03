@@ -142,6 +142,8 @@ model User {
   reviewsGiven         UserReview[]              @relation("ReviewGiver")
   reviewsReceived      UserReview[]              @relation("ReviewReceiver")
   otpCodes             OtpCode[]
+  supportTickets       SupportTicket[] @relation("SupportRequester")
+  supportMessages      SupportMessage[]
 
   @@map("users")
 }
@@ -327,16 +329,58 @@ model ChatRoom {
   status        ChatRoomStatus @default(ACTIVE)
   lastMessageAt DateTime       @default(now()) @map("last_message_at")
   createdAt     DateTime       @default(now()) @map("created_at")
+  closedAt      DateTime?      @map("closed_at")
 
   post      MarketplacePost @relation(fields: [postId], references: [id], onDelete: Cascade)
   initiator User            @relation("ChatInitiator", fields: [initiatorId], references: [id], onDelete: Cascade)
   owner     User            @relation("ChatOwner", fields: [ownerId], references: [id], onDelete: Cascade)
   messages  ChatMessage[]
+  supportTickets SupportTicket[]
 
   @@unique([postId, initiatorId])
   @@index([initiatorId, lastMessageAt])
   @@index([ownerId, lastMessageAt])
   @@map("chat_rooms")
+}
+
+enum SupportStatus {
+  OPEN
+  IN_PROGRESS
+  RESOLVED
+}
+
+model SupportTicket {
+  id Int @id @default(autoincrement())
+  roomId Int @map("room_id")
+  requesterId Int @map("requester_id")
+  category String @db.VarChar(50)
+  status SupportStatus @default(OPEN)
+  resolution String? @db.Text
+  handledById Int? @map("handled_by_id")
+  queuedAt DateTime @default(now()) @map("queued_at")
+  resolvedAt DateTime? @map("resolved_at")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+  room ChatRoom @relation(fields: [roomId], references: [id], onDelete: Restrict)
+  requester User @relation("SupportRequester", fields: [requesterId], references: [id], onDelete: Restrict)
+  messages SupportMessage[]
+  @@unique([roomId, requesterId])
+  @@index([status, updatedAt])
+  @@index([status, queuedAt, id])
+  @@map("support_tickets")
+}
+
+model SupportMessage {
+  id Int @id @default(autoincrement())
+  ticketId Int @map("ticket_id")
+  senderId Int @map("sender_id")
+  isAdmin Boolean @default(false) @map("is_admin")
+  content String @db.Text
+  createdAt DateTime @default(now()) @map("created_at")
+  ticket SupportTicket @relation(fields: [ticketId], references: [id], onDelete: Restrict)
+  sender User @relation(fields: [senderId], references: [id], onDelete: Restrict)
+  @@index([ticketId, createdAt])
+  @@map("support_messages")
 }
 
 model ChatMessage {

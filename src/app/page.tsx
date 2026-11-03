@@ -1,4 +1,8 @@
 "use client";
+import { SupportPortal } from "@/components/support-portal";
+import { chatHistory } from "@/lib/chat-history";
+import { AccountSettingsDialog } from "@/components/account-settings-dialog";
+import { MyPostsDialog } from "@/components/my-posts-dialog";
 
 import { ThemeSwitcher } from "@/components/theme-switcher";
 import { AuthBrandPanel } from "@/components/auth-brand-panel";
@@ -52,7 +56,6 @@ import {
   Zap,
   ChevronDown,
   ChevronUp,
-  Camera,
   FileText,
   Flag,
 } from "lucide-react";
@@ -178,7 +181,7 @@ const I18N_DICT = {
     navChat: "ข้อความ",
     roleLabel: "บทบาท:",
     addRoleBtn: "+ ขอเพิ่มบทบาท",
-    profileMenu: "โปรไฟล์ & รูปภาพ",
+    profileMenu: "จัดการบัญชี",
     myPostsMenu: "ประวัติการโพสต์ของคุณ",
     settingsMenu: "ตั้งค่าบทบาท / บัญชี",
     statsMenu: "สถิติตลาดกลาง",
@@ -194,8 +197,6 @@ const I18N_DICT = {
     myPostsModalSub: "รายการประกาศซื้อ ขาย และรับตัดทุเรียนทั้งหมดที่คุณเคยลงไว้",
     noPostsYet: "คุณยังไม่มีประกาศในตลาดกลาง",
     createFirstPost: "+ เริ่มสร้างประกาศแรกของคุณ",
-    editProfileTitle: "จัดการโปรไฟล์ & รูปภาพ",
-    editProfileSub: "อัปโหลดรูปโปรไฟล์และแก้ไขข้อมูลส่วนตัวของคุณ",
 
     // Regional Dashboard
     heroBadge: "แดชบอร์ดทุเรียนรายภูมิภาค & ฤดูกาลผลผลิต",
@@ -335,7 +336,7 @@ const I18N_DICT = {
     navChat: "Messages",
     roleLabel: "Role:",
     addRoleBtn: "+ Add Role",
-    profileMenu: "Profile & Avatar",
+    profileMenu: "Account settings",
     myPostsMenu: "My Post History",
     settingsMenu: "Role & Account Settings",
     statsMenu: "Market Statistics",
@@ -351,8 +352,6 @@ const I18N_DICT = {
     myPostsModalSub: "All your active and closed marketplace listings",
     noPostsYet: "You haven't posted any listings yet",
     createFirstPost: "+ Create Your First Listing",
-    editProfileTitle: "Profile & Avatar Settings",
-    editProfileSub: "Upload your avatar and manage personal information",
 
     // Regional Dashboard
     heroBadge: "Regional Durian Seasons & Production Planning",
@@ -702,37 +701,41 @@ export default function DurianHubApp() {
 
   // User Profile Dropdown & Modal States (ถอดแบบจากภาพตัวอย่าง)
   const [isProfileDropdownOpen, setIsProfileDropdownOpen] = useState<boolean>(false);
+  const [isSwitchingRole, setIsSwitchingRole] = useState(false);
+  const roleSwitchPending = React.useRef(false);
+  const [isCreatingPost, setIsCreatingPost] = useState(false);
+  const postSubmitPending = React.useRef(false);
   const [showProfileModal, setShowProfileModal] = useState<boolean>(false);
   const [showUserGuideModal, setShowUserGuideModal] = useState<boolean>(false);
   const [showMyPostsModal, setShowMyPostsModal] = useState<boolean>(false);
-  const [isUploadingAvatar, setIsUploadingAvatar] = useState<boolean>(false);
-  const [avatarUploadError, setAvatarUploadError] = useState<string | null>(null);
-  const [avatarUploadSuccess, setAvatarUploadSuccess] = useState<string | null>(null);
-
-  // Profile Edit Form States
-  const [editProfileName, setEditProfileName] = useState<string>("");
-  const [editBusinessName, setEditBusinessName] = useState<string>("");
-  const [editProfilePhone, setEditProfilePhone] = useState<string>("");
-  const [editProfileProvince, setEditProfileProvince] = useState<string>("");
-  const [isSavingProfile, setIsSavingProfile] = useState<boolean>(false);
-  const [profileSaveMsg, setProfileSaveMsg] = useState<string | null>(null);
-
   // Language state (TH | EN สลับภาษาทำงานจริง)
   const [currentLang, setCurrentLang] = useState<"TH" | "EN">("TH");
+  const [languageReady, setLanguageReady] = useState(false);
+  useEffect(() => {
+    try { const saved = localStorage.getItem("durian-hub-language"); if (saved === "TH" || saved === "EN") setCurrentLang(saved); } catch { /* Keep the default when storage is unavailable. */ }
+    setLanguageReady(true);
+  }, []);
+  useEffect(() => {
+    if (!languageReady) return;
+    document.documentElement.lang = currentLang === "TH" ? "th" : "en";
+    try { localStorage.setItem("durian-hub-language", currentLang); } catch { /* Keep the in-memory choice. */ }
+  }, [currentLang, languageReady]);
   const t = I18N_DICT[currentLang];
 
   // Chat Rooms State (อ้างอิงรูปที่ 5)
   const [chatRooms, setChatRooms] = useState<ChatRoomItem[]>([]);
   const [activeChatRoomId, setActiveChatRoomId] = useState<number>(0);
   const [chatInputText, setChatInputText] = useState<string>("");
-  const [chatFilterTab, setChatFilterTab] = useState<"ACTIVE" | "CLOSED" | "ALL">("ACTIVE");
+  const [supportRoomId, setSupportRoomId] = useState<number | null>(null);
+  const [chatFilterTab, setChatFilterTab] = useState<"ACTIVE" | "CLOSED" | "HISTORY">("ACTIVE");
 
   const filteredChatRooms = useMemo(() => {
+    if (chatFilterTab === "HISTORY") return chatRooms.filter(r => r.isHistory);
     if (chatFilterTab === "ACTIVE") {
       return chatRooms.filter((r) => (r.status || "ACTIVE") === "ACTIVE");
     }
     if (chatFilterTab === "CLOSED") {
-      return chatRooms.filter((r) => r.status === "DEAL_CLOSED" || r.status === "ARCHIVED");
+      return chatRooms.filter((r) => !r.isHistory && (r.status === "DEAL_CLOSED" || r.status === "ARCHIVED"));
     }
     return chatRooms;
   }, [chatRooms, chatFilterTab]);
@@ -742,7 +745,7 @@ export default function DurianHubApp() {
   }, [chatRooms]);
 
   const closedRoomsCount = useMemo(() => {
-    return chatRooms.filter((r) => r.status === "DEAL_CLOSED" || r.status === "ARCHIVED").length;
+    return chatRooms.filter((r) => !r.isHistory && (r.status === "DEAL_CLOSED" || r.status === "ARCHIVED")).length;
   }, [chatRooms]);
 
   // Floating Chat Toast Notification State
@@ -830,7 +833,7 @@ export default function DurianHubApp() {
       const res = await fetch("/api/posts");
       if (res.ok) {
         const data = await res.json();
-        if (data.posts && data.posts.length > 0) {
+        if (Array.isArray(data.posts)) {
           setPosts(data.posts);
         }
       }
@@ -965,6 +968,7 @@ export default function DurianHubApp() {
   const [newPostType, setNewPostType] = useState<PostType>("SELL");
 
   const handleOpenCreatePostModal = () => {
+    if (roleSwitchPending.current) return;
     const roleType = ROLE_CONFIG[userProfile.activeRole]?.allowedPostType || "SELL";
     setNewPostType(roleType);
     if (roleType === "SELL") setNewPostPrice("172");
@@ -1280,6 +1284,9 @@ export default function DurianHubApp() {
       console.error(err);
     }
     setIsAuthenticated(false);
+    setShowProfileModal(false);
+    setShowMyPostsModal(false);
+    setSupportRoomId(null);
   };
 
   // Close profile dropdown when clicking outside
@@ -1297,110 +1304,6 @@ export default function DurianHubApp() {
       document.removeEventListener("click", handleClickOutside);
     };
   }, [isProfileDropdownOpen]);
-
-  // Handle Avatar Image File Upload from Computer
-  const handleAvatarFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-
-    setIsUploadingAvatar(true);
-    setAvatarUploadError(null);
-    setAvatarUploadSuccess(null);
-
-    const formData = new FormData();
-    formData.append("file", file);
-
-    try {
-      const res = await fetch("/api/user/avatar", {
-        method: "POST",
-        body: formData,
-      });
-      const data = await res.json();
-      if (!res.ok) {
-        setAvatarUploadError(data.error || "ไม่สามารถอัปโหลดรูปภาพได้");
-        return;
-      }
-      setUserProfile((prev) => ({ ...prev, avatarUrl: data.avatarUrl }));
-      setAvatarUploadSuccess("🎉 อัปเดตรูปโปรไฟล์สำเร็จแล้ว!");
-      setTimeout(() => setAvatarUploadSuccess(null), 3500);
-    } catch {
-      setAvatarUploadError("เกิดข้อผิดพลาดในการเชื่อมต่อเซิร์ฟเวอร์");
-    } finally {
-      setIsUploadingAvatar(false);
-    }
-  };
-
-  // Handle Select Preset Avatar
-  const handleSelectPresetAvatar = async (presetUrl: string) => {
-    setIsUploadingAvatar(true);
-    setAvatarUploadError(null);
-    setAvatarUploadSuccess(null);
-
-    const formData = new FormData();
-    formData.append("preset", presetUrl);
-
-    try {
-      const res = await fetch("/api/user/avatar", {
-        method: "POST",
-        body: formData,
-      });
-      const data = await res.json();
-      if (!res.ok) {
-        setAvatarUploadError(data.error || "ไม่สามารถเลือกรูปนี้ได้");
-        return;
-      }
-      setUserProfile((prev) => ({ ...prev, avatarUrl: data.avatarUrl }));
-      setAvatarUploadSuccess("🎉 เปลี่ยนรูปโปรไฟล์สำเร็จแล้ว!");
-      setTimeout(() => setAvatarUploadSuccess(null), 3500);
-    } catch {
-      setAvatarUploadError("เกิดข้อผิดพลาดในการเชื่อมต่อ");
-    } finally {
-      setIsUploadingAvatar(false);
-    }
-  };
-
-  // Handle Save Profile Details (Full Name, Business, Phone, Province)
-  const handleSaveProfile = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setIsSavingProfile(true);
-    setProfileSaveMsg(null);
-
-    try {
-      const res = await fetch("/api/user/profile", {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          fullName: editProfileName,
-          businessName: editBusinessName,
-          phone: editProfilePhone,
-          province: editProfileProvince,
-        }),
-      });
-
-      const data = await res.json();
-      if (!res.ok) {
-        setProfileSaveMsg(`❌ ${data.error || "บันทึกข้อมูลไม่สำเร็จ"}`);
-        return;
-      }
-
-      setUserProfile((prev) => ({
-        ...prev,
-        fullName: data.user.fullName,
-        businessName: data.user.businessName,
-        phone: data.user.phone,
-        province: data.user.province,
-      }));
-      setProfileSaveMsg("🎉 บันทึกข้อมูลโปรไฟล์เรียบร้อยแล้ว!");
-      setTimeout(() => {
-        setShowProfileModal(false);
-        setProfileSaveMsg(null);
-      }, 1200);
-    } catch {
-      setProfileSaveMsg("❌ เกิดข้อผิดพลาดในการเชื่อมต่อเซิร์ฟเวอร์");
-    } finally {
-      setIsSavingProfile(false);
-    }
-  };
 
   // 3. Open Post Detail (รูปที่ 3)
   const handleOpenPostDetail = (post: MarketplacePostItem) => {
@@ -1435,6 +1338,8 @@ export default function DurianHubApp() {
 
   // 5. Send Chat Message or Quick Reply Chip -> POST /api/chat/rooms/[id]/messages
   const handleSendMessage = async (textToSend: string) => {
+    const room = chatRooms.find(r => r.id === activeChatRoomId);
+    if (room?.isHistory || chatHistory(room?.closedAt).isHistory) return;
     if (!textToSend.trim() || !activeChatRoomId) return;
     const currentRoomId = activeChatRoomId;
     setChatInputText("");
@@ -1510,6 +1415,7 @@ export default function DurianHubApp() {
       }
 
       setDealSuccessMsg("🎉 ตกลงราคาซื้อขายและบันทึกสัญญาดีลสำเร็จแล้ว!");
+      await fetchPosts();
       await fetchMessages(activeChatRoom.id, true);
       await fetchChatRooms();
       setTimeout(() => {
@@ -1579,10 +1485,17 @@ export default function DurianHubApp() {
   // 7. Create New Marketplace Post -> POST /api/posts
   const handleCreateNewPost = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (roleSwitchPending.current || postSubmitPending.current) return;
     const priceNum = parseFloat(newPostPrice) || 0;
     const qtyNum = parseFloat(newPostQty) || 0;
     // Strict Role-to-PostType Enforcement: โพสต์ได้เฉพาะประเภทของบทบาทปัจจุบันเท่านั้น
-    const postType = ROLE_CONFIG[userProfile.activeRole]?.allowedPostType || "SELL";
+    const postType = newPostType;
+    if (postType !== ROLE_CONFIG[userProfile.activeRole]?.allowedPostType) {
+      alert(currentLang === "TH" ? "บทบาทเปลี่ยนไป กรุณาปิดแล้วเปิดฟอร์มประกาศใหม่" : "Your role changed. Please reopen the listing form.");
+      return;
+    }
+    postSubmitPending.current = true;
+    setIsCreatingPost(true);
 
     // Outlier validation (+/- 30% from reference price)
     const refItem = VARIETY_STRIP_ITEMS.find((v) => v.id === newPostVariety);
@@ -1634,6 +1547,9 @@ export default function DurianHubApp() {
       );
     } catch (err) {
       console.error("create post error:", err);
+    } finally {
+      postSubmitPending.current = false;
+      setIsCreatingPost(false);
     }
   };
 
@@ -1650,15 +1566,12 @@ export default function DurianHubApp() {
     }
   };
 
-  const checkIsMyOwnPost = (post: MarketplacePostItem) => {
-    if (!userProfile) return false;
-    if (post.userId && userProfile.id && post.userId === userProfile.id) return true;
-    if (post.authorName && userProfile.fullName && post.authorName.trim() === userProfile.fullName.trim()) return true;
-    if (userProfile.fullName && post.authorName && post.authorName.includes(userProfile.fullName)) return true;
-    return false;
-  };
-
+  const checkIsMyOwnPost = (post: MarketplacePostItem) =>
+    Boolean(post.userId && userProfile.id && post.userId === userProfile.id);
   const handleSwitchActiveRole = async (newRole: RoleType) => {
+    if (newRole === userProfile.activeRole || roleSwitchPending.current || showProfileModal || showCreatePostModal || postSubmitPending.current) return;
+    roleSwitchPending.current = true;
+    setIsSwitchingRole(true);
     try {
       const res = await fetch("/api/user/active-role", {
         method: "PATCH",
@@ -1669,13 +1582,17 @@ export default function DurianHubApp() {
       if (res.ok) {
         setUserProfile((prev) => ({
           ...prev,
-          activeRole: newRole,
+          activeRole: data.activeRole,
+          businessName: data.businessName,
         }));
       } else {
         alert(data.error || "ไม่สามารถสลับบทบาทได้");
       }
     } catch {
       alert("เกิดข้อผิดพลาดในการสลับบทบาท");
+    } finally {
+      roleSwitchPending.current = false;
+      setIsSwitchingRole(false);
     }
   };
 
@@ -2656,6 +2573,8 @@ export default function DurianHubApp() {
               <span className="text-xs text-muted-foreground">{t.roleLabel}</span>
               <select
                 value={userProfile.activeRole}
+                aria-label={currentLang === "TH" ? "สลับบทบาทบนแถบเมนู" : "Switch role in navigation"}
+                disabled={isSwitchingRole || showProfileModal || showCreatePostModal || isCreatingPost}
                 onChange={(e) => handleSwitchActiveRole(e.target.value as RoleType)}
                 className="text-xs font-semibold text-brand-ink bg-transparent focus:outline-none cursor-pointer"
               >
@@ -2745,6 +2664,19 @@ export default function DurianHubApp() {
                   <div className="border-t border-line my-2" />
 
                   {/* Menu Items */}
+                  <label className="mb-3 block border-b border-line px-2 pb-3 text-sm">
+                    <span className="mb-2 block text-secondary">{currentLang === "TH" ? "กำลังใช้งานในบทบาท" : "Active role"}</span>
+                    <select aria-label={currentLang === "TH" ? "สลับบทบาทในเมนูบัญชี" : "Switch role in account menu"}
+                      value={userProfile.activeRole} disabled={isSwitchingRole || showProfileModal || showCreatePostModal || isCreatingPost}
+                      onChange={event => handleSwitchActiveRole(event.target.value as RoleType)}
+                      className="w-full rounded-lg border border-line bg-surface px-3 py-2 text-foreground disabled:opacity-60">
+                      {userProfile.approvedRoles.map(role => <option key={role} value={role}>{ROLE_CONFIG[role].shortTitle}</option>)}
+                    </select>
+                    <span className="mt-2 block text-xs text-muted-foreground" role="status">
+                      {isSwitchingRole ? (currentLang === "TH" ? "กำลังสลับบทบาท…" : "Switching role…")
+                        : (currentLang === "TH" ? "สลับบทบาทได้โดยไม่ต้องออกจากระบบ" : "Switch roles without signing out")}
+                    </span>
+                  </label>
                   <label className="mb-3 flex items-center justify-between gap-3 border-b border-line px-2 pb-3 text-sm text-secondary sm:hidden">
                     {currentLang === "TH" ? "ภาษา" : "Language"}
                     <select aria-label="Language / ภาษา" value={currentLang} onChange={(event) => setCurrentLang(event.target.value as "TH" | "EN")} className="rounded-lg border border-line bg-surface px-3 text-foreground"><option value="TH">ไทย</option><option value="EN">English</option></select>
@@ -2752,12 +2684,9 @@ export default function DurianHubApp() {
                   <div className="space-y-0.5 text-xs font-semibold">
                     <button
                       type="button"
+                      disabled={isSwitchingRole}
                       onClick={() => {
                         setIsProfileDropdownOpen(false);
-                        setEditProfileName(userProfile.fullName);
-                        setEditBusinessName(userProfile.businessName);
-                        setEditProfilePhone(userProfile.phone);
-                        setEditProfileProvince(userProfile.province);
                         setShowProfileModal(true);
                       }}
                       className="w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-secondary hover:text-brand-ink hover:bg-brand-soft/80 transition text-left cursor-pointer"
@@ -2776,6 +2705,11 @@ export default function DurianHubApp() {
                     >
                       <Package className="w-4 h-4 text-brand-ink" />
                       <span>{t.myPostsMenu}</span>
+                    </button>
+
+                    <button type="button" onClick={() => { setIsProfileDropdownOpen(false); setSupportRoomId(0); }} className="w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-secondary hover:text-brand-ink hover:bg-brand-soft/80 transition text-left cursor-pointer">
+                      <MessageSquare className="w-4 h-4 text-brand-ink" />
+                      <span>{currentLang === "TH" ? "ศูนย์ช่วยเหลือ / ติดต่อแอดมิน" : "Help Center / Contact admin"}</span>
                     </button>
 
                     <button
@@ -2954,7 +2888,7 @@ export default function DurianHubApp() {
               </div>
             </div>
 
-            <div className="flex flex-wrap items-center justify-between gap-3 text-sm 2xl:hidden"><label className="flex items-center gap-3 text-secondary">{currentLang === "TH" ? "กำลังใช้งานในบทบาท" : "Active role"}<select aria-label={currentLang === "TH" ? "สลับบทบาท" : "Switch role"} value={userProfile.activeRole} onChange={(event) => handleSwitchActiveRole(event.target.value as RoleType)} className="rounded-lg border border-line bg-surface px-3 text-foreground">{userProfile.approvedRoles.map(role => <option key={role} value={role}>{ROLE_CONFIG[role].shortTitle}</option>)}</select></label></div>
+            <div className="flex flex-wrap items-center justify-between gap-3 text-sm 2xl:hidden"><label className="flex items-center gap-3 text-secondary">{currentLang === "TH" ? "กำลังใช้งานในบทบาท" : "Active role"}<select aria-label={currentLang === "TH" ? "สลับบทบาท" : "Switch role"} value={userProfile.activeRole} disabled={isSwitchingRole || showProfileModal || showCreatePostModal || isCreatingPost} onChange={(event) => handleSwitchActiveRole(event.target.value as RoleType)} className="rounded-lg border border-line bg-surface px-3 text-foreground">{userProfile.approvedRoles.map(role => <option key={role} value={role}>{ROLE_CONFIG[role].shortTitle}</option>)}</select></label></div>
             {/* 3 Quick Action Cards Tailored to User's Role */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
               <div role="button" tabIndex={0} onKeyDown={(event) => { if (event.key === "Enter" || event.key === " ") { event.preventDefault(); setCurrentView("REGIONAL_DASHBOARD"); } }}
@@ -3910,7 +3844,13 @@ export default function DurianHubApp() {
                 </div>
 
                 {/* Main CTA: If own post, show management banner; otherwise show chat & report buttons */}
-                {checkIsMyOwnPost(selectedPost) ? (
+                {selectedPost.status && selectedPost.status !== "OPEN" ? (
+                  <div className="p-4 rounded-xl border border-line bg-subtle text-center text-sm" role="status">
+                    {selectedPost.status === "CLOSED"
+                      ? (currentLang === "TH" ? "ประกาศนี้ปิดดีลแล้ว ดูย้อนหลังได้เท่านั้น" : "This listing is closed and available for viewing only.")
+                      : (currentLang === "TH" ? "ประกาศนี้ถูกซ่อนโดยผู้ดูแล ดูย้อนหลังได้เท่านั้น" : "This listing was hidden by an administrator and is available for viewing only.")}
+                  </div>
+                ) : checkIsMyOwnPost(selectedPost) ? (
                   <div className="p-4 sm:p-5 rounded-xl bg-brand-soft/90 border border-brand-line text-center space-y-2.5">
                     <div className="flex items-center justify-center gap-1.5 text-xs font-semibold text-brand-ink">
                       <User className="w-4 h-4 text-brand-ink" />
@@ -4062,7 +4002,7 @@ export default function DurianHubApp() {
                   </span>
                 </div>
 
-                {/* Filter Tabs: กำลังเจรจา | ปิดดีลแล้ว | ทั้งหมด */}
+                {/* Filter Tabs: กำลังเจรจา | ปิดดีลแล้ว | ประวัติแชต */}
                 <div className="px-3 py-2 bg-muted/80 border-b border-line flex items-center gap-1 shrink-0">
                   <button
                     onClick={() => setChatFilterTab("ACTIVE")}
@@ -4107,14 +4047,10 @@ export default function DurianHubApp() {
                   </button>
 
                   <button
-                    onClick={() => setChatFilterTab("ALL")}
-                    className={`py-1.5 px-2.5 rounded-lg text-xs font-semibold transition cursor-pointer ${
-                      chatFilterTab === "ALL"
-                        ? "bg-surface text-foreground shadow-xs border border-line/80"
-                        : "text-muted-foreground hover:text-foreground hover:bg-surface/60"
-                    }`}
+                    onClick={() => setChatFilterTab("HISTORY")}
+                    className={`py-1.5 px-2.5 rounded-lg text-xs font-semibold ${chatFilterTab === "HISTORY" ? "bg-surface text-foreground" : "text-muted-foreground"}`}
                   >
-                    {currentLang === "TH" ? "ทั้งหมด" : "All"}
+                    {currentLang === "TH" ? "ประวัติแชต" : "History"}
                   </button>
                 </div>
 
@@ -4281,6 +4217,15 @@ export default function DurianHubApp() {
                         <Store className="w-3.5 h-3.5" /> {currentLang === "TH" ? "ดูประกาศสวน/ล้ง" : "View Listing"}
                       </button>
 
+                      <button
+                        type="button"
+                        onClick={() => setSupportRoomId(activeChatRoom.id)}
+                        className="px-3.5 py-2 rounded-full bg-info-soft text-info-ink border border-info-line hover:bg-hover font-semibold text-xs transition inline-flex items-center gap-1.5 cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-500"
+                      >
+                        <MessageSquare className="w-4 h-4 shrink-0" />
+                        {currentLang === "TH" ? "แจ้งปัญหา / ติดต่อแอดมิน" : "Report an issue / Contact admin"}
+                      </button>
+
                       {activeChatRoom.hasReviewedByMe ? (
                         <div className="px-3.5 py-1.5 rounded-full bg-info-soft text-info-ink border border-info-line font-semibold text-xs flex items-center gap-1">
                           <Star className="w-3.5 h-3.5 fill-amber-400 text-warning-ink" />
@@ -4326,8 +4271,8 @@ export default function DurianHubApp() {
                       <CheckCircle2 className="w-4 h-4 text-brand-ink shrink-0" />
                       <span>
                         {currentLang === "TH"
-                          ? "🎉 ห้องนี้ได้ตกลงราคาปิดดีลสำเร็จเรียบร้อยแล้ว ท่านสามารถสนทนาเพื่อนัดหมายวันตัด/ส่งมอบผลผลิต และกดปุ่มรีวิวคู่ค้าได้"
-                          : "🎉 This deal has been accepted and closed! You may continue chatting to coordinate delivery and leave a review."}
+                          ? "🎉 ปิดดีลสำเร็จแล้ว สนทนากับคู่ค้าได้ภายใน 7 วันหลังปิดดีล จากนั้นอ่านประวัติได้เท่านั้น และยังติดต่อศูนย์ช่วยเหลือได้"
+                          : "🎉 Deal closed. Partner chat is available for 7 days, then becomes read-only. Support remains available."}
                       </span>
                     </div>
                   )}
@@ -4338,8 +4283,8 @@ export default function DurianHubApp() {
                         <Lock className="w-4 h-4 text-muted-foreground shrink-0" />
                         <span>
                           {currentLang === "TH"
-                            ? `🔒 ประกาศ "${activeChatRoom.post.title}" ได้ทำการตกลงซื้อขาย (ปิดดีล) กับคู่ค้ารายอื่นแล้ว (คุณยังสามารถสนทนาเพื่อสอบถามผลผลิตล็อตถัดไปได้)`
-                            : `🔒 Listing "${activeChatRoom.post.title}" has been closed with another partner. (You may still chat to inquire about future lots)`}
+                            ? `🔒 ประกาศ "${activeChatRoom.post.title}" ปิดดีลกับคู่ค้ารายอื่นแล้ว สนทนาได้ภายใน 7 วันหลังปิดดีล จากนั้นอ่านประวัติได้เท่านั้น`
+                            : `🔒 Listing "${activeChatRoom.post.title}" closed with another partner. Chat becomes read-only 7 days after closing.`}
                         </span>
                       </div>
                     )}
@@ -4415,7 +4360,7 @@ export default function DurianHubApp() {
                           >
                             <div>{msg.text}</div>
                             {msg.sender === "ME" ? (
-                              <div className="text-xs mt-1 text-right text-brand-ink flex items-center justify-end gap-1">
+                              <div className="text-xs mt-1 text-right text-white flex items-center justify-end gap-1">
                                 {msg.status === "SENDING" ? (
                                   <>
                                     <RefreshCw className="w-2.5 h-2.5 animate-spin" />
@@ -4423,13 +4368,13 @@ export default function DurianHubApp() {
                                   </>
                                 ) : msg.isRead ? (
                                   <>
-                                    <CheckCheck className="w-3.5 h-3.5 text-brand-ink" />
-                                    <span className="text-brand-ink font-semibold">{currentLang === "TH" ? "อ่านแล้ว" : "Read"}</span>
+                                    <CheckCheck className="w-3.5 h-3.5 text-white" />
+                                    <span className="text-white font-semibold">{currentLang === "TH" ? "อ่านแล้ว" : "Read"}</span>
                                   </>
                                 ) : (
                                   <>
-                                    <Check className="w-3 h-3 text-brand-ink" />
-                                    <span className="text-brand-ink/90">{currentLang === "TH" ? "ส่งแล้ว" : "Sent"}</span>
+                                    <Check className="w-3 h-3 text-white" />
+                                    <span className="text-white">{currentLang === "TH" ? "ส่งแล้ว" : "Sent"}</span>
                                   </>
                                 )}
                                 <span>•</span>
@@ -4447,6 +4392,14 @@ export default function DurianHubApp() {
                     <div ref={messagesEndRef} />
                   </div>
 
+                  <div className="shrink-0 p-2 border-t border-line bg-surface">
+                    {activeChatRoom.deal && <details className="text-sm mb-2"><summary className="cursor-pointer">ข้อตกลงดีล #{activeChatRoom.deal.id}</summary>
+                      <p>ราคาตกลง {activeChatRoom.deal.agreedPrice} บาท · ปริมาณ {activeChatRoom.deal.agreedQuantityKg || "—"} กก. · ราคา/กก. {activeChatRoom.deal.agreedPricePerKg || "—"}</p>
+                      <p>วันตัด: {activeChatRoom.deal.cutDate ? new Date(activeChatRoom.deal.cutDate).toLocaleDateString("th-TH", { timeZone: "UTC" }) : "—"}</p>
+                      <p className="whitespace-pre-wrap">{activeChatRoom.deal.note}</p>
+                    </details>}
+                  </div>
+                  {activeChatRoom.isHistory || chatHistory(activeChatRoom.closedAt).isHistory ? <p className="shrink-0 p-4 bg-muted text-sm">ปิดดีลครบ 7 วันแล้ว · อ่านประวัติได้เท่านั้น ไม่สามารถส่งข้อความถึงคู่ค้าได้</p> : <>
                   {/* Bottom Quick Reply Chips + Input Bar (ตามรูปที่ 5) */}
                   <div className="shrink-0 p-3.5 bg-surface border-t border-line space-y-2.5 z-10">
                     {/* Quick Reply Chips */}
@@ -4486,6 +4439,7 @@ export default function DurianHubApp() {
                       </button>
                     </form>
                   </div>
+                  </>}
                 </div>
               ) : (
                 /* Welcome / Empty Chat Dashboard (อ้างอิงตามรูปที่ 4 จาก ARC RAIDERS TH) */
@@ -4577,6 +4531,9 @@ export default function DurianHubApp() {
             </div>
           ))}
       </main>
+      {isAuthenticated && supportRoomId !== null && <DialogFrame label="ศูนย์ช่วยเหลือ" onClose={() => setSupportRoomId(null)} className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-3">
+        <SupportPortal key={`${userProfile?.id}-${supportRoomId}`} initialRoomId={supportRoomId || undefined} name={userProfile?.fullName || "สมาชิก"} onClose={() => setSupportRoomId(null)} />
+      </DialogFrame>}
 
       {/* =====================================================================
           MODAL 1: SECURE CHANNEL LINK CONFIRMATION (อ้างอิงตามรูปที่ 4 ทุกจุด)
@@ -4909,9 +4866,10 @@ export default function DurianHubApp() {
                 </button>
                 <button
                   type="submit"
+                  disabled={isCreatingPost || isSwitchingRole}
                   className="px-6 py-2.5 rounded-lg text-xs font-semibold bg-emerald-700 hover:bg-emerald-800 text-white shadow-sm transition cursor-pointer"
                 >
-                  {currentLang === "TH" ? "ลงประกาศทันที" : "Publish Listing"}
+                  {isCreatingPost ? (currentLang === "TH" ? "กำลังลงประกาศ…" : "Publishing…") : (currentLang === "TH" ? "ลงประกาศทันที" : "Publish Listing")}
                 </button>
               </div>
             </form>
@@ -5263,397 +5221,32 @@ export default function DurianHubApp() {
       )}
 
       {/* ================================================================== */}
-      {/* MODAL 1: PROFILE & AVATAR UPLOAD (จัดการโปรไฟล์ & อัปโหลดรูปภาพ - CLEAN LIGHT THEME) */}
+      {/* Account settings: personal profile, businesses, security and preferences. */}
       {/* ================================================================== */}
-      {showProfileModal && (
-        <DialogFrame label="แก้ไขโปรไฟล์" onClose={() => setShowProfileModal(false)} className="fixed inset-0 z-50 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4 overflow-y-auto">
-          <div className="bg-surface text-foreground rounded-2xl max-w-xl w-full p-6 sm:p-8 shadow-panel border border-line relative animate-in fade-in zoom-in-95 duration-150 my-8">
-            {/* Header */}
-            <div className="flex items-center justify-between pb-4 border-b border-line">
-              <div className="flex items-center gap-2.5">
-                <div className="w-10 h-10 rounded-xl bg-brand-soft text-brand-ink border border-brand-line/80 flex items-center justify-center font-semibold">
-                  <User className="w-5 h-5 text-brand-ink" />
-                </div>
-                <div>
-                  <h3 className="font-semibold text-lg text-foreground">
-                    {t.editProfileTitle}
-                  </h3>
-                  <p className="text-xs text-muted-foreground">
-                    {t.editProfileSub}
-                  </p>
-                </div>
-              </div>
-              <button
-                type="button"
-                onClick={() => setShowProfileModal(false)}
-                className="w-8 h-8 rounded-full bg-muted hover:bg-hover text-muted-foreground hover:text-foreground flex items-center justify-center transition cursor-pointer"
-              >
-                <X className="w-4 h-4" />
-              </button>
-            </div>
-
-            {/* Avatar Section */}
-            <div className="mt-5 p-5 rounded-xl bg-subtle border border-line/80">
-              <label className="block text-xs font-semibold text-secondary tracking-wider mb-3 uppercase">
-                {currentLang === "TH" ? "รูปโปรไฟล์ (Profile Avatar)" : "Profile Avatar"}
-              </label>
-
-              <div className="flex flex-col sm:flex-row items-center gap-5">
-                {/* Large Avatar Preview */}
-                <div className="relative group shrink-0">
-                  <div className="w-24 h-24 rounded-xl overflow-hidden border-2 border-brand-line bg-surface shadow-md flex items-center justify-center">
-                    {userProfile.avatarUrl ? (
-                      <img
-                        src={userProfile.avatarUrl}
-                        alt="Profile Avatar"
-                        className="w-full h-full object-cover"
-                      />
-                    ) : (
-                      <div className="w-full h-full bg-emerald-700    text-white font-semibold text-3xl flex items-center justify-center">
-                        {userProfile.fullName ? userProfile.fullName.slice(0, 1) : "U"}
-                      </div>
-                    )}
-                  </div>
-                  {isUploadingAvatar && (
-                    <div className="absolute inset-0 bg-surface/80 rounded-xl flex items-center justify-center">
-                      <RefreshCw className="w-6 h-6 text-brand-ink animate-spin" />
-                    </div>
-                  )}
-                </div>
-
-                {/* Upload Action & File Input */}
-                <div className="flex-1 space-y-2 text-center sm:text-left">
-                  <label className="inline-flex items-center gap-2 px-4 py-2.5 rounded-lg bg-emerald-700 hover:bg-emerald-800 text-white font-semibold text-xs shadow-sm transition cursor-pointer">
-                    <Camera className="w-4 h-4" />
-                    <span>{currentLang === "TH" ? "อัปโหลดรูปภาพใหม่จากคอมพิวเตอร์" : "Upload new image from computer"}</span>
-                    <input
-                      type="file"
-                      accept="image/png,image/jpeg,image/webp,image/gif"
-                      onChange={handleAvatarFileUpload}
-                      className="hidden"
-                    />
-                  </label>
-                  <p className="text-xs text-muted-foreground">
-                    {currentLang === "TH" ? "รองรับไฟล์ JPG, PNG, WebP ขนาดไม่เกิน 5MB" : "Supports JPG, PNG, WebP up to 5MB"}
-                  </p>
-
-                  {avatarUploadSuccess && (
-                    <div className="text-xs font-semibold text-brand-ink flex items-center gap-1.5 justify-center sm:justify-start">
-                      <CheckCircle2 className="w-4 h-4 shrink-0 text-brand-ink" />
-                      <span>{avatarUploadSuccess}</span>
-                    </div>
-                  )}
-                  {avatarUploadError && (
-                    <div className="text-xs font-semibold text-danger-ink flex items-center gap-1.5 justify-center sm:justify-start">
-                      <AlertTriangle className="w-4 h-4 shrink-0 text-danger-ink" />
-                      <span>{avatarUploadError}</span>
-                    </div>
-                  )}
-                </div>
-              </div>
-
-              {/* Preset Avatars Selector */}
-              <div className="mt-4 pt-4 border-t border-line">
-                <span className="text-xs font-medium text-secondary block mb-2.5">
-                  {currentLang === "TH" ? "หรือเลือกรูป Avatar ประจำบทบาทสำเร็จรูป:" : "Or select a preset role avatar:"}
-                </span>
-                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
-                  {[
-                    {
-                      label: currentLang === "TH" ? "ชาวสวนทุเรียน" : "Durian Farmer",
-                      url: "https://images.unsplash.com/photo-1595273670150-bd0c3c392e46?w=150&auto=format&fit=crop&q=80",
-                    },
-                    {
-                      label: currentLang === "TH" ? "ล้งรับซื้อ" : "Durian Lhong",
-                      url: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80",
-                    },
-                    {
-                      label: currentLang === "TH" ? "ทีมตัดมืออาชีพ" : "Cutting Crew",
-                      url: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&auto=format&fit=crop&q=80",
-                    },
-                    {
-                      label: currentLang === "TH" ? "ผู้เชี่ยวชาญ" : "Expert",
-                      url: "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=150&auto=format&fit=crop&q=80",
-                    },
-                  ].map((preset, idx) => (
-                    <button
-                      key={idx}
-                      type="button"
-                      onClick={() => handleSelectPresetAvatar(preset.url)}
-                      className={`p-2.5 rounded-xl border text-center transition flex flex-col items-center gap-1.5 cursor-pointer ${
-                        userProfile.avatarUrl === preset.url
-                          ? "border-brand-line bg-brand-soft/80 shadow-sm ring-2 ring-emerald-500/20"
-                          : "border-line hover:border-line-strong bg-surface"
-                      }`}
-                    >
-                      <img
-                        src={preset.url}
-                        alt={preset.label}
-                        className="w-11 h-11 rounded-full object-cover border border-line shadow-sm"
-                      />
-                      <span className="text-xs text-secondary font-semibold">
-                        {preset.label}
-                      </span>
-                    </button>
-                  ))}
-                </div>
-              </div>
-            </div>
-
-            {/* Profile Information Edit Form */}
-            <form onSubmit={handleSaveProfile} className="mt-5 space-y-3.5">
-              <label className="block text-xs font-semibold text-foreground tracking-wider uppercase">
-                {currentLang === "TH" ? "ข้อมูลส่วนตัว & ข้อมูลร้านค้า" : "Personal & Business Details"}
-              </label>
-
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                <div>
-                  <label htmlFor="user-field-29" className="block text-xs font-semibold text-secondary mb-1">
-                    {currentLang === "TH" ? "ชื่อ-นามสกุลจริง *" : "Full Name *"}
-                  </label>
-                  <input id="user-field-29"
-                    type="text"
-                    required
-                    value={editProfileName}
-                    onChange={(e) => setEditProfileName(e.target.value)}
-                    placeholder={currentLang === "TH" ? "เช่น คุณสมชาย ชาวสวนจันท์" : "e.g. John Doe"}
-                    className="w-full bg-surface border border-line rounded-lg px-3.5 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-emerald-500"
-                  />
-                </div>
-
-                <div>
-                  <label htmlFor="user-field-30" className="block text-xs font-semibold text-secondary mb-1">
-                    {currentLang === "TH" ? "ชื่อร้านค้า / สวน / ล้ง" : "Store / Orchard / Lhong Name"}
-                  </label>
-                  <input id="user-field-30"
-                    type="text"
-                    value={editBusinessName}
-                    onChange={(e) => setEditBusinessName(e.target.value)}
-                    placeholder={currentLang === "TH" ? "เช่น สวนสมชาย GAP จันทบุรี" : "e.g. Somchai GAP Orchard"}
-                    className="w-full bg-surface border border-line rounded-lg px-3.5 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-emerald-500"
-                  />
-                </div>
-              </div>
-
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                <div>
-                  <label htmlFor="user-field-31" className="block text-xs font-semibold text-secondary mb-1">
-                    {currentLang === "TH" ? "เบอร์โทรศัพท์ติดต่อ" : "Phone Number"}
-                  </label>
-                  <input id="user-field-31"
-                    type="tel"
-                    value={editProfilePhone}
-                    onChange={(e) => setEditProfilePhone(e.target.value)}
-                    placeholder="เช่น 089-456-7890"
-                    className="w-full bg-surface border border-line rounded-lg px-3.5 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-emerald-500"
-                  />
-                </div>
-
-                <div>
-                  <label htmlFor="user-field-32" className="block text-xs font-semibold text-secondary mb-1">
-                    {currentLang === "TH" ? "จังหวัดที่ตั้งผลผลิต" : "Province Location"}
-                  </label>
-                  <input id="user-field-32"
-                    type="text"
-                    value={editProfileProvince}
-                    onChange={(e) => setEditProfileProvince(e.target.value)}
-                    placeholder={currentLang === "TH" ? "เช่น จันทบุรี" : "e.g. Chanthaburi"}
-                    className="w-full bg-surface border border-line rounded-lg px-3.5 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-emerald-500"
-                  />
-                </div>
-              </div>
-
-              {profileSaveMsg && (
-                <div className="p-3 rounded-lg bg-muted border border-line text-xs font-semibold text-center text-foreground">
-                  {profileSaveMsg}
-                </div>
-              )}
-
-              {/* Action Buttons */}
-              <div className="pt-2 flex items-center justify-end gap-2.5">
-                <button
-                  type="button"
-                  onClick={() => setShowProfileModal(false)}
-                  className="px-4 py-2.5 rounded-lg text-xs font-semibold text-secondary hover:bg-muted transition cursor-pointer"
-                >
-                  {currentLang === "TH" ? "ปิดหน้าต่าง" : "Close"}
-                </button>
-                <button
-                  type="submit"
-                  disabled={isSavingProfile}
-                  className="px-6 py-2.5 rounded-lg text-xs font-semibold bg-emerald-700 hover:bg-emerald-800 text-white shadow-sm transition flex items-center gap-2 cursor-pointer disabled:opacity-50"
-                >
-                  {isSavingProfile ? (
-                    <>
-                      <RefreshCw className="w-3.5 h-3.5 animate-spin" />
-                      {currentLang === "TH" ? "กำลังบันทึก..." : "Saving..."}
-                    </>
-                  ) : (
-                    currentLang === "TH" ? "บันทึกข้อมูลโปรไฟล์" : "Save Profile"
-                  )}
-                </button>
-              </div>
-            </form>
-          </div>
-        </DialogFrame>
+      {showProfileModal && isAuthenticated && userProfile.id && (
+        <AccountSettingsDialog key={userProfile.id} userId={userProfile.id} lang={currentLang}
+          onLanguageChange={setCurrentLang}
+          onClose={() => setShowProfileModal(false)}
+          onUpdate={account => {
+            setUserProfile(previous => previous.id === account.id ? { ...previous, ...account } : previous);
+            void fetchPosts();
+          }}
+          onPasswordChanged={() => {
+            setShowProfileModal(false); setShowMyPostsModal(false); setIsAuthenticated(false);
+            setAuthSuccessMsg(currentLang === "TH" ? "เปลี่ยนรหัสผ่านแล้ว กรุณาเข้าสู่ระบบใหม่" : "Password changed. Please sign in again.");
+          }}
+          onRequestRole={() => {
+            setShowProfileModal(false); void fetchMyRoleRequests(); setShowRoleRequestModal(true);
+          }} />
       )}
-
-      {/* ================================================================== */}
       {/* MODAL 2: ประวัติการโพสต์ของคุณ (MY POST HISTORY - REAL USER POSTS) */}
       {/* ================================================================== */}
-      {showMyPostsModal && (
-        <DialogFrame label="ประกาศของคุณ" onClose={() => setShowMyPostsModal(false)} className="fixed inset-0 z-50 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="bg-surface text-foreground rounded-2xl max-w-2xl w-full p-6 sm:p-8 shadow-panel border border-line relative animate-in fade-in zoom-in-95 duration-150 max-h-[90vh] flex flex-col">
-            {/* Header */}
-            <div className="flex items-center justify-between pb-4 border-b border-line">
-              <div className="flex items-center gap-2.5">
-                <div className="w-10 h-10 rounded-xl bg-brand-soft text-brand-ink border border-brand-line/80 flex items-center justify-center font-semibold">
-                  <Package className="w-5 h-5 text-brand-ink" />
-                </div>
-                <div>
-                  <h3 className="font-semibold text-lg text-foreground">
-                    {t.myPostsModalTitle}
-                  </h3>
-                  <p className="text-xs text-muted-foreground">
-                    {t.myPostsModalSub}
-                  </p>
-                </div>
-              </div>
-              <button
-                type="button"
-                onClick={() => setShowMyPostsModal(false)}
-                className="w-8 h-8 rounded-full bg-muted hover:bg-hover text-muted-foreground hover:text-foreground flex items-center justify-center transition cursor-pointer"
-              >
-                <X className="w-4 h-4" />
-              </button>
-            </div>
-
-            {/* List of User's Posts */}
-            <div className="flex-1 overflow-y-auto my-4 pr-1 space-y-3">
-              {posts.filter((p) => p.authorName === userProfile.fullName || p.authorName.includes(userProfile.fullName)).length > 0 ? (
-                posts
-                  .filter((p) => p.authorName === userProfile.fullName || p.authorName.includes(userProfile.fullName))
-                  .map((p) => {
-                    const isClosed = p.status === "CLOSED";
-                    const timeInfo = formatRelativeTime(p.createdAt);
-
-                    return (
-                      <div
-                        key={p.id}
-                        className={`p-4 rounded-xl border transition flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 ${
-                          isClosed
-                            ? "bg-subtle border-line opacity-75"
-                            : "bg-surface border-line hover:border-brand-line hover:shadow-sm"
-                        }`}
-                      >
-                        <div className="space-y-1">
-                          <div className="flex items-center gap-2">
-                            <span
-                              className={`text-xs font-semibold px-2.5 py-0.5 rounded-full ${
-                                p.postType === "SELL"
-                                  ? "bg-brand-soft text-brand-ink"
-                                  : p.postType === "BUY"
-                                  ? "bg-info-soft text-info-ink"
-                                  : "bg-warning-soft text-warning-ink"
-                              }`}
-                            >
-                              {p.postType === "SELL"
-                                ? (currentLang === "TH" ? "ต้องการขาย" : "Sell")
-                                : p.postType === "BUY"
-                                ? (currentLang === "TH" ? "ต้องการซื้อ" : "Buy")
-                                : (currentLang === "TH" ? "รับตัดทุเรียน" : "Cut Service")}
-                            </span>
-                            <span
-                              className={`text-xs font-semibold px-2 py-0.5 rounded-full ${
-                                isClosed
-                                  ? "bg-hover text-secondary"
-                                  : "bg-brand-soft text-brand-ink border border-brand-line"
-                              }`}
-                            >
-                              {isClosed ? (currentLang === "TH" ? "ปิดดีลแล้ว" : "Closed") : (currentLang === "TH" ? "กำลังเปิดรับ" : "Active")}
-                            </span>
-                            <span className="text-xs text-muted-foreground">
-                              {timeInfo.text}
-                            </span>
-                          </div>
-
-                          <h4 className="font-semibold text-sm text-foreground">
-                            {p.title}
-                          </h4>
-                          <div className="text-xs text-muted-foreground">
-                            {currentLang === "TH"
-                              ? `พันธุ์${p.variety} • ${p.grade} • จ.${p.province} (${p.quantityKg.toLocaleString()} กก.)`
-                              : `${translateVarietyName(p.variety, currentLang)} • ${p.grade} • ${translateProvinceName(p.province, currentLang)} (${p.quantityKg.toLocaleString()} kg)`}
-                          </div>
-                        </div>
-
-                        <div className="flex items-center gap-3 w-full sm:w-auto justify-between sm:justify-end pt-2 sm:pt-0 border-t sm:border-t-0 border-line">
-                          <div className="text-left sm:text-right">
-                            <div className="text-xs text-muted-foreground">{currentLang === "TH" ? "ราคาเสนอ" : "Offer Price"}</div>
-                            <div className="text-base font-semibold text-brand-ink">
-                              ฿{p.pricePerKg} <span className="text-xs font-normal text-muted-foreground">{t.perKg}</span>
-                            </div>
-                          </div>
-
-                          <button
-                            type="button"
-                            onClick={() => {
-                              setShowMyPostsModal(false);
-                              handleOpenPostDetail(p);
-                            }}
-                            className="px-3.5 py-2 rounded-lg bg-muted hover:bg-brand-soft text-secondary hover:text-brand-ink text-xs font-semibold transition cursor-pointer"
-                          >
-                            {currentLang === "TH" ? "ดูประกาศ" : "View Post"}
-                          </button>
-                        </div>
-                      </div>
-                    );
-                  })
-              ) : (
-                <div className="text-center py-12 px-4 bg-subtle rounded-2xl border border-dashed border-line">
-                  <Package className="w-12 h-12 text-muted-foreground mx-auto mb-3" />
-                  <div className="text-sm font-semibold text-secondary">
-                    {t.noPostsYet}
-                  </div>
-                  <p className="text-xs text-muted-foreground mt-1 max-w-sm mx-auto">
-                    {currentLang === "TH"
-                      ? "เมื่อคุณลงประกาศขายหรือรับซื้อในตลาดกลาง รายการประกาศทั้งหมดจะถูกบันทึกและแสดงที่นี่"
-                      : "When you post sell or buy orders in the marketplace, they will be listed and tracked here."}
-                  </p>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setShowMyPostsModal(false);
-                      handleOpenCreatePostModal();
-                    }}
-                    className="mt-4 px-5 py-2.5 rounded-lg bg-emerald-700 hover:bg-emerald-800 text-white text-xs font-semibold shadow-sm transition inline-flex items-center gap-1.5 cursor-pointer"
-                  >
-                    <Plus className="w-4 h-4" />
-                    <span>{t.createFirstPost}</span>
-                  </button>
-                </div>
-              )}
-            </div>
-
-            {/* Footer */}
-            <div className="pt-3 border-t border-line flex items-center justify-between">
-              <span className="text-xs text-muted-foreground font-medium">
-                {currentLang === "TH"
-                  ? `ทั้งหมด ${posts.filter((p) => p.authorName === userProfile.fullName || p.authorName.includes(userProfile.fullName)).length} รายการ`
-                  : `Total ${posts.filter((p) => p.authorName === userProfile.fullName || p.authorName.includes(userProfile.fullName)).length} Listings`}
-              </span>
-              <button
-                type="button"
-                onClick={() => setShowMyPostsModal(false)}
-                className="px-5 py-2 rounded-lg bg-muted hover:bg-hover text-secondary text-xs font-semibold transition cursor-pointer"
-              >
-                {currentLang === "TH" ? "ปิดหน้าต่าง" : "Close"}
-              </button>
-            </div>
-          </div>
-        </DialogFrame>
+      {showMyPostsModal && isAuthenticated && userProfile.id && (
+        <MyPostsDialog key={userProfile.id} userId={userProfile.id} lang={currentLang}
+          onClose={() => setShowMyPostsModal(false)}
+          onView={post => { setShowMyPostsModal(false); handleOpenPostDetail(post); }}
+          onCreate={() => { setShowMyPostsModal(false); handleOpenCreatePostModal(); }} />
       )}
-
       {/* ================================================================== */}
       {/* MODAL 3: คู่มือการใช้งาน (USER GUIDE - CLEAN LIGHT THEME) */}
       {/* ================================================================== */}

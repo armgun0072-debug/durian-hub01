@@ -1,6 +1,27 @@
 # Flowchart หลักการทำงานของ Durian Hub
 
-วันที่ตรวจสอบโค้ด: 30 ตุลาคม 2569 (2026-10-30)
+วันที่ตรวจสอบโค้ดส่วนที่เกี่ยวข้องและสร้างภาพ: 2 พฤศจิกายน 2569 (2026-11-02)
+
+## ภาพ Flowchart พร้อมใช้งาน
+
+เปิด [หน้ารวมภาพทั้ง 10 ผัง](flowcharts/index.html) ด้วยเบราว์เซอร์ เลือก PNG สำหรับใส่รายงาน หรือ SVG สำหรับซูมและนำเสนอโดยภาพไม่แตก
+
+| ผัง | ภาพ PNG | ภาพ SVG |
+|---|---|---|
+| 1. ภาพรวมระบบ | [PNG](flowcharts/01-overview.png) | [SVG](flowcharts/01-overview.svg) |
+| 2. สมัคร / OTP / เข้าสู่ระบบ / ลืมรหัสผ่าน | [PNG](flowcharts/02-authentication.png) | [SVG](flowcharts/02-authentication.svg) |
+| 3. ลงประกาศและค้นหาคู่ค้า | [PNG](flowcharts/03-marketplace.png) | [SVG](flowcharts/03-marketplace.svg) |
+| 4. แชทและสถานะอ่าน | [PNG](flowcharts/04-chat.png) | [SVG](flowcharts/04-chat.svg) |
+| 5. ปิดดีลและแจ้งห้องอื่น | [PNG](flowcharts/05-close-deal.png) | [SVG](flowcharts/05-close-deal.svg) |
+| 6. รีวิวคู่ค้า | [PNG](flowcharts/06-reviews.png) | [SVG](flowcharts/06-reviews.svg) |
+| 7. ขอเพิ่มบทบาท | [PNG](flowcharts/07-role-requests.png) | [SVG](flowcharts/07-role-requests.svg) |
+| 8. รายงานและลงโทษ | [PNG](flowcharts/08-moderation.png) | [SVG](flowcharts/08-moderation.svg) |
+| 9. แดชบอร์ดและ snapshot ราคา | [PNG](flowcharts/09-market-dashboard.png) | [SVG](flowcharts/09-market-dashboard.svg) |
+| 10. โครงสร้างระบบ | [PNG](flowcharts/10-system-architecture.png) | [SVG](flowcharts/10-system-architecture.svg) |
+
+![ภาพรวม Durian Hub](flowcharts/01-overview.png)
+
+ต้นฉบับภาพและวิธีสร้างซ้ำอยู่ใน [flowcharts/README.md](flowcharts/README.md) ส่วน Mermaid ด้านล่างยังคงใช้เป็นผังอธิบายประกอบ โดยภาพแยกคำขอบทบาท การจัดการรายงาน แดชบอร์ด และโครงสร้างระบบเป็นคนละผัง
 
 Durian Hub เป็นตลาดกลางเชื่อมผู้ขายทุเรียน ผู้รับซื้อ และทีมตัดทุเรียน ผู้ใช้ลงประกาศตามสิทธิ์ ค้นหาคู่ค้า เจรจาผ่านแชท บันทึกข้อตกลง และรีวิวคู่ค้าหลังปิดดีล ผู้ดูแลระบบตรวจคำขอเพิ่มบทบาทและรายงานปัญหา
 
@@ -140,7 +161,6 @@ flowchart TD
     F -->|ไม่สำเร็จ| X
     F -->|สำเร็จ| G[สร้าง Deal ACCEPTED และส่งข้อความสรุป]
     G --> H[เปลี่ยนห้องเป็น DEAL_CLOSED]
-    G --> H
     H --> I[ค้นหาห้องอื่นของประกาศเดียวกัน]
     I --> J[ส่งข้อความแจ้งปิดดีลกับรายอื่นและเปลี่ยนห้องเป็น ARCHIVED]
     J --> K([Commit และตอบผลสำเร็จ])
@@ -237,7 +257,11 @@ flowchart LR
 
 ## 9. ขอบเขตการตรวจสอบ
 
-เอกสารนี้อธิบายตามการอ่านโค้ด ณ วันที่ระบุ ไม่ใช่ผลทดสอบระบบครบวงจร ในงานเอกสารนี้ไม่ได้เรียก API เพื่อสร้างบัญชี ปิดดีล หรือแก้ฐานข้อมูล และไม่ได้ทดสอบคำขอพร้อมกันกับ MySQL จริง สถานะทดสอบเดิมใน CURRENT_TASK.md ระบุว่ารีวิวผ่าน mock tests 21/21 โดยยังมีงานทดสอบ MySQL และ flow ครบวงจรต่อไป
+งานสร้างภาพนี้ตรวจโค้ดเฉพาะเส้นทางที่เกี่ยวข้อง ไม่ได้เรียก API สร้างบัญชี ปิดดีล หรือแก้ฐานข้อมูล ตรวจไฟล์ SVG ว่าเป็น XML ที่อ่านได้ ตรวจเส้นเชื่อมว่าชี้ไปยังโหนดที่มีอยู่ ตรวจความกว้างข้อความทุกโหนด และเปิดตรวจภาพตัวอย่างด้วยตา ผลอยู่ใน [validation.json](flowcharts/validation.json)
+
+ผลทดสอบก่อนหน้านี้ใน CURRENT_TASK.md ระบุ unit/mock 65/65 และ MySQL integration แยกฐาน 10/10 ผ่านเมื่อ 2 พฤศจิกายน 2569 รวมทั้งงาน UI ผ่าน regression/theme 71/71 และ Chrome checks 25/25 ตัวเลขเหล่านี้เป็นหลักฐานจากงานก่อนหน้า ไม่ใช่การรันทดสอบซ้ำในงานสร้างภาพ และยังไม่ใช่การทดสอบ browser ครบทุกเส้นทางธุรกิจ
+
+แดชบอร์ดปัจจุบันอ่านประกาศจาก posts API ส่วน snapshot สร้างผ่าน `npm run stats:refresh` และบันทึก DailyMarketStat แยกต่างหาก ยังไม่ตั้ง OS schedule อัตโนมัติ หลักฐาน: [market-stats.ts](../src/lib/market-stats.ts), [refresh script](../scripts/refresh-market-stats.cjs)
 
 ## คำอธิบายสั้นสำหรับพูดนำเสนอ
 

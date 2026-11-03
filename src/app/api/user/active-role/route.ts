@@ -48,6 +48,7 @@ export async function PATCH(request: Request) {
       success: true,
       message: `สลับบทบาทเป็น ${activeRole} สำเร็จแล้ว`,
       activeRole: updated.activeRole,
+      businessName: user.roles.find(r => r.roleType === activeRole && r.status === "ACTIVE")?.businessName || user.fullName,
     });
   } catch (error) {
     console.error("Active Role Update Error:", error);

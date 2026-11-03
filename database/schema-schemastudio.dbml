@@ -1,0 +1,394 @@
+Enum users_active_role_enum {
+  SELLER
+  BUYER
+  CUTTER
+  ADMIN
+}
+
+Enum users_status_enum {
+  ACTIVE
+  SUSPENDED
+  BANNED
+}
+
+Enum otp_codes_purpose_enum {
+  VERIFY_EMAIL
+  RESET_PASSWORD
+}
+
+Enum user_roles_role_type_enum {
+  SELLER
+  BUYER
+  CUTTER
+  ADMIN
+}
+
+Enum user_roles_status_enum {
+  ACTIVE
+  PENDING_APPROVAL
+  REJECTED
+}
+
+Enum role_verification_requests_requested_role_enum {
+  SELLER
+  BUYER
+  CUTTER
+  ADMIN
+}
+
+Enum role_verification_requests_document_type_enum {
+  GAP_CERTIFICATE
+  FARMER_BOOK
+  COMMERCIAL_LICENSE
+  CUTTER_CERT_OR_PORT
+  NATIONAL_ID_WITH_PIC
+}
+
+Enum role_verification_requests_status_enum {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+Enum marketplace_posts_post_type_enum {
+  SELL
+  BUY
+  CUT_SERVICE
+}
+
+Enum marketplace_posts_price_unit_enum {
+  PER_KG
+  PER_TON
+  LUMP_SUM
+}
+
+Enum marketplace_posts_status_enum {
+  OPEN
+  CLOSED
+  HIDDEN_BY_ADMIN
+}
+
+Enum chat_rooms_status_enum {
+  ACTIVE
+  DEAL_CLOSED
+  ARCHIVED
+}
+
+Enum support_tickets_status_enum {
+  OPEN
+  IN_PROGRESS
+  RESOLVED
+}
+
+Enum chat_messages_message_type_enum {
+  TEXT
+  PRODUCT_CARD
+  QUICK_REPLY
+  IMAGE
+}
+
+Enum post_reports_reason_enum {
+  FAKE_PRICE
+  SPAM
+  SCAM
+  WRONG_INFO
+}
+
+Enum post_reports_status_enum {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+Enum deals_status_enum {
+  PENDING
+  ACCEPTED
+  COMPLETED
+  DISPUTED
+  CANCELLED
+}
+
+Table users {
+  id integer [pk, increment, not null]
+  email varchar(191) [not null, unique]
+  email_verified_at datetime(3)
+  phone varchar(191) [not null, unique]
+  password_hash varchar(191) [not null]
+  full_name varchar(191) [not null]
+  avatar_url varchar(191)
+  location_id integer
+  active_role users_active_role_enum [not null]
+  is_kyc_verified boolean [not null]
+  trust_score integer [not null]
+  rating_avg decimal(3,2) [not null]
+  rating_count integer [not null]
+  status users_status_enum [not null]
+  suspended_until datetime(3)
+  suspension_reason varchar(191)
+  created_at datetime(3) [not null]
+  updated_at datetime(3) [not null]
+}
+
+Table otp_codes {
+  id integer [pk, increment, not null]
+  user_id integer [not null]
+  purpose otp_codes_purpose_enum [not null]
+  code_hash varchar(191) [not null]
+  attempts integer [not null]
+  expires_at datetime(3) [not null]
+  used_at datetime(3)
+  created_at datetime(3) [not null]
+}
+
+Table user_roles {
+  id integer [pk, increment, not null]
+  user_id integer [not null]
+  role_type user_roles_role_type_enum [not null]
+  is_primary_role boolean [not null]
+  business_name varchar(191)
+  license_number varchar(191)
+  description text
+  status user_roles_status_enum [not null]
+  is_verified boolean [not null]
+  created_at datetime(3) [not null]
+}
+
+Table role_verification_requests {
+  id integer [pk, increment, not null]
+  user_id integer [not null]
+  requested_role role_verification_requests_requested_role_enum [not null]
+  business_name varchar(191) [not null]
+  license_number varchar(191)
+  document_type role_verification_requests_document_type_enum [not null]
+  document_url varchar(191) [not null]
+  note text
+  status role_verification_requests_status_enum [not null]
+  reviewed_by_admin_id integer
+  admin_remark text
+  created_at datetime(3) [not null]
+  reviewed_at datetime(3)
+}
+
+Table regional_seasons {
+  id integer [pk, increment, not null]
+  region_code varchar(191) [not null, unique]
+  region_name varchar(191) [not null]
+  provinces_summary text [not null]
+  popular_varieties varchar(191) [not null]
+  harvest_period varchar(191) [not null]
+  highlight_note text
+}
+
+Table locations {
+  id integer [pk, increment, not null]
+  province varchar(191) [not null]
+  district varchar(191) [not null]
+  region varchar(191) [not null]
+  regional_season_id integer
+}
+
+Table durian_varieties {
+  id integer [pk, increment, not null]
+  name_th varchar(191) [not null, unique]
+  name_en varchar(191) [not null]
+  icon_emoji varchar(191)
+  description text
+  is_active boolean [not null]
+}
+
+Table durian_grades {
+  id integer [pk, increment, not null]
+  grade_code varchar(191) [not null, unique]
+  name_th varchar(191) [not null]
+  description text
+}
+
+Table marketplace_posts {
+  id integer [pk, increment, not null]
+  user_id integer [not null]
+  post_type marketplace_posts_post_type_enum [not null]
+  variety_id integer
+  grade_id integer
+  location_id integer [not null]
+  title varchar(191) [not null]
+  content text [not null]
+  price decimal(10,2) [not null]
+  price_per_kg decimal(10,2)
+  price_unit marketplace_posts_price_unit_enum [not null]
+  quantity_kg decimal(12,2)
+  dry_matter_pct decimal(4,1)
+  available_date date [not null]
+  is_price_outlier boolean [not null]
+  report_count integer [not null]
+  view_count integer [not null]
+  status marketplace_posts_status_enum [not null]
+  created_at datetime(3) [not null]
+  updated_at datetime(3) [not null]
+}
+
+Table post_images {
+  id integer [pk, increment, not null]
+  post_id integer [not null]
+  image_url varchar(191) [not null]
+  sort_order integer [not null]
+  created_at datetime(3) [not null]
+}
+
+Table chat_rooms {
+  id integer [pk, increment, not null]
+  post_id integer [not null]
+  initiator_id integer [not null]
+  owner_id integer [not null]
+  status chat_rooms_status_enum [not null]
+  last_message_at datetime(3) [not null]
+  created_at datetime(3) [not null]
+  closed_at datetime(3)
+}
+
+Table support_tickets {
+  id integer [pk, increment, not null]
+  room_id integer [not null]
+  requester_id integer [not null]
+  category varchar(50) [not null]
+  status support_tickets_status_enum [not null]
+  resolution text
+  handled_by_id integer
+  queued_at datetime(3) [not null]
+  resolved_at datetime(3)
+  created_at datetime(3) [not null]
+  updated_at datetime(3) [not null]
+}
+
+Table support_messages {
+  id integer [pk, increment, not null]
+  ticket_id integer [not null]
+  sender_id integer [not null]
+  is_admin boolean [not null]
+  content text [not null]
+  created_at datetime(3) [not null]
+}
+
+Table chat_messages {
+  id integer [pk, increment, not null]
+  room_id integer [not null]
+  sender_id integer [not null]
+  message_type chat_messages_message_type_enum [not null]
+  content text [not null]
+  is_read boolean [not null]
+  created_at datetime(3) [not null]
+}
+
+Table daily_market_stats {
+  id integer [pk, increment, not null]
+  stat_date date [not null]
+  variety_id integer [not null]
+  grade_id integer [not null]
+  location_id integer [not null]
+  avg_buy_price decimal(10,2)
+  avg_sell_price decimal(10,2)
+  min_price decimal(10,2)
+  max_price decimal(10,2)
+  avg_cut_wage_per_kg decimal(10,2)
+  official_ref_price decimal(10,2)
+  total_buy_volume_kg decimal(14,2) [not null]
+  total_sell_volume_kg decimal(14,2) [not null]
+  sample_post_count integer [not null]
+  updated_at datetime(3) [not null]
+}
+
+Table post_reports {
+  id integer [pk, increment, not null]
+  post_id integer [not null]
+  reporter_id integer [not null]
+  reason post_reports_reason_enum [not null]
+  detail text
+  status post_reports_status_enum [not null]
+  created_at datetime(3) [not null]
+}
+
+Table deals {
+  id integer [pk, increment, not null]
+  post_id integer [not null]
+  initiator_id integer [not null]
+  receiver_id integer [not null]
+  agreed_price decimal(10,2) [not null]
+  agreed_price_per_kg decimal(10,2)
+  agreed_quantity_kg decimal(12,2)
+  cut_date date
+  note text
+  status deals_status_enum [not null]
+  created_at datetime(3) [not null]
+  updated_at datetime(3) [not null]
+}
+
+Table user_reviews {
+  id integer [pk, increment, not null]
+  deal_id integer [not null]
+  reviewer_id integer [not null]
+  reviewee_id integer [not null]
+  rating integer [not null]
+  comment text
+  created_at datetime(3) [not null]
+}
+
+Ref: users.location_id > locations.id
+
+Ref: otp_codes.user_id > users.id
+
+Ref: user_roles.user_id > users.id
+
+Ref: role_verification_requests.user_id > users.id
+
+Ref: role_verification_requests.reviewed_by_admin_id > users.id
+
+Ref: locations.regional_season_id > regional_seasons.id
+
+Ref: marketplace_posts.user_id > users.id
+
+Ref: marketplace_posts.variety_id > durian_varieties.id
+
+Ref: marketplace_posts.grade_id > durian_grades.id
+
+Ref: marketplace_posts.location_id > locations.id
+
+Ref: post_images.post_id > marketplace_posts.id
+
+Ref: chat_rooms.post_id > marketplace_posts.id
+
+Ref: chat_rooms.initiator_id > users.id
+
+Ref: chat_rooms.owner_id > users.id
+
+Ref: support_tickets.room_id > chat_rooms.id
+
+Ref: support_tickets.requester_id > users.id
+
+Ref: support_messages.ticket_id > support_tickets.id
+
+Ref: support_messages.sender_id > users.id
+
+Ref: chat_messages.room_id > chat_rooms.id
+
+Ref: chat_messages.sender_id > users.id
+
+Ref: daily_market_stats.variety_id > durian_varieties.id
+
+Ref: daily_market_stats.grade_id > durian_grades.id
+
+Ref: daily_market_stats.location_id > locations.id
+
+Ref: post_reports.post_id > marketplace_posts.id
+
+Ref: post_reports.reporter_id > users.id
+
+Ref: deals.post_id > marketplace_posts.id
+
+Ref: deals.initiator_id > users.id
+
+Ref: deals.receiver_id > users.id
+
+Ref: user_reviews.deal_id > deals.id
+
+Ref: user_reviews.reviewer_id > users.id
+
+Ref: user_reviews.reviewee_id > users.id

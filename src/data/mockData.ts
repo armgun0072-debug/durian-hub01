@@ -155,6 +155,10 @@ export interface ChatMessageItem {
 }
 
 export interface ChatRoomItem {
+  closedAt?: string | null;
+  readOnlyAt?: string | null;
+  isHistory?: boolean;
+  deal?: { id: number; agreedPrice: string; agreedPricePerKg?: string; agreedQuantityKg?: string; cutDate?: string | null; note?: string | null } | null;
   id: number;
   postId?: number;
   partnerId?: number;

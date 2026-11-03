@@ -59,14 +59,14 @@ export async function POST(request: Request) {
             roomId, senderId: user.id, messageType: "TEXT",
             content: `🎉 ตกลงราคาซื้อขาย (ปิดดีล) สำเร็จ!\n• ราคาตกลง: ${agreedPrice.toLocaleString()} บาท${agreedPricePerKg ? ` (${agreedPricePerKg} บาท/กก.)` : ""}\n• ปริมาณ: ${agreedQuantityKg ? `${agreedQuantityKg.toLocaleString()} กก.` : "ตามตกลง"}\n• สถานะดีล: ยืนยันแล้ว (รหัสดีล #${created.id})`,
           } });
-          await tx.chatRoom.update({ where: { id: roomId }, data: { status: "DEAL_CLOSED", lastMessageAt: new Date() } });
+          await tx.chatRoom.update({ where: { id: roomId }, data: { status: "DEAL_CLOSED", closedAt: created.createdAt, lastMessageAt: new Date() } });
           const otherRooms = await tx.chatRoom.findMany({ where: { postId, id: { not: roomId }, status: "ACTIVE" } });
           for (const other of otherRooms) {
             await tx.chatMessage.create({ data: {
               roomId: other.id, senderId: user.id, messageType: "TEXT",
               content: `📢 แจ้งเตือนจากระบบ: ประกาศ "${post.title}" ได้ทำการตกลงซื้อขาย (ปิดดีล) กับคู่ค้ารายอื่นเรียบร้อยแล้ว ขอบคุณที่ให้ความสนใจครับ (คุณยังสามารถพูดคุยเพื่อสอบถามข้อมูลผลผลิตล็อตถัดไปกับผู้ขายได้)`,
             } });
-            await tx.chatRoom.update({ where: { id: other.id }, data: { status: "ARCHIVED", lastMessageAt: new Date() } });
+            await tx.chatRoom.update({ where: { id: other.id }, data: { status: "ARCHIVED", closedAt: created.createdAt, lastMessageAt: new Date() } });
           }
           return created;
         }, { isolationLevel: Prisma.TransactionIsolationLevel.Serializable });

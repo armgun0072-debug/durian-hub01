@@ -1,0 +1,18 @@
+﻿{
+    "runtimeErrors":  [
+
+                      ],
+    "api":  "browser fixtures; no database access",
+    "checks":  [
+                   "seller can browse buying category without changing role",
+                   "desktop account switch offers only approved roles",
+                   "switch refreshes business identity without logout",
+                   "history filters old sell posts while buyer role is active",
+                   "buyer listing form has a buy category",
+                   "role switches are disabled while the listing form is open",
+                   "chat status, time and icons white on emerald in light (5.48:1)",
+                   "chat status, time and icons white on emerald in dark (5.48:1)",
+                   "mobile account switch visible in chat",
+                   "mobile viewport has no horizontal page overflow"
+               ]
+}

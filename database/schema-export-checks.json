@@ -1,0 +1,9 @@
+{
+  "source": "prisma/schema.prisma + database/hardening.sql",
+  "tables": 18,
+  "columns": 169,
+  "foreignKeys": 31,
+  "enumColumns": 17,
+  "includesReviewRatingCheck": true,
+  "validation": "Prisma-generated DDL; table count and FK endpoints matched; no live database connection"
+}

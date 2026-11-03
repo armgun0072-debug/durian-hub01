@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getCurrentUser } from "@/lib/auth";
 import { ChatMessageType } from "@prisma/client";
+import { chatHistory, CHAT_HISTORY_MS } from "@/lib/chat-history";
 
 export async function GET(
   request: Request,
@@ -91,26 +92,30 @@ export async function POST(
     }
 
     const body = await request.json();
+    if (chatHistory(room.closedAt).isHistory) {
+      return NextResponse.json({ error: "ปิดดีลครบ 7 วันแล้ว ห้องนี้อ่านย้อนหลังได้เท่านั้น กรุณาติดต่อศูนย์ช่วยเหลือหากมีปัญหา" }, { status: 403 });
+    }
     const { content, messageType = "TEXT" } = body;
 
-    if (!content || !content.trim()) {
+    if (typeof content !== "string" || !content.trim() || content.length > 5000 || !["TEXT", "QUICK_REPLY"].includes(messageType)) {
       return NextResponse.json({ error: "กรุณาระบุข้อความ" }, { status: 400 });
     }
 
-    const [newMessage] = await prisma.$transaction([
-      prisma.chatMessage.create({
+    const newMessage = await prisma.$transaction(async tx => {
+      const writable = await tx.chatRoom.updateMany({
+        where: { id: roomId, OR: [{ closedAt: null }, { closedAt: { gt: new Date(Date.now() - CHAT_HISTORY_MS) } }] },
+        data: { lastMessageAt: new Date() },
+      });
+      if (!writable.count) throw new Error("CHAT_READ_ONLY");
+      return tx.chatMessage.create({
         data: {
           roomId,
           senderId: user.id,
           messageType: messageType as ChatMessageType,
           content: content.trim(),
         },
-      }),
-      prisma.chatRoom.update({
-        where: { id: roomId },
-        data: { lastMessageAt: new Date() },
-      }),
-    ]);
+      });
+    });
 
     return NextResponse.json({
       success: true,
@@ -126,6 +131,7 @@ export async function POST(
       },
     });
   } catch (error) {
+    if (error instanceof Error && error.message === "CHAT_READ_ONLY") return NextResponse.json({ error: "ปิดดีลครบ 7 วันแล้ว อ่านย้อนหลังได้เท่านั้น" }, { status: 403 });
     console.error("POST Message Error:", error);
     return NextResponse.json({ error: "ไม่สามารถส่งข้อความได้" }, { status: 500 });
   }

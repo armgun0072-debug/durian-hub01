@@ -1,0 +1,25 @@
+﻿{
+    "runtimeErrors":  [
+
+                      ],
+    "api":  "browser fixtures; no database access",
+    "checks":  [
+                   "profile load failure is visible and retryable",
+                   "four account sections are present",
+                   "email and phone are visible but not editable",
+                   "no face presets are offered",
+                   "personal save sends only personal fields",
+                   "avatar upload updates preview",
+                   "avatar deletion restores initials",
+                   "buyer business save leaves seller and active role unchanged",
+                   "role status, rejection feedback and real reputation are shown",
+                   "language updates the app and persists in this browser",
+                   "theme preference persists",
+                   "mobile dialog stays inside viewport",
+                   "mobile document has no horizontal overflow",
+                   "mismatched passwords are blocked before API request",
+                   "server password error remains visible for correction",
+                   "successful password change clears password fields",
+                   "password completion returns to the signed-out screen"
+               ]
+}

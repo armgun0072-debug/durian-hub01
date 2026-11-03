@@ -1,0 +1,65 @@
+// Run ONLY against the disposable support_check database in the isolated test container.
+const assert = require('node:assert/strict');
+const { readFileSync } = require('node:fs');
+const { PrismaClient } = require('@prisma/client');
+const { loadTs, request } = require('./helpers.cjs');
+const prisma = new PrismaClient();
+async function main() {
+  assert.equal(new URL(process.env.DATABASE_URL).pathname, '/support_check');
+  const sql = readFileSync('database/chat-support.sql', 'utf8').replace(/^--.*$/gm, '').split(';').map(s => s.trim()).filter(Boolean);
+  for (const statement of sql.filter(s => !s.startsWith('SELECT'))) await prisma.$executeRawUnsafe(statement);
+  const queueSql = readFileSync('database/support-queue.sql', 'utf8').replace(/^--.*$/gm, '').split(';').map(s => s.trim()).filter(Boolean);
+  for (const statement of queueSql) await prisma.$executeRawUnsafe(statement);
+  const users = await Promise.all(['owner', 'buyer', 'other', 'admin'].map((fullName, i) => prisma.user.create({ data: {
+    fullName, email: `${fullName}@test.invalid`, phone: `090000000${i}`, passwordHash: 'test-only',
+  } })));
+  const location = await prisma.location.create({ data: { province: 'TEST', district: 'TEST', region: 'TEST' } });
+  const variety = await prisma.durianVariety.create({ data: { nameTh: 'TEST', nameEn: 'TEST' } });
+  const grade = await prisma.durianGrade.create({ data: { gradeCode: 'TEST', nameTh: 'TEST' } });
+  const post = await prisma.marketplacePost.create({ data: { userId: users[0].id, postType: 'SELL', title: 'Support test', content: '', price: 100, priceUnit: 'PER_KG', availableDate: new Date(), locationId: location.id, varietyId: variety.id, gradeId: grade.id } });
+  const room = await prisma.chatRoom.create({ data: { postId: post.id, ownerId: users[0].id, initiatorId: users[1].id } });
+  const mocks = user => ({ '@/lib/prisma': { prisma }, '@/lib/auth': { getCurrentUser: async () => user, getAdminUser: async () => users[3] } });
+  const dealApi = loadTs('src/app/api/deals/route.ts', mocks(users[1]));
+  assert.equal((await dealApi.POST(request({ roomId: room.id, postId: post.id, receiverId: users[0].id, agreedPrice: 1000 }))).status, 200);
+  const closed = await prisma.chatRoom.findUnique({ where: { id: room.id } });
+  assert.ok(closed.closedAt);
+  const deal = await prisma.deal.findFirst({ where: { postId: post.id } });
+  assert.equal(+closed.closedAt, +deal.createdAt);
+  await prisma.chatRoom.update({ where: { id: room.id }, data: { closedAt: null } });
+  await prisma.$executeRawUnsafe(sql.find(s => s.startsWith('UPDATE')));
+  assert.equal(+(await prisma.chatRoom.findUnique({ where: { id: room.id } })).closedAt, +deal.createdAt);
+  await prisma.chatRoom.update({ where: { id: room.id }, data: { closedAt: new Date(Date.now() - 8 * 86400000) } });
+  const messagesApi = loadTs('src/app/api/chat/rooms/[id]/messages/route.ts', mocks(users[1]));
+  assert.equal((await messagesApi.POST(request({ content: 'must be blocked' }), { params: Promise.resolve({ id: String(room.id) }) })).status, 403);
+  const api = loadTs('src/lib/support.ts', mocks(users[1]));
+  const created = await api.createSupport(request({ roomId: room.id, category: 'PAYMENT', content: 'Payment issue' }));
+  assert.equal(created.status, 200);
+  const { ticket } = await created.json();
+  assert.equal((await api.claimNextSupport()).status, 200);
+  assert.equal((await api.updateSupport(request({ content: 'Admin reply' }), String(ticket.id), true)).status, 200);
+  assert.equal((await api.updateSupport(request({ status: 'RESOLVED', resolution: 'Payment confirmed' }), String(ticket.id), true)).status, 200);
+  assert.equal((await api.updateSupport(request({ status: 'OPEN' }), String(ticket.id))).status, 200);
+  const outsider = loadTs('src/lib/support.ts', mocks(users[2]));
+  assert.equal((await outsider.supportDetail(new Request('http://test/support'), String(ticket.id))).status, 404);
+  const detail = await api.supportDetail(new Request('http://test/support'), String(ticket.id), true);
+  assert.equal(detail.status, 200);
+  const data = await detail.json();
+  assert.equal(data.messages.length, 5);
+  assert.equal(data.evidence.deals.length, 1);
+  assert.equal(data.ticket.status, 'OPEN');
+  assert.equal(data.ticket.handledById, null);
+  assert.equal(data.ahead, 0);
+  const secondRoom = await prisma.chatRoom.create({ data: { postId: post.id, ownerId: users[0].id, initiatorId: users[2].id } });
+  const second = await outsider.createSupport(request({ roomId: secondRoom.id, category: 'OTHER', content: 'second' }));
+  assert.equal(second.status, 200);
+  const secondTicket = (await second.json()).ticket;
+  const waiting = await outsider.supportDetail(new Request('http://test/support'), String(secondTicket.id));
+  assert.equal((await waiting.json()).ahead, 1);
+  const claims = await Promise.all([api.claimNextSupport(), api.claimNextSupport()]);
+  const successful = await Promise.all(claims.filter(r => r.status === 200).map(r => r.json()));
+  assert.equal(successful[0].ticket.id, ticket.id);
+  assert.equal(new Set(successful.map(r => r.ticket.id)).size, successful.length);
+  if (successful.length === 1) assert.equal((await api.claimNextSupport()).status, 200);
+  console.log('PASS: SQL upgrade, backfill, deal timestamp, expired chat, private support, FIFO/ahead count, concurrent claims, admin reply/resolve/reopen and evidence on isolated MySQL');
+}
+main().catch(error => { console.error(error); process.exitCode = 1; }).finally(() => prisma.$disconnect());

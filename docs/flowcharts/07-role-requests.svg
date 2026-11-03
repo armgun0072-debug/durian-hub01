@@ -1,0 +1,61 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1400" height="2238" viewBox="0 0 1400 2238" role="img" aria-labelledby="title desc"><title id="title">บทบาทผู้ใช้และคำขอเพิ่มบทบาท</title><desc id="desc">ผู้ใช้หนึ่งคนมีหลายบทบาทได้ โดยผู้ดูแลตรวจคำขอพร้อมเอกสาร</desc><defs><marker id="arrow" markerWidth="10" markerHeight="10" refX="8" refY="4" orient="auto" markerUnits="userSpaceOnUse"><path d="M0 0 L8 4 L0 8 Z" fill="#536b63"/></marker></defs><rect width="100%" height="100%" fill="#f7faf9"/><g font-family="Tahoma, Leelawadee UI, sans-serif">
+<text x="700" y="30" text-anchor="middle" dominant-baseline="central" font-size="16" fill="#527267">DURIAN HUB  /  SYSTEM FLOWCHART</text>
+<text x="700" y="75.5" text-anchor="middle" dominant-baseline="central" font-size="36" fill="#164735">บทบาทผู้ใช้และคำขอเพิ่มบทบาท</text>
+<text x="700" y="127.5" text-anchor="middle" dominant-baseline="central" font-size="20" fill="#526960">ผู้ใช้หนึ่งคนมีหลายบทบาทได้ โดยผู้ดูแลตรวจคำขอพร้อมเอกสาร</text>
+<path d="M 700,350 L 700,406" fill="none" stroke="#536b63" stroke-width="2" marker-end="url(#arrow)"/>
+<path d="M 700,566 L 700,622" fill="none" stroke="#536b63" stroke-width="2" marker-end="url(#arrow)"/>
+<path d="M 700,782 L 700,838" fill="none" stroke="#536b63" stroke-width="2" marker-end="url(#arrow)"/>
+<path d="M 700,998 L 700,1054" fill="none" stroke="#536b63" stroke-width="2" marker-end="url(#arrow)"/>
+<path d="M 700,998 L 700,1026 L 1150,1026 L 1150,1054" fill="none" stroke="#536b63" stroke-width="2" marker-end="url(#arrow)"/>
+<path d="M 700,1214 L 700,1270" fill="none" stroke="#536b63" stroke-width="2" marker-end="url(#arrow)"/>
+<path d="M 700,1430 L 700,1486" fill="none" stroke="#536b63" stroke-width="2" marker-end="url(#arrow)"/>
+<path d="M 700,1646 L 700,1674 L 250,1674 L 250,1702" fill="none" stroke="#536b63" stroke-width="2" marker-end="url(#arrow)"/>
+<path d="M 700,1646 L 700,1674 L 1150,1674 L 1150,1702" fill="none" stroke="#536b63" stroke-width="2" marker-end="url(#arrow)"/>
+<path d="M 250,1862 L 250,1918" fill="none" stroke="#536b63" stroke-width="2" marker-end="url(#arrow)"/>
+<path d="M 1150,1862 L 1150,1918" fill="none" stroke="#536b63" stroke-width="2" marker-end="url(#arrow)"/>
+<rect x="717" y="1013" width="70" height="26" fill="white"/>
+<text x="752" y="1026" text-anchor="middle" dominant-baseline="central" font-size="16" fill="#36574a">ผ่าน</text>
+<rect x="890" y="1013" width="70" height="26" fill="white"/>
+<text x="925" y="1026" text-anchor="middle" dominant-baseline="central" font-size="16" fill="#36574a">ไม่ผ่าน</text>
+<rect x="440" y="1661" width="70" height="26" fill="white"/>
+<text x="475" y="1674" text-anchor="middle" dominant-baseline="central" font-size="16" fill="#36574a">อนุมัติ</text>
+<rect x="890" y="1661" width="70" height="26" fill="white"/>
+<text x="925" y="1674" text-anchor="middle" dominant-baseline="central" font-size="16" fill="#36574a">ปฏิเสธ</text>
+<rect x="500" y="190" width="400" height="160" rx="12" fill="#164735" stroke="#164735" stroke-width="2"/>
+<text x="700" y="270" text-anchor="middle" dominant-baseline="central" font-size="21" fill="#ffffff">ผู้ใช้เข้าสู่ระบบ</text>
+<rect x="500" y="406" width="400" height="160" rx="12" fill="#ffffff" stroke="#9bb5aa" stroke-width="2"/>
+<text x="700" y="472.5" text-anchor="middle" dominant-baseline="central" font-size="21" fill="#183f32">เลือกขอเพิ่มบทบาท</text>
+<text x="700" y="499.5" text-anchor="middle" dominant-baseline="central" font-size="21" fill="#183f32">SELLER / BUYER / CUTTER</text>
+<rect x="500" y="622" width="400" height="160" rx="12" fill="#ffffff" stroke="#9bb5aa" stroke-width="2"/>
+<text x="700" y="688.5" text-anchor="middle" dominant-baseline="central" font-size="21" fill="#183f32">กรอกข้อมูลกิจการและแนบเอกสาร</text>
+<text x="700" y="715.5" text-anchor="middle" dominant-baseline="central" font-size="21" fill="#183f32">ตามบทบาทที่ต้องการ</text>
+<polygon points="700,838 900,918 700,998 500,918" fill="#fff4cf" stroke="#c99e38" stroke-width="2"/>
+<text x="700" y="904.5" text-anchor="middle" dominant-baseline="central" font-size="18" fill="#183f32">ข้อมูล / ไฟล์ผ่าน?</text>
+<text x="700" y="931.5" text-anchor="middle" dominant-baseline="central" font-size="18" fill="#183f32">ไม่มีบทบาท ACTIVE หรือคำขอซ้ำ?</text>
+<rect x="500" y="1054" width="400" height="160" rx="12" fill="#e7f0fc" stroke="#6b94c8" stroke-width="2"/>
+<text x="700" y="1134" text-anchor="middle" dominant-baseline="central" font-size="21" fill="#183f32">สร้างคำขอสถานะ PENDING</text>
+<rect x="500" y="1270" width="400" height="160" rx="12" fill="#ffffff" stroke="#9bb5aa" stroke-width="2"/>
+<text x="700" y="1336.5" text-anchor="middle" dominant-baseline="central" font-size="21" fill="#183f32">ผู้ดูแลเข้าสู่ระบบ /admin</text>
+<text x="700" y="1363.5" text-anchor="middle" dominant-baseline="central" font-size="21" fill="#183f32">เปิดคำขอและตรวจหลักฐาน</text>
+<polygon points="700,1486 900,1566 700,1646 500,1566" fill="#fff4cf" stroke="#c99e38" stroke-width="2"/>
+<text x="700" y="1566" text-anchor="middle" dominant-baseline="central" font-size="18" fill="#183f32">อนุมัติคำขอ?</text>
+<rect x="50" y="1702" width="400" height="160" rx="12" fill="#ffffff" stroke="#9bb5aa" stroke-width="2"/>
+<text x="250" y="1755" text-anchor="middle" dominant-baseline="central" font-size="21" fill="#183f32">คำขอ APPROVED</text>
+<text x="250" y="1782" text-anchor="middle" dominant-baseline="central" font-size="21" fill="#183f32">เพิ่มหรืออัปเดตบทบาท ACTIVE</text>
+<text x="250" y="1809" text-anchor="middle" dominant-baseline="central" font-size="21" fill="#183f32">isVerified=true</text>
+<rect x="950" y="1702" width="400" height="160" rx="12" fill="#ffffff" stroke="#9bb5aa" stroke-width="2"/>
+<text x="1150" y="1768.5" text-anchor="middle" dominant-baseline="central" font-size="21" fill="#183f32">คำขอ REJECTED</text>
+<text x="1150" y="1795.5" text-anchor="middle" dominant-baseline="central" font-size="21" fill="#183f32">บันทึกหมายเหตุจากผู้ดูแล</text>
+<rect x="50" y="1918" width="400" height="160" rx="12" fill="#e0f2e8" stroke="#27805a" stroke-width="2"/>
+<text x="250" y="1984.5" text-anchor="middle" dominant-baseline="central" font-size="21" fill="#183f32">ผู้ใช้เลือกบทบาทใหม่</text>
+<text x="250" y="2011.5" text-anchor="middle" dominant-baseline="central" font-size="21" fill="#183f32">ใช้งานตามสิทธิ์ของบทบาทนั้น</text>
+<rect x="950" y="1918" width="400" height="160" rx="12" fill="#e0f2e8" stroke="#27805a" stroke-width="2"/>
+<text x="1150" y="1984.5" text-anchor="middle" dominant-baseline="central" font-size="21" fill="#183f32">ผู้ใช้ดูผลพิจารณา</text>
+<text x="1150" y="2011.5" text-anchor="middle" dominant-baseline="central" font-size="21" fill="#183f32">และปรับข้อมูลตามหมายเหตุ</text>
+<rect x="950" y="1054" width="400" height="160" rx="12" fill="#fce9e7" stroke="#c88077" stroke-width="2"/>
+<text x="1150" y="1120.5" text-anchor="middle" dominant-baseline="central" font-size="21" fill="#183f32">ปฏิเสธคำขอที่ไม่ถูกต้อง</text>
+<text x="1150" y="1147.5" text-anchor="middle" dominant-baseline="central" font-size="21" fill="#183f32">แจ้งข้อมูลหรือเอกสารให้แก้ไข</text>
+<text x="700" y="2120" text-anchor="middle" dominant-baseline="central" font-size="16" fill="#526960">สีเขียว: เริ่ม/สำเร็จ    สีเหลือง: เงื่อนไข    สีฟ้า: ข้อมูล    สีแดง: ไม่ผ่าน/ข้อผิดพลาด</text>
+<text x="700" y="2156" text-anchor="middle" dominant-baseline="central" font-size="16" fill="#36574a">บทบาทหลักตอนสมัครเป็น ACTIVE และ isVerified=false • การขอเพิ่มบทบาทเป็นคนละขั้นตอนกับสมัครบัญชี</text>
+<text x="700" y="2191" text-anchor="middle" dominant-baseline="central" font-size="16" fill="#687b74">อ้างอิง: src/app/api/user/role-requests/route.ts; src/app/api/admin/role-requests/[id]/route.ts</text>
+</g></svg>

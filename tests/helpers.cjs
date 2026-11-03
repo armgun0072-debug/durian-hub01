@@ -14,7 +14,7 @@ function loadTs(file, mocks = {}) {
     const output = ts.transpileModule(readFileSync(filename, 'utf8'), {
       compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2020 },
     }).outputText;
-    vm.runInNewContext(output, { exports, console: { ...console, error() {} }, Request, Date, Intl, require(name) {
+    vm.runInNewContext(output, { exports, console: { ...console, error() {} }, Request, URL, Date, Intl, require(name) {
       if (Object.hasOwn(mocks, name)) return mocks[name];
       if (name.startsWith('@/')) return load(resolve('src', name.slice(2)) + '.ts');
       if (name.startsWith('.')) return load(resolve(dirname(filename), name) + '.ts');

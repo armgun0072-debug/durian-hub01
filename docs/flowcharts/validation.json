@@ -1,0 +1,92 @@
+﻿[
+    {
+        "nodes":  18,
+        "width":  1400,
+        "edges":  17,
+        "svgValid":  true,
+        "height":  2886,
+        "title":  "ภาพรวมการทำงานของ Durian Hub",
+        "file":  "01-overview"
+    },
+    {
+        "nodes":  20,
+        "width":  1400,
+        "edges":  24,
+        "svgValid":  true,
+        "height":  2238,
+        "title":  "สมัครสมาชิก · OTP · เข้าสู่ระบบ",
+        "file":  "02-authentication"
+    },
+    {
+        "nodes":  13,
+        "width":  1400,
+        "edges":  12,
+        "svgValid":  true,
+        "height":  2238,
+        "title":  "ลงประกาศและค้นหาคู่ค้า",
+        "file":  "03-marketplace"
+    },
+    {
+        "nodes":  14,
+        "width":  1400,
+        "edges":  15,
+        "svgValid":  true,
+        "height":  2670,
+        "title":  "แชทเจรจาและสถานะอ่านข้อความ",
+        "file":  "04-chat"
+    },
+    {
+        "nodes":  14,
+        "width":  1400,
+        "edges":  14,
+        "svgValid":  true,
+        "height":  2670,
+        "title":  "ปิดดีลและแจ้งคู่ค้ารายอื่น",
+        "file":  "05-close-deal"
+    },
+    {
+        "nodes":  14,
+        "width":  1400,
+        "edges":  15,
+        "svgValid":  true,
+        "height":  2670,
+        "title":  "รีวิวคู่ค้าหลังปิดดีล",
+        "file":  "06-reviews"
+    },
+    {
+        "nodes":  12,
+        "width":  1400,
+        "edges":  11,
+        "svgValid":  true,
+        "height":  2238,
+        "title":  "บทบาทผู้ใช้และคำขอเพิ่มบทบาท",
+        "file":  "07-role-requests"
+    },
+    {
+        "nodes":  16,
+        "width":  1400,
+        "edges":  17,
+        "svgValid":  true,
+        "height":  2886,
+        "title":  "รายงานปัญหาและคะแนนความประพฤติ",
+        "file":  "08-moderation"
+    },
+    {
+        "nodes":  14,
+        "width":  1400,
+        "edges":  13,
+        "svgValid":  true,
+        "height":  2022,
+        "title":  "แดชบอร์ดราคาและสถิติรายวัน",
+        "file":  "09-market-dashboard"
+    },
+    {
+        "nodes":  13,
+        "width":  1400,
+        "edges":  13,
+        "svgValid":  true,
+        "height":  2238,
+        "title":  "โครงสร้างระบบและเส้นทางข้อมูล",
+        "file":  "10-system-architecture"
+    }
+]

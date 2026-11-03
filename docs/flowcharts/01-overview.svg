@@ -1,0 +1,92 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1400" height="2886" viewBox="0 0 1400 2886" role="img" aria-labelledby="title desc"><title id="title">ภาพรวมการทำงานของ Durian Hub</title><desc id="desc">เส้นทางผู้ใช้ตั้งแต่ค้นหาคู่ค้า จนถึงบันทึกข้อตกลงและรีวิว</desc><defs><marker id="arrow" markerWidth="10" markerHeight="10" refX="8" refY="4" orient="auto" markerUnits="userSpaceOnUse"><path d="M0 0 L8 4 L0 8 Z" fill="#536b63"/></marker></defs><rect width="100%" height="100%" fill="#f7faf9"/><g font-family="Tahoma, Leelawadee UI, sans-serif">
+<text x="700" y="30" text-anchor="middle" dominant-baseline="central" font-size="16" fill="#527267">DURIAN HUB  /  SYSTEM FLOWCHART</text>
+<text x="700" y="75.5" text-anchor="middle" dominant-baseline="central" font-size="36" fill="#164735">ภาพรวมการทำงานของ Durian Hub</text>
+<text x="700" y="127.5" text-anchor="middle" dominant-baseline="central" font-size="20" fill="#526960">เส้นทางผู้ใช้ตั้งแต่ค้นหาคู่ค้า จนถึงบันทึกข้อตกลงและรีวิว</text>
+<path d="M 700,350 L 700,406" fill="none" stroke="#536b63" stroke-width="2" marker-end="url(#arrow)"/>
+<path d="M 700,566 L 700,622" fill="none" stroke="#536b63" stroke-width="2" marker-end="url(#arrow)"/>
+<path d="M 700,782 L 700,810 L 250,810 L 250,838" fill="none" stroke="#536b63" stroke-width="2" marker-end="url(#arrow)"/>
+<path d="M 700,782 L 700,838" fill="none" stroke="#536b63" stroke-width="2" marker-end="url(#arrow)"/>
+<path d="M 700,998 L 700,1054" fill="none" stroke="#536b63" stroke-width="2" marker-end="url(#arrow)"/>
+<path d="M 700,1214 L 700,1242 L 250,1242 L 250,1270" fill="none" stroke="#536b63" stroke-width="2" marker-end="url(#arrow)"/>
+<path d="M 700,1214 L 700,1270" fill="none" stroke="#536b63" stroke-width="2" marker-end="url(#arrow)"/>
+<path d="M 700,1214 L 700,1242 L 1150,1242 L 1150,1270" fill="none" stroke="#536b63" stroke-width="2" marker-end="url(#arrow)"/>
+<path d="M 700,1430 L 700,1486" fill="none" stroke="#536b63" stroke-width="2" marker-end="url(#arrow)"/>
+<path d="M 700,1430 L 700,1458 L 1150,1458 L 1150,1486" fill="none" stroke="#536b63" stroke-width="2" marker-end="url(#arrow)"/>
+<path d="M 700,1646 L 700,1702" fill="none" stroke="#536b63" stroke-width="2" marker-end="url(#arrow)"/>
+<path d="M 700,1862 L 700,1890 L 250,1890 L 250,1918" fill="none" stroke="#536b63" stroke-width="2" marker-end="url(#arrow)"/>
+<path d="M 700,1862 L 700,1918" fill="none" stroke="#536b63" stroke-width="2" marker-end="url(#arrow)"/>
+<path d="M 700,2078 L 700,2134" fill="none" stroke="#536b63" stroke-width="2" marker-end="url(#arrow)"/>
+<path d="M 700,2294 L 700,2322 L 1150,2322 L 1150,2294" fill="none" stroke="#536b63" stroke-width="2" marker-end="url(#arrow)"/>
+<path d="M 700,2294 L 700,2350" fill="none" stroke="#536b63" stroke-width="2" marker-end="url(#arrow)"/>
+<path d="M 700,2510 L 700,2566" fill="none" stroke="#536b63" stroke-width="2" marker-end="url(#arrow)"/>
+<rect x="435.5" y="797" width="79" height="26" fill="white"/>
+<text x="475" y="810" text-anchor="middle" dominant-baseline="central" font-size="16" fill="#36574a">ยังไม่ทำ</text>
+<rect x="705.5" y="797" width="93" height="26" fill="white"/>
+<text x="752" y="810" text-anchor="middle" dominant-baseline="central" font-size="16" fill="#36574a">ทำรายการ</text>
+<rect x="428" y="1229" width="94" height="26" fill="white"/>
+<text x="475" y="1242" text-anchor="middle" dominant-baseline="central" font-size="16" fill="#36574a">ลงประกาศ</text>
+<rect x="706.5" y="1229" width="91" height="26" fill="white"/>
+<text x="752" y="1242" text-anchor="middle" dominant-baseline="central" font-size="16" fill="#36574a">ค้นหาคู่ค้า</text>
+<rect x="873.5" y="1229" width="103" height="26" fill="white"/>
+<text x="925" y="1242" text-anchor="middle" dominant-baseline="central" font-size="16" fill="#36574a">เพิ่มบทบาท</text>
+<rect x="888" y="1445" width="74" height="26" fill="white"/>
+<text x="925" y="1458" text-anchor="middle" dominant-baseline="central" font-size="16" fill="#36574a">รายงาน</text>
+<rect x="436" y="1877" width="78" height="26" fill="white"/>
+<text x="475" y="1890" text-anchor="middle" dominant-baseline="central" font-size="16" fill="#36574a">ยังไม่ได้</text>
+<rect x="712" y="1877" width="80" height="26" fill="white"/>
+<text x="752" y="1890" text-anchor="middle" dominant-baseline="central" font-size="16" fill="#36574a">ตกลงได้</text>
+<rect x="877.5" y="2309" width="95" height="26" fill="white"/>
+<text x="925" y="2322" text-anchor="middle" dominant-baseline="central" font-size="16" fill="#36574a">แจ้งรายอื่น</text>
+<rect x="500" y="190" width="400" height="160" rx="12" fill="#164735" stroke="#164735" stroke-width="2"/>
+<text x="700" y="270" text-anchor="middle" dominant-baseline="central" font-size="21" fill="#ffffff">เริ่มใช้งาน Durian Hub</text>
+<rect x="500" y="406" width="400" height="160" rx="12" fill="#ffffff" stroke="#9bb5aa" stroke-width="2"/>
+<text x="700" y="472.5" text-anchor="middle" dominant-baseline="central" font-size="21" fill="#183f32">ดูตลาดกลาง / แดชบอร์ดราคา</text>
+<text x="700" y="499.5" text-anchor="middle" dominant-baseline="central" font-size="21" fill="#183f32">ค้นหาตามประเภทและพื้นที่</text>
+<polygon points="700,622 900,702 700,782 500,702" fill="#fff4cf" stroke="#c99e38" stroke-width="2"/>
+<text x="700" y="702" text-anchor="middle" dominant-baseline="central" font-size="18" fill="#183f32">ต้องการทำรายการ?</text>
+<rect x="50" y="838" width="400" height="160" rx="12" fill="#ffffff" stroke="#9bb5aa" stroke-width="2"/>
+<text x="250" y="904.5" text-anchor="middle" dominant-baseline="central" font-size="21" fill="#183f32">ดูข้อมูลต่อได้</text>
+<text x="250" y="931.5" text-anchor="middle" dominant-baseline="central" font-size="21" fill="#183f32">โดยยังไม่เข้าสู่ระบบ</text>
+<rect x="500" y="838" width="400" height="160" rx="12" fill="#ffffff" stroke="#9bb5aa" stroke-width="2"/>
+<text x="700" y="904.5" text-anchor="middle" dominant-baseline="central" font-size="21" fill="#183f32">สมัคร / ยืนยันอีเมล OTP</text>
+<text x="700" y="931.5" text-anchor="middle" dominant-baseline="central" font-size="21" fill="#183f32">หรือเข้าสู่ระบบ</text>
+<polygon points="700,1054 900,1134 700,1214 500,1134" fill="#fff4cf" stroke="#c99e38" stroke-width="2"/>
+<text x="700" y="1134" text-anchor="middle" dominant-baseline="central" font-size="18" fill="#183f32">เลือกการใช้งาน</text>
+<rect x="50" y="1270" width="400" height="160" rx="12" fill="#ffffff" stroke="#9bb5aa" stroke-width="2"/>
+<text x="250" y="1336.5" text-anchor="middle" dominant-baseline="central" font-size="21" fill="#183f32">ลงประกาศตามสิทธิ์</text>
+<text x="250" y="1363.5" text-anchor="middle" dominant-baseline="central" font-size="21" fill="#183f32">SELL / BUY / CUT_SERVICE</text>
+<rect x="500" y="1270" width="400" height="160" rx="12" fill="#ffffff" stroke="#9bb5aa" stroke-width="2"/>
+<text x="700" y="1336.5" text-anchor="middle" dominant-baseline="central" font-size="21" fill="#183f32">เลือกประกาศของคู่ค้า</text>
+<text x="700" y="1363.5" text-anchor="middle" dominant-baseline="central" font-size="21" fill="#183f32">ตรวจว่าไม่ใช่ประกาศตนเอง</text>
+<rect x="950" y="1270" width="400" height="160" rx="12" fill="#ffffff" stroke="#9bb5aa" stroke-width="2"/>
+<text x="1150" y="1336.5" text-anchor="middle" dominant-baseline="central" font-size="21" fill="#183f32">ขอเพิ่มบทบาท</text>
+<text x="1150" y="1363.5" text-anchor="middle" dominant-baseline="central" font-size="21" fill="#183f32">ส่งคำขอให้ผู้ดูแลตรวจ</text>
+<rect x="500" y="1486" width="400" height="160" rx="12" fill="#ffffff" stroke="#9bb5aa" stroke-width="2"/>
+<text x="700" y="1552.5" text-anchor="middle" dominant-baseline="central" font-size="21" fill="#183f32">เปิดห้องแชท</text>
+<text x="700" y="1579.5" text-anchor="middle" dominant-baseline="central" font-size="21" fill="#183f32">เจรจาราคา / ปริมาณ / วันตัด</text>
+<polygon points="700,1702 900,1782 700,1862 500,1782" fill="#fff4cf" stroke="#c99e38" stroke-width="2"/>
+<text x="700" y="1782" text-anchor="middle" dominant-baseline="central" font-size="18" fill="#183f32">ตกลงกันได้?</text>
+<rect x="50" y="1918" width="400" height="160" rx="12" fill="#ffffff" stroke="#9bb5aa" stroke-width="2"/>
+<text x="250" y="1984.5" text-anchor="middle" dominant-baseline="central" font-size="21" fill="#183f32">เจรจาต่อ</text>
+<text x="250" y="2011.5" text-anchor="middle" dominant-baseline="central" font-size="21" fill="#183f32">หรือเลือกคู่ค้ารายอื่น</text>
+<rect x="500" y="1918" width="400" height="160" rx="12" fill="#ffffff" stroke="#9bb5aa" stroke-width="2"/>
+<text x="700" y="1984.5" text-anchor="middle" dominant-baseline="central" font-size="21" fill="#183f32">ตรวจสมาชิกห้องและประกาศ</text>
+<text x="700" y="2011.5" text-anchor="middle" dominant-baseline="central" font-size="21" fill="#183f32">บันทึกดีล ACCEPTED</text>
+<rect x="500" y="2134" width="400" height="160" rx="12" fill="#ffffff" stroke="#9bb5aa" stroke-width="2"/>
+<text x="700" y="2200.5" text-anchor="middle" dominant-baseline="central" font-size="21" fill="#183f32">ประกาศ CLOSED</text>
+<text x="700" y="2227.5" text-anchor="middle" dominant-baseline="central" font-size="21" fill="#183f32">ห้องคู่ค้า DEAL_CLOSED</text>
+<rect x="950" y="2134" width="400" height="160" rx="12" fill="#ffffff" stroke="#9bb5aa" stroke-width="2"/>
+<text x="1150" y="2200.5" text-anchor="middle" dominant-baseline="central" font-size="21" fill="#183f32">แจ้งห้องอื่นของประกาศ</text>
+<text x="1150" y="2227.5" text-anchor="middle" dominant-baseline="central" font-size="21" fill="#183f32">เปลี่ยนห้อง ACTIVE เป็น ARCHIVED</text>
+<rect x="500" y="2350" width="400" height="160" rx="12" fill="#ffffff" stroke="#9bb5aa" stroke-width="2"/>
+<text x="700" y="2416.5" text-anchor="middle" dominant-baseline="central" font-size="21" fill="#183f32">คู่ค้ารีวิวกัน 1–5 ดาว</text>
+<text x="700" y="2443.5" text-anchor="middle" dominant-baseline="central" font-size="21" fill="#183f32">คนละหนึ่งครั้งต่อดีล</text>
+<rect x="500" y="2566" width="400" height="160" rx="12" fill="#e0f2e8" stroke="#27805a" stroke-width="2"/>
+<text x="700" y="2646" text-anchor="middle" dominant-baseline="central" font-size="21" fill="#183f32">อัปเดตคะแนนเฉลี่ย / จำนวนรีวิว</text>
+<rect x="950" y="1486" width="400" height="160" rx="12" fill="#ffffff" stroke="#9bb5aa" stroke-width="2"/>
+<text x="1150" y="1552.5" text-anchor="middle" dominant-baseline="central" font-size="21" fill="#183f32">พบปัญหา: รายงานประกาศ</text>
+<text x="1150" y="1579.5" text-anchor="middle" dominant-baseline="central" font-size="21" fill="#183f32">ผู้ดูแลตรวจและพิจารณาลงโทษ</text>
+<text x="700" y="2768" text-anchor="middle" dominant-baseline="central" font-size="16" fill="#526960">สีเขียว: เริ่ม/สำเร็จ    สีเหลือง: เงื่อนไข    สีฟ้า: ข้อมูล    สีแดง: ไม่ผ่าน/ข้อผิดพลาด</text>
+<text x="700" y="2804" text-anchor="middle" dominant-baseline="central" font-size="16" fill="#36574a">การปิดดีลคือบันทึกข้อตกลง ระบบยังไม่มีขั้นตอนรับชำระเงินหรือจัดส่ง</text>
+<text x="700" y="2839" text-anchor="middle" dominant-baseline="central" font-size="16" fill="#687b74">อ้างอิง: src/app/page.tsx; src/app/api/deals/route.ts; src/app/api/reviews/route.ts</text>
+</g></svg>

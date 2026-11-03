@@ -1,4 +1,5 @@
 "use client";
+import { SupportCenter } from "@/components/support-center";
 
 import { ThemeSwitcher } from "@/components/theme-switcher";
 import { PageHeading } from "@/components/ui";
@@ -128,7 +129,7 @@ export default function AdminPortalPage() {
   const [loginLoading, setLoginLoading] = useState(false);
 
   // Dashboard Data
-  const [activeTab, setActiveTab] = useState<"ROLE_REQUESTS" | "REPORTS" | "POSTS" | "USERS">("ROLE_REQUESTS");
+  const [activeTab, setActiveTab] = useState<"ROLE_REQUESTS" | "REPORTS" | "POSTS" | "USERS" | "SUPPORT">("ROLE_REQUESTS");
   const [isLoadingData, setIsLoadingData] = useState(false);
   const [summary, setSummary] = useState({
     pendingRoleRequestsCount: 0,
@@ -780,6 +781,7 @@ export default function AdminPortalPage() {
 
         {/* Tab Navigation */}
         <div className="border-b border-line flex items-center gap-2 overflow-x-auto pb-1">
+          <button className={`px-4 py-2.5 rounded-lg text-sm font-semibold shrink-0 ${activeTab === "SUPPORT" ? "bg-brand-soft text-brand-ink" : "text-muted-foreground"}`} onClick={() => setActiveTab("SUPPORT")}>ศูนย์ช่วยเหลือ · แชตกับผู้ใช้</button>
           <button
             onClick={() => setActiveTab("ROLE_REQUESTS")}
             className={`px-4 py-2.5 rounded-lg text-sm font-semibold flex items-center gap-2 transition-all shrink-0 ${
@@ -840,6 +842,7 @@ export default function AdminPortalPage() {
         </div>
 
         {/* ================================================================== */}
+        {activeTab === "SUPPORT" && <SupportCenter admin key={adminUser?.id} />}
         {/* TAB 1: ROLE VERIFICATION REQUESTS */}
         {/* ================================================================== */}
         {activeTab === "ROLE_REQUESTS" && (

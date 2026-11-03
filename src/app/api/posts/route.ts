@@ -53,46 +53,46 @@ export async function GET(request: Request) {
         images: {
           orderBy: { sortOrder: "asc" },
         },
-      },
+      },+
     });
 
-    // Map to frontend friendly format
-    const formattedPosts = posts.map((p) => {
-      const primaryRole = p.user.roles[0];
-      return {
-        id: p.id,
-        userId: p.userId,
-        authorName: p.user.fullName,
-        businessName: primaryRole?.businessName || p.user.fullName,
-        authorRole: p.user.activeRole,
-        isKycVerified: p.user.isKycVerified,
-        rating: Number(p.user.ratingAvg),
-        reviewCount: p.user.ratingCount,
-        title: p.title,
-        postType: p.postType,
-        variety: p.variety?.nameTh || "หมอนทอง",
-        grade: p.grade?.nameTh || "เกรด AB",
-        province: p.location?.province || "จันทบุรี",
-        region: p.location?.region || "ภาคตะวันออก",
-        regionTag: p.location?.region || "ภาคตะวันออก",
-        price: Number(p.price),
-        pricePerKg: p.pricePerKg ? Number(p.pricePerKg) : Number(p.price),
-        priceUnit: p.priceUnit,
-        quantityKg: p.quantityKg ? Number(p.quantityKg) : 5000,
-        dryMatterPct: p.dryMatterPct ? Number(p.dryMatterPct) : 32.0,
-        availableDate: p.availableDate ? p.availableDate.toISOString().split("T")[0] : "พร้อมตัดทันที",
-        content: p.content,
-        imageUrl: p.images[0]?.imageUrl || "",
-        status: p.status,
-        createdAt: p.createdAt.toISOString(),
-      };
-    });
+  // Map to frontend friendly format
+  const formattedPosts = posts.map((p) => {
+    const primaryRole = p.user.roles[0];
+    return {
+      id: p.id,
+      userId: p.userId,
+      authorName: p.user.fullName,
+      businessName: primaryRole?.businessName || p.user.fullName,
+      authorRole: p.user.activeRole,
+      isKycVerified: p.user.isKycVerified,
+      rating: Number(p.user.ratingAvg),
+      reviewCount: p.user.ratingCount,
+      title: p.title,
+      postType: p.postType,
+      variety: p.variety?.nameTh || "หมอนทอง",
+      grade: p.grade?.nameTh || "เกรด AB",
+      province: p.location?.province || "จันทบุรี",
+      region: p.location?.region || "ภาคตะวันออก",
+      regionTag: p.location?.region || "ภาคตะวันออก",
+      price: Number(p.price),
+      pricePerKg: p.pricePerKg ? Number(p.pricePerKg) : Number(p.price),
+      priceUnit: p.priceUnit,
+      quantityKg: p.quantityKg ? Number(p.quantityKg) : 5000,
+      dryMatterPct: p.dryMatterPct ? Number(p.dryMatterPct) : 32.0,
+      availableDate: p.availableDate ? p.availableDate.toISOString().split("T")[0] : "พร้อมตัดทันที",
+      content: p.content,
+      imageUrl: p.images[0]?.imageUrl || "",
+      status: p.status,
+      createdAt: p.createdAt.toISOString(),
+    };
+  });
 
-    return NextResponse.json({ success: true, posts: formattedPosts });
-  } catch (error) {
-    console.error("GET Posts Error:", error);
-    return NextResponse.json({ error: "ไม่สามารถดึงข้อมูลโพสต์ได้" }, { status: 500 });
-  }
+  return NextResponse.json({ success: true, posts: formattedPosts });
+} catch (error) {
+  console.error("GET Posts Error:", error);
+  return NextResponse.json({ error: "ไม่สามารถดึงข้อมูลโพสต์ได้" }, { status: 500 });
+}
 }
 
 export async function POST(request: Request) {

@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getCurrentUser } from "@/lib/auth";
+import { chatHistory } from "@/lib/chat-history";
 
 export async function GET() {
   try {
@@ -79,6 +80,9 @@ export async function GET() {
         createdAt: m.createdAt.toISOString(),
       }));
       const lastMsg = allMessages[allMessages.length - 1];
+      const ownDeal = room.post.deals.find(d =>
+        (d.initiatorId === room.initiatorId && d.receiverId === room.ownerId) ||
+        (d.initiatorId === room.ownerId && d.receiverId === room.initiatorId));
 
       const unreadCount = (room.messages || []).filter(
         (m) => m.senderId !== user.id && !m.isRead
@@ -99,6 +103,9 @@ export async function GET() {
         id: room.id,
         postId: room.postId,
         status: effectiveStatus,
+        closedAt: room.closedAt,
+        ...chatHistory(room.closedAt),
+        deal: ownDeal ? { id: ownDeal.id, agreedPrice: String(ownDeal.agreedPrice), agreedPricePerKg: ownDeal.agreedPricePerKg?.toString(), agreedQuantityKg: ownDeal.agreedQuantityKg?.toString(), cutDate: ownDeal.cutDate, note: ownDeal.note } : null,
         partnerId: partner.id,
         partnerName: partner.fullName,
         partnerBusiness: partnerPrimaryRole?.businessName || partner.fullName,
@@ -126,7 +133,7 @@ export async function GET() {
       };
     });
 
-    return NextResponse.json({ success: true, rooms: formattedRooms });
+    return NextResponse.json({ success: true, rooms: formattedRooms }, { headers: { "Cache-Control": "private, no-store" } });
   } catch (error) {
     console.error("GET Chat Rooms Error:", error);
     return NextResponse.json({ error: "ไม่สามารถดึงข้อมูลห้องแชทได้" }, { status: 500 });
@@ -158,6 +165,10 @@ export async function POST(request: Request) {
 
     if (post.userId === user.id) {
       return NextResponse.json({ error: "คุณไม่สามารถเริ่มแชทกับประกาศของตัวเองได้" }, { status: 400 });
+    }
+
+    if (post.status !== "OPEN") {
+      return NextResponse.json({ error: "ประกาศนี้ปิดรับการเจรจาแล้ว" }, { status: 409 });
     }
 
     // Check if room already exists

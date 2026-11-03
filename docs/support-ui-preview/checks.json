@@ -1,0 +1,16 @@
+﻿{
+    "runtimeErrors":  [
+
+                      ],
+    "api":  "browser fixtures; no database access",
+    "checks":  [
+                   "help center opens from account menu with participant listing",
+                   "load more includes closed history listings",
+                   "topic submission preserves category and queue feedback",
+                   "conversation shows submitted message",
+                   "mobile no horizontal overflow in light",
+                   "mobile message composer visible in light",
+                   "mobile no horizontal overflow in dark",
+                   "mobile message composer visible in dark"
+               ]
+}

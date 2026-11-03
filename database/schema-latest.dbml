@@ -1,0 +1,438 @@
+// Generated from the Prisma MySQL DDL; no invented foreign keys.
+Project durian_hub {
+  database_type: 'MySQL'
+  Note: 'Current design schema, not a dump of the running database. Rating CHECK is documented in the column note.'
+}
+
+Enum users_active_role_enum {
+  SELLER
+  BUYER
+  CUTTER
+  ADMIN
+}
+
+Enum users_status_enum {
+  ACTIVE
+  SUSPENDED
+  BANNED
+}
+
+Enum otp_codes_purpose_enum {
+  VERIFY_EMAIL
+  RESET_PASSWORD
+}
+
+Enum user_roles_role_type_enum {
+  SELLER
+  BUYER
+  CUTTER
+  ADMIN
+}
+
+Enum user_roles_status_enum {
+  ACTIVE
+  PENDING_APPROVAL
+  REJECTED
+}
+
+Enum role_verification_requests_requested_role_enum {
+  SELLER
+  BUYER
+  CUTTER
+  ADMIN
+}
+
+Enum role_verification_requests_document_type_enum {
+  GAP_CERTIFICATE
+  FARMER_BOOK
+  COMMERCIAL_LICENSE
+  CUTTER_CERT_OR_PORT
+  NATIONAL_ID_WITH_PIC
+}
+
+Enum role_verification_requests_status_enum {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+Enum marketplace_posts_post_type_enum {
+  SELL
+  BUY
+  CUT_SERVICE
+}
+
+Enum marketplace_posts_price_unit_enum {
+  PER_KG
+  PER_TON
+  LUMP_SUM
+}
+
+Enum marketplace_posts_status_enum {
+  OPEN
+  CLOSED
+  HIDDEN_BY_ADMIN
+}
+
+Enum chat_rooms_status_enum {
+  ACTIVE
+  DEAL_CLOSED
+  ARCHIVED
+}
+
+Enum support_tickets_status_enum {
+  OPEN
+  IN_PROGRESS
+  RESOLVED
+}
+
+Enum chat_messages_message_type_enum {
+  TEXT
+  PRODUCT_CARD
+  QUICK_REPLY
+  IMAGE
+}
+
+Enum post_reports_reason_enum {
+  FAKE_PRICE
+  SPAM
+  SCAM
+  WRONG_INFO
+}
+
+Enum post_reports_status_enum {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+Enum deals_status_enum {
+  PENDING
+  ACCEPTED
+  COMPLETED
+  DISPUTED
+  CANCELLED
+}
+
+Table users {
+  id integer [pk, increment, not null]
+  email varchar(191) [not null]
+  email_verified_at datetime(3)
+  phone varchar(191) [not null]
+  password_hash varchar(191) [not null]
+  full_name varchar(191) [not null]
+  avatar_url varchar(191)
+  location_id integer
+  active_role users_active_role_enum [not null, default: 'SELLER']
+  is_kyc_verified boolean [not null, default: false]
+  trust_score integer [not null, default: 100]
+  rating_avg decimal(3, 2) [not null, default: 5.00]
+  rating_count integer [not null, default: 0]
+  status users_status_enum [not null, default: 'ACTIVE']
+  suspended_until datetime(3)
+  suspension_reason varchar(191)
+  created_at datetime(3) [not null, default: `CURRENT_TIMESTAMP(3)`]
+  updated_at datetime(3) [not null]
+
+  indexes {
+    (email) [name: 'users_email_key', unique]
+    (phone) [name: 'users_phone_key', unique]
+  }
+}
+
+Table otp_codes {
+  id integer [pk, increment, not null]
+  user_id integer [not null]
+  purpose otp_codes_purpose_enum [not null]
+  code_hash varchar(191) [not null]
+  attempts integer [not null, default: 0]
+  expires_at datetime(3) [not null]
+  used_at datetime(3)
+  created_at datetime(3) [not null, default: `CURRENT_TIMESTAMP(3)`]
+
+  indexes {
+    (user_id, purpose, created_at) [name: 'otp_codes_user_id_purpose_created_at_idx']
+  }
+}
+
+Table user_roles {
+  id integer [pk, increment, not null]
+  user_id integer [not null]
+  role_type user_roles_role_type_enum [not null]
+  is_primary_role boolean [not null, default: false]
+  business_name varchar(191)
+  license_number varchar(191)
+  description text
+  status user_roles_status_enum [not null, default: 'ACTIVE']
+  is_verified boolean [not null, default: false]
+  created_at datetime(3) [not null, default: `CURRENT_TIMESTAMP(3)`]
+
+  indexes {
+    (user_id, role_type) [name: 'user_roles_user_id_role_type_key', unique]
+  }
+}
+
+Table role_verification_requests {
+  id integer [pk, increment, not null]
+  user_id integer [not null]
+  requested_role role_verification_requests_requested_role_enum [not null]
+  business_name varchar(191) [not null]
+  license_number varchar(191)
+  document_type role_verification_requests_document_type_enum [not null]
+  document_url varchar(191) [not null]
+  note text
+  status role_verification_requests_status_enum [not null, default: 'PENDING']
+  reviewed_by_admin_id integer
+  admin_remark text
+  created_at datetime(3) [not null, default: `CURRENT_TIMESTAMP(3)`]
+  reviewed_at datetime(3)
+
+  indexes {
+    (user_id, status) [name: 'role_verification_requests_user_id_status_idx']
+  }
+}
+
+Table regional_seasons {
+  id integer [pk, increment, not null]
+  region_code varchar(191) [not null]
+  region_name varchar(191) [not null]
+  provinces_summary text [not null]
+  popular_varieties varchar(191) [not null]
+  harvest_period varchar(191) [not null]
+  highlight_note text
+
+  indexes {
+    (region_code) [name: 'regional_seasons_region_code_key', unique]
+  }
+}
+
+Table locations {
+  id integer [pk, increment, not null]
+  province varchar(191) [not null]
+  district varchar(191) [not null]
+  region varchar(191) [not null]
+  regional_season_id integer
+
+  indexes {
+    (province) [name: 'locations_province_idx']
+    (province, district) [name: 'locations_province_district_key', unique]
+  }
+}
+
+Table durian_varieties {
+  id integer [pk, increment, not null]
+  name_th varchar(191) [not null]
+  name_en varchar(191) [not null]
+  icon_emoji varchar(191)
+  description text
+  is_active boolean [not null, default: true]
+
+  indexes {
+    (name_th) [name: 'durian_varieties_name_th_key', unique]
+  }
+}
+
+Table durian_grades {
+  id integer [pk, increment, not null]
+  grade_code varchar(191) [not null]
+  name_th varchar(191) [not null]
+  description text
+
+  indexes {
+    (grade_code) [name: 'durian_grades_grade_code_key', unique]
+  }
+}
+
+Table marketplace_posts {
+  id integer [pk, increment, not null]
+  user_id integer [not null]
+  post_type marketplace_posts_post_type_enum [not null]
+  variety_id integer
+  grade_id integer
+  location_id integer [not null]
+  title varchar(191) [not null]
+  content text [not null]
+  price decimal(10, 2) [not null]
+  price_per_kg decimal(10, 2)
+  price_unit marketplace_posts_price_unit_enum [not null, default: 'PER_KG']
+  quantity_kg decimal(12, 2)
+  dry_matter_pct decimal(4, 1)
+  available_date date [not null]
+  is_price_outlier boolean [not null, default: false]
+  report_count integer [not null, default: 0]
+  view_count integer [not null, default: 0]
+  status marketplace_posts_status_enum [not null, default: 'OPEN']
+  created_at datetime(3) [not null, default: `CURRENT_TIMESTAMP(3)`]
+  updated_at datetime(3) [not null]
+
+  indexes {
+    (post_type, variety_id, grade_id, created_at) [name: 'marketplace_posts_post_type_variety_id_grade_id_created_at_idx']
+    (location_id, status) [name: 'marketplace_posts_location_id_status_idx']
+  }
+}
+
+Table post_images {
+  id integer [pk, increment, not null]
+  post_id integer [not null]
+  image_url varchar(191) [not null]
+  sort_order integer [not null, default: 0]
+  created_at datetime(3) [not null, default: `CURRENT_TIMESTAMP(3)`]
+}
+
+Table chat_rooms {
+  id integer [pk, increment, not null]
+  post_id integer [not null]
+  initiator_id integer [not null]
+  owner_id integer [not null]
+  status chat_rooms_status_enum [not null, default: 'ACTIVE']
+  last_message_at datetime(3) [not null, default: `CURRENT_TIMESTAMP(3)`]
+  created_at datetime(3) [not null, default: `CURRENT_TIMESTAMP(3)`]
+  closed_at datetime(3)
+
+  indexes {
+    (initiator_id, last_message_at) [name: 'chat_rooms_initiator_id_last_message_at_idx']
+    (owner_id, last_message_at) [name: 'chat_rooms_owner_id_last_message_at_idx']
+    (post_id, initiator_id) [name: 'chat_rooms_post_id_initiator_id_key', unique]
+  }
+}
+
+Table support_tickets {
+  id integer [pk, increment, not null]
+  room_id integer [not null]
+  requester_id integer [not null]
+  category varchar(50) [not null]
+  status support_tickets_status_enum [not null, default: 'OPEN']
+  resolution text
+  handled_by_id integer [note: 'Application-managed admin ID; no foreign key in current Prisma schema']
+  queued_at datetime(3) [not null, default: `CURRENT_TIMESTAMP(3)`]
+  resolved_at datetime(3)
+  created_at datetime(3) [not null, default: `CURRENT_TIMESTAMP(3)`]
+  updated_at datetime(3) [not null]
+
+  indexes {
+    (status, updated_at) [name: 'support_tickets_status_updated_at_idx']
+    (status, queued_at, id) [name: 'support_tickets_status_queued_at_id_idx']
+    (room_id, requester_id) [name: 'support_tickets_room_id_requester_id_key', unique]
+  }
+}
+
+Table support_messages {
+  id integer [pk, increment, not null]
+  ticket_id integer [not null]
+  sender_id integer [not null]
+  is_admin boolean [not null, default: false]
+  content text [not null]
+  created_at datetime(3) [not null, default: `CURRENT_TIMESTAMP(3)`]
+
+  indexes {
+    (ticket_id, created_at) [name: 'support_messages_ticket_id_created_at_idx']
+  }
+}
+
+Table chat_messages {
+  id integer [pk, increment, not null]
+  room_id integer [not null]
+  sender_id integer [not null]
+  message_type chat_messages_message_type_enum [not null, default: 'TEXT']
+  content text [not null]
+  is_read boolean [not null, default: false]
+  created_at datetime(3) [not null, default: `CURRENT_TIMESTAMP(3)`]
+
+  indexes {
+    (room_id, created_at) [name: 'chat_messages_room_id_created_at_idx']
+  }
+}
+
+Table daily_market_stats {
+  id integer [pk, increment, not null]
+  stat_date date [not null]
+  variety_id integer [not null]
+  grade_id integer [not null]
+  location_id integer [not null]
+  avg_buy_price decimal(10, 2)
+  avg_sell_price decimal(10, 2)
+  min_price decimal(10, 2)
+  max_price decimal(10, 2)
+  avg_cut_wage_per_kg decimal(10, 2)
+  official_ref_price decimal(10, 2)
+  total_buy_volume_kg decimal(14, 2) [not null, default: 0]
+  total_sell_volume_kg decimal(14, 2) [not null, default: 0]
+  sample_post_count integer [not null, default: 0]
+  updated_at datetime(3) [not null]
+
+  indexes {
+    (stat_date, variety_id) [name: 'daily_market_stats_stat_date_variety_id_idx']
+    (stat_date, variety_id, grade_id, location_id) [name: 'daily_market_stats_stat_date_variety_id_grade_id_location_id_key', unique]
+  }
+}
+
+Table post_reports {
+  id integer [pk, increment, not null]
+  post_id integer [not null]
+  reporter_id integer [not null]
+  reason post_reports_reason_enum [not null]
+  detail text
+  status post_reports_status_enum [not null, default: 'PENDING']
+  created_at datetime(3) [not null, default: `CURRENT_TIMESTAMP(3)`]
+}
+
+Table deals {
+  id integer [pk, increment, not null]
+  post_id integer [not null]
+  initiator_id integer [not null]
+  receiver_id integer [not null]
+  agreed_price decimal(10, 2) [not null]
+  agreed_price_per_kg decimal(10, 2)
+  agreed_quantity_kg decimal(12, 2)
+  cut_date date
+  note text
+  status deals_status_enum [not null, default: 'PENDING']
+  created_at datetime(3) [not null, default: `CURRENT_TIMESTAMP(3)`]
+  updated_at datetime(3) [not null]
+}
+
+Table user_reviews {
+  id integer [pk, increment, not null]
+  deal_id integer [not null]
+  reviewer_id integer [not null]
+  reviewee_id integer [not null]
+  rating integer [not null, note: 'MySQL CHECK user_reviews_rating_range: 1 to 5']
+  comment text
+  created_at datetime(3) [not null, default: `CURRENT_TIMESTAMP(3)`]
+
+  indexes {
+    (deal_id, reviewer_id) [name: 'user_reviews_deal_id_reviewer_id_key', unique]
+  }
+}
+
+Ref users_location_id_fkey: users.location_id > locations.id [delete: set null, update: cascade]
+Ref otp_codes_user_id_fkey: otp_codes.user_id > users.id [delete: cascade, update: cascade]
+Ref user_roles_user_id_fkey: user_roles.user_id > users.id [delete: cascade, update: cascade]
+Ref role_verification_requests_user_id_fkey: role_verification_requests.user_id > users.id [delete: cascade, update: cascade]
+Ref role_verification_requests_reviewed_by_admin_id_fkey: role_verification_requests.reviewed_by_admin_id > users.id [delete: set null, update: cascade]
+Ref locations_regional_season_id_fkey: locations.regional_season_id > regional_seasons.id [delete: set null, update: cascade]
+Ref marketplace_posts_user_id_fkey: marketplace_posts.user_id > users.id [delete: cascade, update: cascade]
+Ref marketplace_posts_variety_id_fkey: marketplace_posts.variety_id > durian_varieties.id [delete: set null, update: cascade]
+Ref marketplace_posts_grade_id_fkey: marketplace_posts.grade_id > durian_grades.id [delete: set null, update: cascade]
+Ref marketplace_posts_location_id_fkey: marketplace_posts.location_id > locations.id [delete: restrict, update: cascade]
+Ref post_images_post_id_fkey: post_images.post_id > marketplace_posts.id [delete: cascade, update: cascade]
+Ref chat_rooms_post_id_fkey: chat_rooms.post_id > marketplace_posts.id [delete: cascade, update: cascade]
+Ref chat_rooms_initiator_id_fkey: chat_rooms.initiator_id > users.id [delete: cascade, update: cascade]
+Ref chat_rooms_owner_id_fkey: chat_rooms.owner_id > users.id [delete: cascade, update: cascade]
+Ref support_tickets_room_id_fkey: support_tickets.room_id > chat_rooms.id [delete: restrict, update: cascade]
+Ref support_tickets_requester_id_fkey: support_tickets.requester_id > users.id [delete: restrict, update: cascade]
+Ref support_messages_ticket_id_fkey: support_messages.ticket_id > support_tickets.id [delete: restrict, update: cascade]
+Ref support_messages_sender_id_fkey: support_messages.sender_id > users.id [delete: restrict, update: cascade]
+Ref chat_messages_room_id_fkey: chat_messages.room_id > chat_rooms.id [delete: cascade, update: cascade]
+Ref chat_messages_sender_id_fkey: chat_messages.sender_id > users.id [delete: cascade, update: cascade]
+Ref daily_market_stats_variety_id_fkey: daily_market_stats.variety_id > durian_varieties.id [delete: restrict, update: cascade]
+Ref daily_market_stats_grade_id_fkey: daily_market_stats.grade_id > durian_grades.id [delete: restrict, update: cascade]
+Ref daily_market_stats_location_id_fkey: daily_market_stats.location_id > locations.id [delete: restrict, update: cascade]
+Ref post_reports_post_id_fkey: post_reports.post_id > marketplace_posts.id [delete: cascade, update: cascade]
+Ref post_reports_reporter_id_fkey: post_reports.reporter_id > users.id [delete: cascade, update: cascade]
+Ref deals_post_id_fkey: deals.post_id > marketplace_posts.id [delete: restrict, update: cascade]
+Ref deals_initiator_id_fkey: deals.initiator_id > users.id [delete: restrict, update: cascade]
+Ref deals_receiver_id_fkey: deals.receiver_id > users.id [delete: restrict, update: cascade]
+Ref user_reviews_deal_id_fkey: user_reviews.deal_id > deals.id [delete: cascade, update: cascade]
+Ref user_reviews_reviewer_id_fkey: user_reviews.reviewer_id > users.id [delete: restrict, update: cascade]
+Ref user_reviews_reviewee_id_fkey: user_reviews.reviewee_id > users.id [delete: restrict, update: cascade]
