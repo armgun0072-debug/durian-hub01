@@ -2,16 +2,33 @@
 
 **Project:** Durian Hub (ตลาดกลางทุเรียน)
 **Last Updated:** 2026-11-07
-**Current Status:** APPROVED COMMIT AND PUSH — READY TO PUBLISH
+**Current Status:** GITHUB PAGES DEMO BUILT AND VERIFIED — DEPLOYMENT IN PROGRESS
 **Latest Backup:** `D:\csc481_backup_20261030_013531`
 **Presentation Deck & ERD:** `D:\durian_hub_presentation\index.html`
+
+## Latest GitHub Pages Demo — 2026-11-07
+- **Authorization:** ผู้ใช้เลือกเว็บเดโมบน GitHub Pages และอนุมัติ “ลุย” ตามแผน static demo, ทดสอบ, commit/push และ deploy
+- **Changes:** src/demo/page.tsx ใช้ข้อมูลตัวอย่างและคอมโพเนนต์เดิม รองรับค้นหา/กรองประเภทและจังหวัด รายละเอียดประกาศ สถิติ 6 ภูมิภาค ธีม และแชตจำลองใน memory; ไม่มีการส่ง API หรือรับรหัสผ่าน/ไฟล์จริง
+- **Build:** scripts/build-pages-demo.cjs คัดลอก source แบบ allowlist ไป .pages-demo-build (Git/TypeScript ignore) และ static export พร้อม basePath /durian-hub01; ไม่รวม API, admin, .env, public/uploads หรือข้อมูลฐานข้อมูล; เพิ่ม workflow และคู่มือ
+- **Validation:** static production build ผ่าน; TypeScript ผ่าน; Chrome browser 18/18 checks ผ่าน desktop 1440px/mobile 390px, ไม่มี runtime errors/API requests/broken assets; ตรวจภาพ scratch/pages-demo-desktop.png และ pages-demo-mobile-dark.png
+- **Existing regression results:** tests/*.test.cjs ผ่าน 136/143, ไม่ผ่าน 7 ใน tests/post-roles.test.cjs (role validation และ author role); API source ส่วนนั้นไม่มี diff ในงานเดโมนี้ ไม่ได้แก้ข้อผิดพลาดเหล่านี้
+- **Hosting:** เปิด Pages build_type=workflow สำเร็จที่ public repository; URL เป้าหมาย https://armgun0072-debug.github.io/durian-hub01/
+- **Next:** commit/push และรอ Actions deploy สำเร็จ จากนั้นตรวจ URL จริงและบันทึกผล
+
+## Latest Prisma Client Refresh — 2026-11-07
+- **Authorization:** ผู้ใช้อนุมัติ “ช่วยจัดการที” ตามแผนสร้าง Client ใหม่และตรวจ TypeScript
+- **Cause:** schema ภายใน generated Client เดิมไม่ตรงกับ prisma/schema.prisma โดยไม่มี closedAt, SupportTicket และ SupportMessage
+- **Resolution:** รัน node node_modules/prisma/build/index.js generate สำเร็จ ได้ Prisma Client v6.19.3 โดยไม่ต้องหยุดโปรเซสหรือแก้ schema
+- **Validation:** node node_modules/typescript/bin/tsc --noEmit --incremental false ผ่าน (exit code 0, ไม่มี errors)
+- **Scope:** อัปเดต generated files ใน node_modules และบันทึกนี้ ไม่รัน migration/db push/seed และไม่แก้ข้อมูลฐานข้อมูล
+- **Next:** ปัญหา TypeScript จาก Client เก่าแก้แล้ว; รวมบันทึกรอบนี้ใน commit งาน Pages demo
 
 ## Latest Git Publication Task — 2026-11-07
 - **Authorization:** ผู้ใช้อนุมัติ “ลุย” ให้ commit งานค้างทั้งหมด 19 ไฟล์และ push ไป origin/main ที่ https://github.com/armgun0072-debug/durian-hub01.git
 - **Scope:** แก้ syntax posts API, เอกสาร/ภาพฐานข้อมูลและ Flowchart, สคริปต์ renderer และบันทึกสถานะ; ไฟล์ชั่วคราวที่เคลียร์เป็น ignored files จึงไม่มีรายการลบใน commit
 - **Validation:** git diff --check และ node --check scripts/render-system-flowchart.cjs ผ่าน; TypeScript ไม่ผ่านเนื่องจาก generated Prisma Client ในเครื่องไม่มี closedAt/supportTicket/supportMessage ที่ source ใช้ ยังไม่ได้แก้ปัญหานี้ในงานเผยแพร่
 - **Remote check:** GitHub main ชี้ไป 12f3c0ac41bdb741a15502a71d5746e3e155a549 ตรงกับ local HEAD ก่อน commit
-- **Next:** สร้าง commit แล้ว push แบบปกติและตรวจ remote hash; ผลสำเร็จของ push รายงานในแชตหลังดำเนินการ
+- **Result:** commit 184a1e22a7923b89ece6fe19005d39f3743852d3 push ไป origin/main สำเร็จ และตรวจ remote hash ตรงกับ local แล้ว
 
 ## Latest Temporary File Cleanup — 2026-11-07
 - **Authorization:** ผู้ใช้อนุมัติ “ลุย” ตามแผนลบเฉพาะ .next-ui-test/, scratch/flowchart-render/ และ tsconfig.tsbuildinfo

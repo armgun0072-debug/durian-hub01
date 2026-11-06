@@ -6,6 +6,7 @@ node_modules/
 # Next.js build outputs
 .next/
 .next-ui-test/
+.pages-demo-build/
 out/
 build/
 dist/
