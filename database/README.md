@@ -2,6 +2,8 @@
 
 แหล่งอ้างอิงหลักคือ `prisma/schema.prisma` ซึ่งใช้ MySQL ไฟล์ export เป็นโครงสร้างตาม source ปัจจุบัน ไม่ใช่ dump หรือผลตรวจฐานข้อมูลที่กำลังรัน
 
+อ่าน [Relationship Diagram 3 กลุ่ม, Flowchart ภาพรวมระบบ และข้อเสนอแนะฐานข้อมูล](../docs/database-overview.md) สำหรับภาพรวมภาษาไทยพร้อมหลักฐานจาก source
+
 | ไฟล์ | ใช้งาน |
 | --- | --- |
 | [schema-latest.mysql.sql](schema-latest.mysql.sql) | MySQL DDL ล่าสุดครบ 18 ตาราง / 31 Foreign Keys พร้อม indexes, nullability, defaults และ CHECK คะแนนรีวิว 1–5 |

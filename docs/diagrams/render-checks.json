@@ -1,0 +1,54 @@
+{
+  "renderer": "ER: Mermaid 11.12.2 / Flowchart: fixed SVG layout / PNG: Chrome headless",
+  "font": "Tahoma",
+  "source": "docs/database-overview.md",
+  "diagrams": [
+    {
+      "name": "relationship-01-members",
+      "width": 1050,
+      "height": 500,
+      "labels": 7,
+      "empty": 0,
+      "foreignObjects": 0,
+      "pngWidth": 2100,
+      "pngHeight": 1000
+    },
+    {
+      "name": "relationship-02-marketplace",
+      "width": 1348,
+      "height": 900,
+      "labels": 17,
+      "empty": 0,
+      "foreignObjects": 0,
+      "pngWidth": 2696,
+      "pngHeight": 1800
+    },
+    {
+      "name": "relationship-03-transactions",
+      "width": 1128,
+      "height": 900,
+      "labels": 15,
+      "empty": 0,
+      "foreignObjects": 0,
+      "pngWidth": 2256,
+      "pngHeight": 1800
+    },
+    {
+      "name": "system-flowchart",
+      "renderer": "scripts/render-system-flowchart.cjs",
+      "width": 1900,
+      "height": 4540,
+      "pngWidth": 3800,
+      "pngHeight": 9080,
+      "nodes": 73,
+      "edges": 68,
+      "textOverflow": [],
+      "foreignObjects": 0,
+      "nodeOverlaps": 0,
+      "edgesThroughUnrelatedNodes": 0,
+      "lineCrossings": 0,
+      "mermaidSyntax": "flowchart-v2: PASS",
+      "matchingSource": true
+    }
+  ]
+}

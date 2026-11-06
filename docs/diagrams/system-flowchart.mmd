@@ -1,0 +1,157 @@
+---
+config:
+  theme: base
+  themeVariables:
+    background: "#020609"
+    primaryColor: "#062e50"
+    primaryTextColor: "#9dceff"
+    primaryBorderColor: "#28516d"
+    lineColor: "#b5becb"
+  flowchart:
+    curve: stepBefore
+---
+flowchart TD
+    %% Same-letter circles connect across sections; see legend in the document.
+    START("เริ่มต้น")
+    PUBLIC("ดูประกาศสาธารณะ / และข้อมูลตลาด")
+    ENTRY("เลือกช่องทางเข้าใช้งาน")
+    LOGIN("เข้าสู่ระบบสมาชิก")
+    CHECK("รหัสผ่าน สถานะบัญชี / และอีเมลผ่านหรือไม่")
+    HOME("ใช้งานบัญชีสมาชิก")
+    ACTION("เลือกใช้งาน Marketplace")
+    SELECT("เลือกประกาศ OPEN ของผู้อื่น")
+    CHAT("เปิดห้องเดิมหรือสร้างห้อง / ส่งข้อความเจรจา")
+    AGREE("ตกลงปิดดีลหรือไม่")
+    DEAL("สร้างดีล ACCEPTED / และปิดประกาศใน transaction")
+    CLOSED("ห้องคู่ค้า DEAL_CLOSED / ห้องอื่น ARCHIVED พร้อม closed_at")
+    REVIEW("คู่ค้ารีวิว 1–5 ดาว / คนละครั้งต่อดีล")
+    TOTAL("บันทึกรีวิวและคำนวณคะแนนเฉลี่ย / พร้อมจำนวนรีวิวใน transaction")
+    END("สิ้นสุดขั้นตอนที่เลือก")
+    REG("สมัครสมาชิก / เลือกบทบาทหลัก")
+    OTP("รับและยืนยันอีเมลด้วย OTP")
+    RETRY("แก้ไขรหัสหรือขอส่ง OTP ใหม่")
+    ADMINLOGIN("เข้าสู่ระบบแอดมิน / และตรวจสิทธิ์")
+    ADMIN("งานผู้ดูแลระบบ")
+    DENY("แจ้งข้อผิดพลาด / ปฏิเสธการเข้าใช้งาน")
+    A_OTP((A))
+    A_HOME((A))
+    O_CHECK((O))
+    O_OTP((O))
+    O_RETRY((O))
+    B_ADMIN((B))
+    R_HOME((R))
+    P_PUBLIC((P))
+    POST("ลงประกาศตามบทบาทที่มีสิทธิ์")
+    SAVE("บันทึกประกาศ OPEN / และเพิ่มรูปภาพถ้ามี")
+    P_SAVE((P))
+    S_SAVE((S))
+    C_SELECT((C))
+    H_CHAT((H))
+    J_AGREE((J))
+    J_CHAT((J))
+    Z_TOTAL((Z))
+    R_REQUEST((R))
+    REQUEST("ส่งเอกสารขอเพิ่มบทบาท")
+    ROLEADMIN("แอดมินพิจารณาเอกสาร")
+    B_ROLE((B))
+    GRANT("เพิ่มบทบาท ACTIVE / และสถานะยืนยัน")
+    REJECT("บันทึก REJECTED / และหมายเหตุ")
+    A_GRANT((A))
+    Z_REJECT((Z))
+    C_REPORT((C))
+    REPORT("สร้างรายงานประกาศ / และเพิ่ม report_count")
+    MOD("แอดมินตรวจรายงาน")
+    B_MOD((B))
+    MOD_RESULT("พบความผิดหรือไม่")
+    PENALTY("ซ่อนประกาศ / ปรับคะแนน / / สถานะบัญชี")
+    DISMISS("บันทึกรายงาน / REJECTED")
+    Z_PENALTY((Z))
+    Z_DISMISS((Z))
+    HISTORY("ครบ 168 ชั่วโมงหลังปิดดีล / อ่านแชตได้ แต่ส่งข้อความคู่ค้าไม่ได้")
+    H_SUPPORT((H))
+    SUPPORT("เลือกห้องและหัวข้อปัญหา / สร้างคำร้อง OPEN")
+    QUEUE("เข้าคิวตาม queued_at และ id")
+    Q_QUEUE((Q))
+    CLAIM("แอดมินรับคิวถัดไป / เปลี่ยนเป็น IN_PROGRESS")
+    B_CLAIM((B))
+    HELP("ผู้รับเรื่องคุยกับผู้แจ้ง / และตรวจหลักฐาน")
+    RESOLVE("บันทึกผลแก้ไข / ปิดคำร้อง RESOLVED")
+    REOPEN("ผู้แจ้งเปิดเรื่องซ้ำหรือไม่")
+    Q_REOPEN((Q))
+    Z_RESOLVE((Z))
+    S_STATS((S))
+    REFRESH("ผู้ดูแลเรียก stats:refresh / เป็นกระบวนการแยก")
+    STATS("สรุปราคาเสนอที่เข้าเกณฑ์ / จากประกาศย้อนหลัง 7 วัน")
+    DAILY("บันทึก daily_market_stats")
+    Z_STATS((Z))
+    Z_END((Z))
+    START --> PUBLIC
+    PUBLIC --> ENTRY
+    ENTRY -->|สมาชิกเดิม| LOGIN
+    ENTRY -->|สมาชิกใหม่| REG
+    ENTRY -->|เจ้าหน้าที่| ADMINLOGIN
+    REG --> OTP
+    OTP -->|สำเร็จ| A_OTP
+    OTP -->|ไม่ผ่าน| RETRY
+    RETRY --> O_RETRY
+    O_OTP --> OTP
+    LOGIN --> CHECK
+    CHECK -->|ผ่าน| HOME
+    CHECK -->|ยืนยันอีเมล| O_CHECK
+    CHECK -->|ไม่ผ่าน| DENY
+    ADMINLOGIN --> ADMIN
+    ADMIN --> B_ADMIN
+    A_HOME --> HOME
+    HOME --> ACTION
+    HOME -.-> R_HOME
+    P_PUBLIC --> PUBLIC
+    ACTION -->|สร้างประกาศ| POST
+    ACTION -->|ค้นหา| SELECT
+    SELECT -.->|รายงาน| C_SELECT
+    POST --> SAVE
+    SAVE --> P_SAVE
+    SAVE -.->|สถิติ| S_SAVE
+    SELECT --> CHAT
+    CHAT --> AGREE
+    CHAT -.->|ช่วยเหลือ| H_CHAT
+    AGREE -->|ยังไม่ตกลง| J_AGREE
+    J_CHAT --> CHAT
+    AGREE -->|ตกลงและผ่านการตรวจ| DEAL
+    DEAL --> CLOSED
+    CLOSED -.->|เลือกรีวิว| REVIEW
+    REVIEW --> TOTAL
+    TOTAL --> Z_TOTAL
+    CLOSED -->|เมื่อครบกำหนด| HISTORY
+    R_REQUEST --> REQUEST
+    REQUEST --> ROLEADMIN
+    B_ROLE --> ROLEADMIN
+    ROLEADMIN -->|อนุมัติ| GRANT
+    ROLEADMIN -->|ปฏิเสธ| REJECT
+    GRANT --> A_GRANT
+    REJECT --> Z_REJECT
+    C_REPORT --> REPORT
+    REPORT --> MOD
+    B_MOD --> MOD
+    MOD --> MOD_RESULT
+    MOD_RESULT -->|พบ| PENALTY
+    MOD_RESULT -->|ไม่พบ| DISMISS
+    PENALTY --> Z_PENALTY
+    DISMISS --> Z_DISMISS
+    HISTORY -.->|ขอความช่วยเหลือ| H_SUPPORT
+    H_SUPPORT --> SUPPORT
+    SUPPORT --> QUEUE
+    Q_QUEUE --> QUEUE
+    QUEUE --> CLAIM
+    B_CLAIM --> CLAIM
+    CLAIM --> HELP
+    HELP --> RESOLVE
+    RESOLVE --> REOPEN
+    REOPEN -->|เปิดซ้ำ| Q_REOPEN
+    REOPEN -->|ไม่| Z_RESOLVE
+    S_STATS --> REFRESH
+    REFRESH --> STATS
+    STATS --> DAILY
+    DAILY --> Z_STATS
+    Z_END --> END
+    classDef decision fill:#03131e,stroke:#28516d,stroke-dasharray:5 5,color:#9dceff;
+    class ENTRY,CHECK,ACTION,AGREE,ROLEADMIN,MOD_RESULT,REOPEN decision;

@@ -1,0 +1,455 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1900" height="4540" viewBox="0 0 1900 4540" role="img" aria-labelledby="title desc" font-family="Tahoma, sans-serif">
+<title id="title">Flowchart ภาพรวมระบบ Durian Hub</title>
+<desc id="desc">ผังบนลงล่าง เส้นหักมุม จุดเชื่อมตัวอักษรเดียวกันหมายถึงทางเดินต่อเนื่องระหว่างส่วน ดูคำอธิบายท้ายภาพ</desc>
+<defs><marker id="arrow" markerWidth="12" markerHeight="12" refX="9" refY="5" orient="auto" markerUnits="userSpaceOnUse"><path d="M1 1 L9 5 L1 9" fill="none" stroke="#b5becb" stroke-width="2"/></marker></defs>
+<rect width="1900" height="4540" fill="#020609"/>
+<text x="950" y="65" text-anchor="middle" fill="#698da9" font-size="18" font-weight="600"><tspan x="950" dy="0">DURIAN HUB  /  SYSTEM FLOWCHART</tspan></text>
+<text x="950" y="118" text-anchor="middle" fill="#9dceff" font-size="38" font-weight="600"><tspan x="950" dy="0">ภาพรวมการทำงานทั้งระบบ</tspan></text>
+<text x="950" y="165" text-anchor="middle" fill="#a5b6c6" font-size="20" font-weight="400"><tspan x="950" dy="0">อ่านจากบนลงล่าง • กล่องเส้นประ = จุดตัดสินใจ • วงกลมอักษรเดียวกัน = จุดเชื่อมต่อ</tspan></text>
+<path d="M60 1345 H1840" stroke="#183147" stroke-width="2"/>
+<text x="310" y="1390" text-anchor="middle" fill="#698da9" font-size="20" font-weight="600"><tspan x="310" dy="0">ประกาศ / บทบาท / สถิติ</tspan></text>
+<text x="1590" y="1390" text-anchor="middle" fill="#698da9" font-size="20" font-weight="600"><tspan x="1590" dy="0">รายงานและศูนย์ช่วยเหลือ</tspan></text>
+<path data-from="START" data-to="PUBLIC" d="M950 294 L950 355" fill="none" stroke="#b5becb" stroke-width="2" stroke-linejoin="round"  marker-end="url(#arrow)"/>
+<path data-from="PUBLIC" data-to="ENTRY" d="M950 465 L950 515" fill="none" stroke="#b5becb" stroke-width="2" stroke-linejoin="round"  marker-end="url(#arrow)"/>
+<path data-from="ENTRY" data-to="LOGIN" d="M950 625 L950 700" fill="none" stroke="#b5becb" stroke-width="2" stroke-linejoin="round"  marker-end="url(#arrow)"/>
+<rect x="878" y="643" width="144" height="36" rx="16" fill="#020609"/>
+<text x="950" y="668" text-anchor="middle" fill="#b8d9f3" font-size="20" font-weight="400"><tspan x="950" dy="0">สมาชิกเดิม</tspan></text>
+<path data-from="ENTRY" data-to="REG" d="M700 570 L310 570 L310 700" fill="none" stroke="#b5becb" stroke-width="2" stroke-linejoin="round"  marker-end="url(#arrow)"/>
+<rect x="388" y="551" width="144" height="36" rx="16" fill="#020609"/>
+<text x="460" y="576" text-anchor="middle" fill="#b8d9f3" font-size="20" font-weight="400"><tspan x="460" dy="0">สมาชิกใหม่</tspan></text>
+<path data-from="ENTRY" data-to="ADMINLOGIN" d="M1200 570 L1590 570 L1590 700" fill="none" stroke="#b5becb" stroke-width="2" stroke-linejoin="round"  marker-end="url(#arrow)"/>
+<rect x="1352" y="551" width="156" height="36" rx="16" fill="#020609"/>
+<text x="1430" y="576" text-anchor="middle" fill="#b8d9f3" font-size="20" font-weight="400"><tspan x="1430" dy="0">เจ้าหน้าที่</tspan></text>
+<path data-from="REG" data-to="OTP" d="M310 810 L310 860" fill="none" stroke="#b5becb" stroke-width="2" stroke-linejoin="round"  marker-end="url(#arrow)"/>
+<path data-from="OTP" data-to="A_OTP" d="M560 915 L580 915 L580 1020 L595 1020" fill="none" stroke="#b5becb" stroke-width="2" stroke-linejoin="round"  marker-end="url(#arrow)"/>
+<rect x="527" y="969" width="96" height="36" rx="16" fill="#020609"/>
+<text x="575" y="994" text-anchor="middle" fill="#b8d9f3" font-size="20" font-weight="400"><tspan x="575" dy="0">สำเร็จ</tspan></text>
+<path data-from="OTP" data-to="RETRY" d="M310 970 L310 1140" fill="none" stroke="#b5becb" stroke-width="2" stroke-linejoin="round"  marker-end="url(#arrow)"/>
+<rect x="256" y="1041" width="108" height="36" rx="16" fill="#020609"/>
+<text x="310" y="1066" text-anchor="middle" fill="#b8d9f3" font-size="20" font-weight="400"><tspan x="310" dy="0">ไม่ผ่าน</tspan></text>
+<path data-from="RETRY" data-to="O_RETRY" d="M310 1250 L310 1275" fill="none" stroke="#b5becb" stroke-width="2" stroke-linejoin="round"  marker-end="url(#arrow)"/>
+<path data-from="O_OTP" data-to="OTP" d="M55 915 L60 915" fill="none" stroke="#b5becb" stroke-width="2" stroke-linejoin="round"  marker-end="url(#arrow)"/>
+<path data-from="LOGIN" data-to="CHECK" d="M950 810 L950 860" fill="none" stroke="#b5becb" stroke-width="2" stroke-linejoin="round"  marker-end="url(#arrow)"/>
+<path data-from="CHECK" data-to="HOME" d="M950 970 L950 1140" fill="none" stroke="#b5becb" stroke-width="2" stroke-linejoin="round"  marker-end="url(#arrow)"/>
+<rect x="914" y="1041" width="72" height="36" rx="16" fill="#020609"/>
+<text x="950" y="1066" text-anchor="middle" fill="#b8d9f3" font-size="20" font-weight="400"><tspan x="950" dy="0">ผ่าน</tspan></text>
+<path data-from="CHECK" data-to="O_CHECK" d="M700 915 L645 915" fill="none" stroke="#b5becb" stroke-width="2" stroke-linejoin="round"  marker-end="url(#arrow)"/>
+<rect x="577" y="856" width="156" height="36" rx="16" fill="#020609"/>
+<text x="655" y="881" text-anchor="middle" fill="#b8d9f3" font-size="20" font-weight="400"><tspan x="655" dy="0">ยืนยันอีเมล</tspan></text>
+<path data-from="CHECK" data-to="DENY" d="M1200 915 L1295 915 L1295 1105 L1340 1105" fill="none" stroke="#b5becb" stroke-width="2" stroke-linejoin="round"  marker-end="url(#arrow)"/>
+<rect x="1241" y="981" width="108" height="36" rx="16" fill="#020609"/>
+<text x="1295" y="1006" text-anchor="middle" fill="#b8d9f3" font-size="20" font-weight="400"><tspan x="1295" dy="0">ไม่ผ่าน</tspan></text>
+<path data-from="ADMINLOGIN" data-to="ADMIN" d="M1590 810 L1590 845" fill="none" stroke="#b5becb" stroke-width="2" stroke-linejoin="round"  marker-end="url(#arrow)"/>
+<path data-from="ADMIN" data-to="B_ADMIN" d="M1590 915 L1590 940" fill="none" stroke="#b5becb" stroke-width="2" stroke-linejoin="round"  marker-end="url(#arrow)"/>
+<path data-from="A_HOME" data-to="HOME" d="M645 1195 L700 1195" fill="none" stroke="#b5becb" stroke-width="2" stroke-linejoin="round"  marker-end="url(#arrow)"/>
+<path data-from="HOME" data-to="ACTION" d="M950 1250 L950 1430" fill="none" stroke="#b5becb" stroke-width="2" stroke-linejoin="round"  marker-end="url(#arrow)"/>
+<path data-from="HOME" data-to="R_HOME" d="M1200 1195 L1245 1195" fill="none" stroke="#b5becb" stroke-width="2" stroke-linejoin="round" stroke-dasharray="5 6" marker-end="url(#arrow)"/>
+<path data-from="P_PUBLIC" data-to="PUBLIC" d="M645 410 L700 410" fill="none" stroke="#b5becb" stroke-width="2" stroke-linejoin="round"  marker-end="url(#arrow)"/>
+<path data-from="ACTION" data-to="POST" d="M700 1485 L310 1485 L310 1640" fill="none" stroke="#b5becb" stroke-width="2" stroke-linejoin="round"  marker-end="url(#arrow)"/>
+<rect x="382" y="1466" width="156" height="36" rx="16" fill="#020609"/>
+<text x="460" y="1491" text-anchor="middle" fill="#b8d9f3" font-size="20" font-weight="400"><tspan x="460" dy="0">สร้างประกาศ</tspan></text>
+<path data-from="ACTION" data-to="SELECT" d="M950 1540 L950 1640" fill="none" stroke="#b5becb" stroke-width="2" stroke-linejoin="round"  marker-end="url(#arrow)"/>
+<rect x="908" y="1571" width="84" height="36" rx="16" fill="#020609"/>
+<text x="950" y="1596" text-anchor="middle" fill="#b8d9f3" font-size="20" font-weight="400"><tspan x="950" dy="0">ค้นหา</tspan></text>
+<path data-from="SELECT" data-to="C_SELECT" d="M1200 1695 L1245 1695" fill="none" stroke="#b5becb" stroke-width="2" stroke-linejoin="round" stroke-dasharray="5 6" marker-end="url(#arrow)"/>
+<rect x="1202" y="1636" width="96" height="36" rx="16" fill="#020609"/>
+<text x="1250" y="1661" text-anchor="middle" fill="#b8d9f3" font-size="20" font-weight="400"><tspan x="1250" dy="0">รายงาน</tspan></text>
+<path data-from="POST" data-to="SAVE" d="M310 1750 L310 1810" fill="none" stroke="#b5becb" stroke-width="2" stroke-linejoin="round"  marker-end="url(#arrow)"/>
+<path data-from="SAVE" data-to="P_SAVE" d="M310 1920 L310 1960 L220 1960 L220 1995" fill="none" stroke="#b5becb" stroke-width="2" stroke-linejoin="round"  marker-end="url(#arrow)"/>
+<path data-from="SAVE" data-to="S_SAVE" d="M310 1920 L310 1960 L450 1960 L450 1995" fill="none" stroke="#b5becb" stroke-width="2" stroke-linejoin="round" stroke-dasharray="5 6" marker-end="url(#arrow)"/>
+<rect x="413" y="1941" width="84" height="36" rx="16" fill="#020609"/>
+<text x="455" y="1966" text-anchor="middle" fill="#b8d9f3" font-size="20" font-weight="400"><tspan x="455" dy="0">สถิติ</tspan></text>
+<path data-from="SELECT" data-to="CHAT" d="M950 1750 L950 1830" fill="none" stroke="#b5becb" stroke-width="2" stroke-linejoin="round"  marker-end="url(#arrow)"/>
+<path data-from="CHAT" data-to="AGREE" d="M950 1940 L950 2040" fill="none" stroke="#b5becb" stroke-width="2" stroke-linejoin="round"  marker-end="url(#arrow)"/>
+<path data-from="CHAT" data-to="H_CHAT" d="M1200 1885 L1245 1885" fill="none" stroke="#b5becb" stroke-width="2" stroke-linejoin="round" stroke-dasharray="5 6" marker-end="url(#arrow)"/>
+<rect x="1184" y="1829" width="132" height="36" rx="16" fill="#020609"/>
+<text x="1250" y="1854" text-anchor="middle" fill="#b8d9f3" font-size="20" font-weight="400"><tspan x="1250" dy="0">ช่วยเหลือ</tspan></text>
+<path data-from="AGREE" data-to="J_AGREE" d="M700 2095 L645 2095" fill="none" stroke="#b5becb" stroke-width="2" stroke-linejoin="round"  marker-end="url(#arrow)"/>
+<rect x="568" y="2039" width="144" height="36" rx="16" fill="#020609"/>
+<text x="640" y="2064" text-anchor="middle" fill="#b8d9f3" font-size="20" font-weight="400"><tspan x="640" dy="0">ยังไม่ตกลง</tspan></text>
+<path data-from="J_CHAT" data-to="CHAT" d="M645 1885 L700 1885" fill="none" stroke="#b5becb" stroke-width="2" stroke-linejoin="round"  marker-end="url(#arrow)"/>
+<path data-from="AGREE" data-to="DEAL" d="M950 2150 L950 2250" fill="none" stroke="#b5becb" stroke-width="2" stroke-linejoin="round"  marker-end="url(#arrow)"/>
+<rect x="830" y="2181" width="240" height="36" rx="16" fill="#020609"/>
+<text x="950" y="2206" text-anchor="middle" fill="#b8d9f3" font-size="20" font-weight="400"><tspan x="950" dy="0">ตกลงและผ่านการตรวจ</tspan></text>
+<path data-from="DEAL" data-to="CLOSED" d="M950 2370 L950 2460" fill="none" stroke="#b5becb" stroke-width="2" stroke-linejoin="round"  marker-end="url(#arrow)"/>
+<path data-from="CLOSED" data-to="REVIEW" d="M950 2580 L950 2700" fill="none" stroke="#b5becb" stroke-width="2" stroke-linejoin="round" stroke-dasharray="5 6" marker-end="url(#arrow)"/>
+<rect x="878" y="2621" width="144" height="36" rx="16" fill="#020609"/>
+<text x="950" y="2646" text-anchor="middle" fill="#b8d9f3" font-size="20" font-weight="400"><tspan x="950" dy="0">เลือกรีวิว</tspan></text>
+<path data-from="REVIEW" data-to="TOTAL" d="M950 2820 L950 2890" fill="none" stroke="#b5becb" stroke-width="2" stroke-linejoin="round"  marker-end="url(#arrow)"/>
+<path data-from="TOTAL" data-to="Z_TOTAL" d="M950 3000 L950 3055" fill="none" stroke="#b5becb" stroke-width="2" stroke-linejoin="round"  marker-end="url(#arrow)"/>
+<path data-from="CLOSED" data-to="HISTORY" d="M1200 2520 L1590 2520 L1590 2700" fill="none" stroke="#b5becb" stroke-width="2" stroke-linejoin="round"  marker-end="url(#arrow)"/>
+<rect x="1350" y="2501" width="180" height="36" rx="16" fill="#020609"/>
+<text x="1440" y="2526" text-anchor="middle" fill="#b8d9f3" font-size="20" font-weight="400"><tspan x="1440" dy="0">เมื่อครบกำหนด</tspan></text>
+<path data-from="R_REQUEST" data-to="REQUEST" d="M310 2265 L310 2330" fill="none" stroke="#b5becb" stroke-width="2" stroke-linejoin="round"  marker-end="url(#arrow)"/>
+<path data-from="REQUEST" data-to="ROLEADMIN" d="M310 2440 L310 2520" fill="none" stroke="#b5becb" stroke-width="2" stroke-linejoin="round"  marker-end="url(#arrow)"/>
+<path data-from="B_ROLE" data-to="ROLEADMIN" d="M595 2575 L560 2575" fill="none" stroke="#b5becb" stroke-width="2" stroke-linejoin="round"  marker-end="url(#arrow)"/>
+<path data-from="ROLEADMIN" data-to="GRANT" d="M180 2630 L180 2740" fill="none" stroke="#b5becb" stroke-width="2" stroke-linejoin="round"  marker-end="url(#arrow)"/>
+<rect x="126" y="2666" width="108" height="36" rx="16" fill="#020609"/>
+<text x="180" y="2691" text-anchor="middle" fill="#b8d9f3" font-size="20" font-weight="400"><tspan x="180" dy="0">อนุมัติ</tspan></text>
+<path data-from="ROLEADMIN" data-to="REJECT" d="M440 2630 L440 2740" fill="none" stroke="#b5becb" stroke-width="2" stroke-linejoin="round"  marker-end="url(#arrow)"/>
+<rect x="392" y="2666" width="96" height="36" rx="16" fill="#020609"/>
+<text x="440" y="2691" text-anchor="middle" fill="#b8d9f3" font-size="20" font-weight="400"><tspan x="440" dy="0">ปฏิเสธ</tspan></text>
+<path data-from="GRANT" data-to="A_GRANT" d="M180 2880 L180 3015" fill="none" stroke="#b5becb" stroke-width="2" stroke-linejoin="round"  marker-end="url(#arrow)"/>
+<path data-from="REJECT" data-to="Z_REJECT" d="M440 2880 L440 3015" fill="none" stroke="#b5becb" stroke-width="2" stroke-linejoin="round"  marker-end="url(#arrow)"/>
+<path data-from="C_REPORT" data-to="REPORT" d="M1590 1625 L1590 1700" fill="none" stroke="#b5becb" stroke-width="2" stroke-linejoin="round"  marker-end="url(#arrow)"/>
+<path data-from="REPORT" data-to="MOD" d="M1590 1810 L1590 1860" fill="none" stroke="#b5becb" stroke-width="2" stroke-linejoin="round"  marker-end="url(#arrow)"/>
+<path data-from="B_MOD" data-to="MOD" d="M1295 1985 L1315 1985 L1315 1940 L1340 1940" fill="none" stroke="#b5becb" stroke-width="2" stroke-linejoin="round"  marker-end="url(#arrow)"/>
+<path data-from="MOD" data-to="MOD_RESULT" d="M1590 1970 L1590 2020" fill="none" stroke="#b5becb" stroke-width="2" stroke-linejoin="round"  marker-end="url(#arrow)"/>
+<path data-from="MOD_RESULT" data-to="PENALTY" d="M1460 2130 L1460 2220" fill="none" stroke="#b5becb" stroke-width="2" stroke-linejoin="round"  marker-end="url(#arrow)"/>
+<rect x="1436" y="2156" width="48" height="36" rx="16" fill="#020609"/>
+<text x="1460" y="2181" text-anchor="middle" fill="#b8d9f3" font-size="20" font-weight="400"><tspan x="1460" dy="0">พบ</tspan></text>
+<path data-from="MOD_RESULT" data-to="DISMISS" d="M1720 2130 L1720 2220" fill="none" stroke="#b5becb" stroke-width="2" stroke-linejoin="round"  marker-end="url(#arrow)"/>
+<rect x="1678" y="2156" width="84" height="36" rx="16" fill="#020609"/>
+<text x="1720" y="2181" text-anchor="middle" fill="#b8d9f3" font-size="20" font-weight="400"><tspan x="1720" dy="0">ไม่พบ</tspan></text>
+<path data-from="PENALTY" data-to="Z_PENALTY" d="M1460 2360 L1460 2395" fill="none" stroke="#b5becb" stroke-width="2" stroke-linejoin="round"  marker-end="url(#arrow)"/>
+<path data-from="DISMISS" data-to="Z_DISMISS" d="M1720 2360 L1720 2395" fill="none" stroke="#b5becb" stroke-width="2" stroke-linejoin="round"  marker-end="url(#arrow)"/>
+<path data-from="HISTORY" data-to="H_SUPPORT" d="M1590 2820 L1590 2895" fill="none" stroke="#b5becb" stroke-width="2" stroke-linejoin="round" stroke-dasharray="5 6" marker-end="url(#arrow)"/>
+<rect x="1488" y="2841" width="204" height="36" rx="16" fill="#020609"/>
+<text x="1590" y="2866" text-anchor="middle" fill="#b8d9f3" font-size="20" font-weight="400"><tspan x="1590" dy="0">ขอความช่วยเหลือ</tspan></text>
+<path data-from="H_SUPPORT" data-to="SUPPORT" d="M1590 2945 L1590 3020" fill="none" stroke="#b5becb" stroke-width="2" stroke-linejoin="round"  marker-end="url(#arrow)"/>
+<path data-from="SUPPORT" data-to="QUEUE" d="M1590 3130 L1590 3200" fill="none" stroke="#b5becb" stroke-width="2" stroke-linejoin="round"  marker-end="url(#arrow)"/>
+<path data-from="Q_QUEUE" data-to="QUEUE" d="M1295 3255 L1340 3255" fill="none" stroke="#b5becb" stroke-width="2" stroke-linejoin="round"  marker-end="url(#arrow)"/>
+<path data-from="QUEUE" data-to="CLAIM" d="M1590 3310 L1590 3380" fill="none" stroke="#b5becb" stroke-width="2" stroke-linejoin="round"  marker-end="url(#arrow)"/>
+<path data-from="B_CLAIM" data-to="CLAIM" d="M1295 3435 L1340 3435" fill="none" stroke="#b5becb" stroke-width="2" stroke-linejoin="round"  marker-end="url(#arrow)"/>
+<path data-from="CLAIM" data-to="HELP" d="M1590 3490 L1590 3560" fill="none" stroke="#b5becb" stroke-width="2" stroke-linejoin="round"  marker-end="url(#arrow)"/>
+<path data-from="HELP" data-to="RESOLVE" d="M1590 3670 L1590 3740" fill="none" stroke="#b5becb" stroke-width="2" stroke-linejoin="round"  marker-end="url(#arrow)"/>
+<path data-from="RESOLVE" data-to="REOPEN" d="M1590 3850 L1590 3920" fill="none" stroke="#b5becb" stroke-width="2" stroke-linejoin="round"  marker-end="url(#arrow)"/>
+<path data-from="REOPEN" data-to="Q_REOPEN" d="M1590 4030 L1590 4105" fill="none" stroke="#b5becb" stroke-width="2" stroke-linejoin="round"  marker-end="url(#arrow)"/>
+<rect x="1536" y="4051" width="108" height="36" rx="16" fill="#020609"/>
+<text x="1590" y="4076" text-anchor="middle" fill="#b8d9f3" font-size="20" font-weight="400"><tspan x="1590" dy="0">เปิดซ้ำ</tspan></text>
+<path data-from="REOPEN" data-to="Z_RESOLVE" d="M1840 3975 L1845 3975" fill="none" stroke="#b5becb" stroke-width="2" stroke-linejoin="round"  marker-end="url(#arrow)"/>
+<rect x="1830" y="3916" width="60" height="36" rx="16" fill="#020609"/>
+<text x="1860" y="3941" text-anchor="middle" fill="#b8d9f3" font-size="20" font-weight="400"><tspan x="1860" dy="0">ไม่</tspan></text>
+<path data-from="S_STATS" data-to="REFRESH" d="M310 3325 L310 3400" fill="none" stroke="#b5becb" stroke-width="2" stroke-linejoin="round"  marker-end="url(#arrow)"/>
+<path data-from="REFRESH" data-to="STATS" d="M310 3510 L310 3590" fill="none" stroke="#b5becb" stroke-width="2" stroke-linejoin="round"  marker-end="url(#arrow)"/>
+<path data-from="STATS" data-to="DAILY" d="M310 3700 L310 3790" fill="none" stroke="#b5becb" stroke-width="2" stroke-linejoin="round"  marker-end="url(#arrow)"/>
+<path data-from="DAILY" data-to="Z_STATS" d="M310 3900 L310 3975" fill="none" stroke="#b5becb" stroke-width="2" stroke-linejoin="round"  marker-end="url(#arrow)"/>
+<path data-from="Z_END" data-to="END" d="M950 4075 L950 4140" fill="none" stroke="#b5becb" stroke-width="2" stroke-linejoin="round"  marker-end="url(#arrow)"/>
+<g id="node-START" data-node="START">
+<rect x="860" y="230" width="180" height="64" rx="32" fill="#062e50" stroke="#28516d" stroke-width="2" />
+<text x="950" y="271" text-anchor="middle" fill="#9dceff" font-size="23" font-weight="600"><tspan x="950" dy="0">เริ่มต้น</tspan></text>
+</g>
+<g id="node-PUBLIC" data-node="PUBLIC">
+<rect x="700" y="355" width="500" height="110" rx="26" fill="#062e50" stroke="#28516d" stroke-width="2" />
+<text x="950" y="399.5" text-anchor="middle" fill="#9dceff" font-size="27" font-weight="600"><tspan x="950" dy="0">ดูประกาศสาธารณะ</tspan><tspan x="950" dy="39">และข้อมูลตลาด</tspan></text>
+</g>
+<g id="node-ENTRY" data-node="ENTRY">
+<rect x="700" y="515" width="500" height="110" rx="26" fill="#03131e" stroke="#28516d" stroke-width="2" stroke-dasharray="5 5"/>
+<text x="950" y="579" text-anchor="middle" fill="#9dceff" font-size="27" font-weight="600"><tspan x="950" dy="0">เลือกช่องทางเข้าใช้งาน</tspan></text>
+</g>
+<g id="node-LOGIN" data-node="LOGIN">
+<rect x="700" y="700" width="500" height="110" rx="26" fill="#062e50" stroke="#28516d" stroke-width="2" />
+<text x="950" y="764" text-anchor="middle" fill="#9dceff" font-size="27" font-weight="600"><tspan x="950" dy="0">เข้าสู่ระบบสมาชิก</tspan></text>
+</g>
+<g id="node-CHECK" data-node="CHECK">
+<rect x="700" y="860" width="500" height="110" rx="26" fill="#03131e" stroke="#28516d" stroke-width="2" stroke-dasharray="5 5"/>
+<text x="950" y="904.5" text-anchor="middle" fill="#9dceff" font-size="27" font-weight="600"><tspan x="950" dy="0">รหัสผ่าน สถานะบัญชี</tspan><tspan x="950" dy="39">และอีเมลผ่านหรือไม่</tspan></text>
+</g>
+<g id="node-HOME" data-node="HOME">
+<rect x="700" y="1140" width="500" height="110" rx="26" fill="#062e50" stroke="#28516d" stroke-width="2" />
+<text x="950" y="1204" text-anchor="middle" fill="#9dceff" font-size="27" font-weight="600"><tspan x="950" dy="0">ใช้งานบัญชีสมาชิก</tspan></text>
+</g>
+<g id="node-ACTION" data-node="ACTION">
+<rect x="700" y="1430" width="500" height="110" rx="26" fill="#03131e" stroke="#28516d" stroke-width="2" stroke-dasharray="5 5"/>
+<text x="950" y="1494" text-anchor="middle" fill="#9dceff" font-size="27" font-weight="600"><tspan x="950" dy="0">เลือกใช้งาน Marketplace</tspan></text>
+</g>
+<g id="node-SELECT" data-node="SELECT">
+<rect x="700" y="1640" width="500" height="110" rx="26" fill="#062e50" stroke="#28516d" stroke-width="2" />
+<text x="950" y="1704" text-anchor="middle" fill="#9dceff" font-size="27" font-weight="600"><tspan x="950" dy="0">เลือกประกาศ OPEN ของผู้อื่น</tspan></text>
+</g>
+<g id="node-CHAT" data-node="CHAT">
+<rect x="700" y="1830" width="500" height="110" rx="26" fill="#062e50" stroke="#28516d" stroke-width="2" />
+<text x="950" y="1874.5" text-anchor="middle" fill="#9dceff" font-size="27" font-weight="600"><tspan x="950" dy="0">เปิดห้องเดิมหรือสร้างห้อง</tspan><tspan x="950" dy="39">ส่งข้อความเจรจา</tspan></text>
+</g>
+<g id="node-AGREE" data-node="AGREE">
+<rect x="700" y="2040" width="500" height="110" rx="26" fill="#03131e" stroke="#28516d" stroke-width="2" stroke-dasharray="5 5"/>
+<text x="950" y="2104" text-anchor="middle" fill="#9dceff" font-size="27" font-weight="600"><tspan x="950" dy="0">ตกลงปิดดีลหรือไม่</tspan></text>
+</g>
+<g id="node-DEAL" data-node="DEAL">
+<rect x="700" y="2250" width="500" height="120" rx="26" fill="#062e50" stroke="#28516d" stroke-width="2" />
+<text x="950" y="2299.5" text-anchor="middle" fill="#9dceff" font-size="27" font-weight="600"><tspan x="950" dy="0">สร้างดีล ACCEPTED</tspan><tspan x="950" dy="39">และปิดประกาศใน transaction</tspan></text>
+</g>
+<g id="node-CLOSED" data-node="CLOSED">
+<rect x="700" y="2460" width="500" height="120" rx="26" fill="#062e50" stroke="#28516d" stroke-width="2" />
+<text x="950" y="2509.5" text-anchor="middle" fill="#9dceff" font-size="27" font-weight="600"><tspan x="950" dy="0">ห้องคู่ค้า DEAL_CLOSED</tspan><tspan x="950" dy="39">ห้องอื่น ARCHIVED พร้อม closed_at</tspan></text>
+</g>
+<g id="node-REVIEW" data-node="REVIEW">
+<rect x="700" y="2700" width="500" height="120" rx="26" fill="#062e50" stroke="#28516d" stroke-width="2" />
+<text x="950" y="2749.5" text-anchor="middle" fill="#9dceff" font-size="27" font-weight="600"><tspan x="950" dy="0">คู่ค้ารีวิว 1–5 ดาว</tspan><tspan x="950" dy="39">คนละครั้งต่อดีล</tspan></text>
+</g>
+<g id="node-TOTAL" data-node="TOTAL">
+<rect x="700" y="2890" width="500" height="110" rx="26" fill="#062e50" stroke="#28516d" stroke-width="2" />
+<text x="950" y="2934.5" text-anchor="middle" fill="#9dceff" font-size="27" font-weight="600"><tspan x="950" dy="0">บันทึกรีวิวและคำนวณคะแนนเฉลี่ย</tspan><tspan x="950" dy="39">พร้อมจำนวนรีวิวใน transaction</tspan></text>
+</g>
+<g id="node-END" data-node="END">
+<rect x="790" y="4140" width="320" height="80" rx="32" fill="#062e50" stroke="#28516d" stroke-width="2" />
+<text x="950" y="4189" text-anchor="middle" fill="#9dceff" font-size="27" font-weight="600"><tspan x="950" dy="0">สิ้นสุดขั้นตอนที่เลือก</tspan></text>
+</g>
+<g id="node-REG" data-node="REG">
+<rect x="60" y="700" width="500" height="110" rx="26" fill="#062e50" stroke="#28516d" stroke-width="2" />
+<text x="310" y="744.5" text-anchor="middle" fill="#9dceff" font-size="27" font-weight="600"><tspan x="310" dy="0">สมัครสมาชิก</tspan><tspan x="310" dy="39">เลือกบทบาทหลัก</tspan></text>
+</g>
+<g id="node-OTP" data-node="OTP">
+<rect x="60" y="860" width="500" height="110" rx="26" fill="#062e50" stroke="#28516d" stroke-width="2" />
+<text x="310" y="924" text-anchor="middle" fill="#9dceff" font-size="27" font-weight="600"><tspan x="310" dy="0">รับและยืนยันอีเมลด้วย OTP</tspan></text>
+</g>
+<g id="node-RETRY" data-node="RETRY">
+<rect x="60" y="1140" width="500" height="110" rx="26" fill="#062e50" stroke="#28516d" stroke-width="2" />
+<text x="310" y="1204" text-anchor="middle" fill="#9dceff" font-size="27" font-weight="600"><tspan x="310" dy="0">แก้ไขรหัสหรือขอส่ง OTP ใหม่</tspan></text>
+</g>
+<g id="node-ADMINLOGIN" data-node="ADMINLOGIN">
+<rect x="1340" y="700" width="500" height="110" rx="26" fill="#062e50" stroke="#28516d" stroke-width="2" />
+<text x="1590" y="744.5" text-anchor="middle" fill="#9dceff" font-size="27" font-weight="600"><tspan x="1590" dy="0">เข้าสู่ระบบแอดมิน</tspan><tspan x="1590" dy="39">และตรวจสิทธิ์</tspan></text>
+</g>
+<g id="node-ADMIN" data-node="ADMIN">
+<rect x="1340" y="845" width="500" height="70" rx="26" fill="#062e50" stroke="#28516d" stroke-width="2" />
+<text x="1590" y="889" text-anchor="middle" fill="#9dceff" font-size="27" font-weight="600"><tspan x="1590" dy="0">งานผู้ดูแลระบบ</tspan></text>
+</g>
+<g id="node-DENY" data-node="DENY">
+<rect x="1340" y="1050" width="500" height="110" rx="26" fill="#062e50" stroke="#28516d" stroke-width="2" />
+<text x="1590" y="1094.5" text-anchor="middle" fill="#9dceff" font-size="27" font-weight="600"><tspan x="1590" dy="0">แจ้งข้อผิดพลาด</tspan><tspan x="1590" dy="39">ปฏิเสธการเข้าใช้งาน</tspan></text>
+</g>
+<g id="node-A_OTP" data-node="A_OTP">
+<circle cx="620" cy="1020" r="25" fill="#031522" stroke="#326589" stroke-width="2"/>
+<text x="620" y="1029" text-anchor="middle" fill="#9dceff" font-size="27" font-weight="600"><tspan x="620" dy="0">A</tspan></text>
+</g>
+<g id="node-A_HOME" data-node="A_HOME">
+<circle cx="620" cy="1195" r="25" fill="#031522" stroke="#326589" stroke-width="2"/>
+<text x="620" y="1204" text-anchor="middle" fill="#9dceff" font-size="27" font-weight="600"><tspan x="620" dy="0">A</tspan></text>
+</g>
+<g id="node-O_CHECK" data-node="O_CHECK">
+<circle cx="620" cy="915" r="25" fill="#031522" stroke="#326589" stroke-width="2"/>
+<text x="620" y="924" text-anchor="middle" fill="#9dceff" font-size="27" font-weight="600"><tspan x="620" dy="0">O</tspan></text>
+</g>
+<g id="node-O_OTP" data-node="O_OTP">
+<circle cx="30" cy="915" r="25" fill="#031522" stroke="#326589" stroke-width="2"/>
+<text x="30" y="924" text-anchor="middle" fill="#9dceff" font-size="27" font-weight="600"><tspan x="30" dy="0">O</tspan></text>
+</g>
+<g id="node-O_RETRY" data-node="O_RETRY">
+<circle cx="310" cy="1300" r="25" fill="#031522" stroke="#326589" stroke-width="2"/>
+<text x="310" y="1309" text-anchor="middle" fill="#9dceff" font-size="27" font-weight="600"><tspan x="310" dy="0">O</tspan></text>
+</g>
+<g id="node-B_ADMIN" data-node="B_ADMIN">
+<circle cx="1590" cy="965" r="25" fill="#031522" stroke="#326589" stroke-width="2"/>
+<text x="1590" y="974" text-anchor="middle" fill="#9dceff" font-size="27" font-weight="600"><tspan x="1590" dy="0">B</tspan></text>
+</g>
+<g id="node-R_HOME" data-node="R_HOME">
+<circle cx="1270" cy="1195" r="25" fill="#031522" stroke="#326589" stroke-width="2"/>
+<text x="1270" y="1204" text-anchor="middle" fill="#9dceff" font-size="27" font-weight="600"><tspan x="1270" dy="0">R</tspan></text>
+</g>
+<g id="node-P_PUBLIC" data-node="P_PUBLIC">
+<circle cx="620" cy="410" r="25" fill="#031522" stroke="#326589" stroke-width="2"/>
+<text x="620" y="419" text-anchor="middle" fill="#9dceff" font-size="27" font-weight="600"><tspan x="620" dy="0">P</tspan></text>
+</g>
+<g id="node-POST" data-node="POST">
+<rect x="60" y="1640" width="500" height="110" rx="26" fill="#062e50" stroke="#28516d" stroke-width="2" />
+<text x="310" y="1704" text-anchor="middle" fill="#9dceff" font-size="27" font-weight="600"><tspan x="310" dy="0">ลงประกาศตามบทบาทที่มีสิทธิ์</tspan></text>
+</g>
+<g id="node-SAVE" data-node="SAVE">
+<rect x="60" y="1810" width="500" height="110" rx="26" fill="#062e50" stroke="#28516d" stroke-width="2" />
+<text x="310" y="1854.5" text-anchor="middle" fill="#9dceff" font-size="27" font-weight="600"><tspan x="310" dy="0">บันทึกประกาศ OPEN</tspan><tspan x="310" dy="39">และเพิ่มรูปภาพถ้ามี</tspan></text>
+</g>
+<g id="node-P_SAVE" data-node="P_SAVE">
+<circle cx="220" cy="2020" r="25" fill="#031522" stroke="#326589" stroke-width="2"/>
+<text x="220" y="2029" text-anchor="middle" fill="#9dceff" font-size="27" font-weight="600"><tspan x="220" dy="0">P</tspan></text>
+</g>
+<g id="node-S_SAVE" data-node="S_SAVE">
+<circle cx="450" cy="2020" r="25" fill="#031522" stroke="#326589" stroke-width="2"/>
+<text x="450" y="2029" text-anchor="middle" fill="#9dceff" font-size="27" font-weight="600"><tspan x="450" dy="0">S</tspan></text>
+</g>
+<g id="node-C_SELECT" data-node="C_SELECT">
+<circle cx="1270" cy="1695" r="25" fill="#031522" stroke="#326589" stroke-width="2"/>
+<text x="1270" y="1704" text-anchor="middle" fill="#9dceff" font-size="27" font-weight="600"><tspan x="1270" dy="0">C</tspan></text>
+</g>
+<g id="node-H_CHAT" data-node="H_CHAT">
+<circle cx="1270" cy="1885" r="25" fill="#031522" stroke="#326589" stroke-width="2"/>
+<text x="1270" y="1894" text-anchor="middle" fill="#9dceff" font-size="27" font-weight="600"><tspan x="1270" dy="0">H</tspan></text>
+</g>
+<g id="node-J_AGREE" data-node="J_AGREE">
+<circle cx="620" cy="2095" r="25" fill="#031522" stroke="#326589" stroke-width="2"/>
+<text x="620" y="2104" text-anchor="middle" fill="#9dceff" font-size="27" font-weight="600"><tspan x="620" dy="0">J</tspan></text>
+</g>
+<g id="node-J_CHAT" data-node="J_CHAT">
+<circle cx="620" cy="1885" r="25" fill="#031522" stroke="#326589" stroke-width="2"/>
+<text x="620" y="1894" text-anchor="middle" fill="#9dceff" font-size="27" font-weight="600"><tspan x="620" dy="0">J</tspan></text>
+</g>
+<g id="node-Z_TOTAL" data-node="Z_TOTAL">
+<circle cx="950" cy="3080" r="25" fill="#031522" stroke="#326589" stroke-width="2"/>
+<text x="950" y="3089" text-anchor="middle" fill="#9dceff" font-size="27" font-weight="600"><tspan x="950" dy="0">Z</tspan></text>
+</g>
+<g id="node-R_REQUEST" data-node="R_REQUEST">
+<circle cx="310" cy="2240" r="25" fill="#031522" stroke="#326589" stroke-width="2"/>
+<text x="310" y="2249" text-anchor="middle" fill="#9dceff" font-size="27" font-weight="600"><tspan x="310" dy="0">R</tspan></text>
+</g>
+<g id="node-REQUEST" data-node="REQUEST">
+<rect x="60" y="2330" width="500" height="110" rx="26" fill="#062e50" stroke="#28516d" stroke-width="2" />
+<text x="310" y="2394" text-anchor="middle" fill="#9dceff" font-size="27" font-weight="600"><tspan x="310" dy="0">ส่งเอกสารขอเพิ่มบทบาท</tspan></text>
+</g>
+<g id="node-ROLEADMIN" data-node="ROLEADMIN">
+<rect x="60" y="2520" width="500" height="110" rx="26" fill="#03131e" stroke="#28516d" stroke-width="2" stroke-dasharray="5 5"/>
+<text x="310" y="2584" text-anchor="middle" fill="#9dceff" font-size="27" font-weight="600"><tspan x="310" dy="0">แอดมินพิจารณาเอกสาร</tspan></text>
+</g>
+<g id="node-B_ROLE" data-node="B_ROLE">
+<circle cx="620" cy="2575" r="25" fill="#031522" stroke="#326589" stroke-width="2"/>
+<text x="620" y="2584" text-anchor="middle" fill="#9dceff" font-size="27" font-weight="600"><tspan x="620" dy="0">B</tspan></text>
+</g>
+<g id="node-GRANT" data-node="GRANT">
+<rect x="60" y="2740" width="240" height="140" rx="26" fill="#062e50" stroke="#28516d" stroke-width="2" />
+<text x="180" y="2799.5" text-anchor="middle" fill="#9dceff" font-size="23" font-weight="600"><tspan x="180" dy="0">เพิ่มบทบาท ACTIVE</tspan><tspan x="180" dy="39">และสถานะยืนยัน</tspan></text>
+</g>
+<g id="node-REJECT" data-node="REJECT">
+<rect x="320" y="2740" width="240" height="140" rx="26" fill="#062e50" stroke="#28516d" stroke-width="2" />
+<text x="440" y="2799.5" text-anchor="middle" fill="#9dceff" font-size="23" font-weight="600"><tspan x="440" dy="0">บันทึก REJECTED</tspan><tspan x="440" dy="39">และหมายเหตุ</tspan></text>
+</g>
+<g id="node-A_GRANT" data-node="A_GRANT">
+<circle cx="180" cy="3040" r="25" fill="#031522" stroke="#326589" stroke-width="2"/>
+<text x="180" y="3049" text-anchor="middle" fill="#9dceff" font-size="27" font-weight="600"><tspan x="180" dy="0">A</tspan></text>
+</g>
+<g id="node-Z_REJECT" data-node="Z_REJECT">
+<circle cx="440" cy="3040" r="25" fill="#031522" stroke="#326589" stroke-width="2"/>
+<text x="440" y="3049" text-anchor="middle" fill="#9dceff" font-size="27" font-weight="600"><tspan x="440" dy="0">Z</tspan></text>
+</g>
+<g id="node-C_REPORT" data-node="C_REPORT">
+<circle cx="1590" cy="1600" r="25" fill="#031522" stroke="#326589" stroke-width="2"/>
+<text x="1590" y="1609" text-anchor="middle" fill="#9dceff" font-size="27" font-weight="600"><tspan x="1590" dy="0">C</tspan></text>
+</g>
+<g id="node-REPORT" data-node="REPORT">
+<rect x="1340" y="1700" width="500" height="110" rx="26" fill="#062e50" stroke="#28516d" stroke-width="2" />
+<text x="1590" y="1744.5" text-anchor="middle" fill="#9dceff" font-size="27" font-weight="600"><tspan x="1590" dy="0">สร้างรายงานประกาศ</tspan><tspan x="1590" dy="39">และเพิ่ม report_count</tspan></text>
+</g>
+<g id="node-MOD" data-node="MOD">
+<rect x="1340" y="1860" width="500" height="110" rx="26" fill="#062e50" stroke="#28516d" stroke-width="2" />
+<text x="1590" y="1924" text-anchor="middle" fill="#9dceff" font-size="27" font-weight="600"><tspan x="1590" dy="0">แอดมินตรวจรายงาน</tspan></text>
+</g>
+<g id="node-B_MOD" data-node="B_MOD">
+<circle cx="1270" cy="1985" r="25" fill="#031522" stroke="#326589" stroke-width="2"/>
+<text x="1270" y="1994" text-anchor="middle" fill="#9dceff" font-size="27" font-weight="600"><tspan x="1270" dy="0">B</tspan></text>
+</g>
+<g id="node-MOD_RESULT" data-node="MOD_RESULT">
+<rect x="1340" y="2020" width="500" height="110" rx="26" fill="#03131e" stroke="#28516d" stroke-width="2" stroke-dasharray="5 5"/>
+<text x="1590" y="2084" text-anchor="middle" fill="#9dceff" font-size="27" font-weight="600"><tspan x="1590" dy="0">พบความผิดหรือไม่</tspan></text>
+</g>
+<g id="node-PENALTY" data-node="PENALTY">
+<rect x="1340" y="2220" width="240" height="140" rx="26" fill="#062e50" stroke="#28516d" stroke-width="2" />
+<text x="1460" y="2260" text-anchor="middle" fill="#9dceff" font-size="23" font-weight="600"><tspan x="1460" dy="0">ซ่อนประกาศ</tspan><tspan x="1460" dy="39">ปรับคะแนน /</tspan><tspan x="1460" dy="39">สถานะบัญชี</tspan></text>
+</g>
+<g id="node-DISMISS" data-node="DISMISS">
+<rect x="1600" y="2220" width="240" height="140" rx="26" fill="#062e50" stroke="#28516d" stroke-width="2" />
+<text x="1720" y="2279.5" text-anchor="middle" fill="#9dceff" font-size="23" font-weight="600"><tspan x="1720" dy="0">บันทึกรายงาน</tspan><tspan x="1720" dy="39">REJECTED</tspan></text>
+</g>
+<g id="node-Z_PENALTY" data-node="Z_PENALTY">
+<circle cx="1460" cy="2420" r="25" fill="#031522" stroke="#326589" stroke-width="2"/>
+<text x="1460" y="2429" text-anchor="middle" fill="#9dceff" font-size="27" font-weight="600"><tspan x="1460" dy="0">Z</tspan></text>
+</g>
+<g id="node-Z_DISMISS" data-node="Z_DISMISS">
+<circle cx="1720" cy="2420" r="25" fill="#031522" stroke="#326589" stroke-width="2"/>
+<text x="1720" y="2429" text-anchor="middle" fill="#9dceff" font-size="27" font-weight="600"><tspan x="1720" dy="0">Z</tspan></text>
+</g>
+<g id="node-HISTORY" data-node="HISTORY">
+<rect x="1340" y="2700" width="500" height="120" rx="26" fill="#062e50" stroke="#28516d" stroke-width="2" />
+<text x="1590" y="2749.5" text-anchor="middle" fill="#9dceff" font-size="27" font-weight="600"><tspan x="1590" dy="0">ครบ 168 ชั่วโมงหลังปิดดีล</tspan><tspan x="1590" dy="39">อ่านแชตได้ แต่ส่งข้อความคู่ค้าไม่ได้</tspan></text>
+</g>
+<g id="node-H_SUPPORT" data-node="H_SUPPORT">
+<circle cx="1590" cy="2920" r="25" fill="#031522" stroke="#326589" stroke-width="2"/>
+<text x="1590" y="2929" text-anchor="middle" fill="#9dceff" font-size="27" font-weight="600"><tspan x="1590" dy="0">H</tspan></text>
+</g>
+<g id="node-SUPPORT" data-node="SUPPORT">
+<rect x="1340" y="3020" width="500" height="110" rx="26" fill="#062e50" stroke="#28516d" stroke-width="2" />
+<text x="1590" y="3064.5" text-anchor="middle" fill="#9dceff" font-size="27" font-weight="600"><tspan x="1590" dy="0">เลือกห้องและหัวข้อปัญหา</tspan><tspan x="1590" dy="39">สร้างคำร้อง OPEN</tspan></text>
+</g>
+<g id="node-QUEUE" data-node="QUEUE">
+<rect x="1340" y="3200" width="500" height="110" rx="26" fill="#062e50" stroke="#28516d" stroke-width="2" />
+<text x="1590" y="3264" text-anchor="middle" fill="#9dceff" font-size="27" font-weight="600"><tspan x="1590" dy="0">เข้าคิวตาม queued_at และ id</tspan></text>
+</g>
+<g id="node-Q_QUEUE" data-node="Q_QUEUE">
+<circle cx="1270" cy="3255" r="25" fill="#031522" stroke="#326589" stroke-width="2"/>
+<text x="1270" y="3264" text-anchor="middle" fill="#9dceff" font-size="27" font-weight="600"><tspan x="1270" dy="0">Q</tspan></text>
+</g>
+<g id="node-CLAIM" data-node="CLAIM">
+<rect x="1340" y="3380" width="500" height="110" rx="26" fill="#062e50" stroke="#28516d" stroke-width="2" />
+<text x="1590" y="3424.5" text-anchor="middle" fill="#9dceff" font-size="27" font-weight="600"><tspan x="1590" dy="0">แอดมินรับคิวถัดไป</tspan><tspan x="1590" dy="39">เปลี่ยนเป็น IN_PROGRESS</tspan></text>
+</g>
+<g id="node-B_CLAIM" data-node="B_CLAIM">
+<circle cx="1270" cy="3435" r="25" fill="#031522" stroke="#326589" stroke-width="2"/>
+<text x="1270" y="3444" text-anchor="middle" fill="#9dceff" font-size="27" font-weight="600"><tspan x="1270" dy="0">B</tspan></text>
+</g>
+<g id="node-HELP" data-node="HELP">
+<rect x="1340" y="3560" width="500" height="110" rx="26" fill="#062e50" stroke="#28516d" stroke-width="2" />
+<text x="1590" y="3604.5" text-anchor="middle" fill="#9dceff" font-size="27" font-weight="600"><tspan x="1590" dy="0">ผู้รับเรื่องคุยกับผู้แจ้ง</tspan><tspan x="1590" dy="39">และตรวจหลักฐาน</tspan></text>
+</g>
+<g id="node-RESOLVE" data-node="RESOLVE">
+<rect x="1340" y="3740" width="500" height="110" rx="26" fill="#062e50" stroke="#28516d" stroke-width="2" />
+<text x="1590" y="3784.5" text-anchor="middle" fill="#9dceff" font-size="27" font-weight="600"><tspan x="1590" dy="0">บันทึกผลแก้ไข</tspan><tspan x="1590" dy="39">ปิดคำร้อง RESOLVED</tspan></text>
+</g>
+<g id="node-REOPEN" data-node="REOPEN">
+<rect x="1340" y="3920" width="500" height="110" rx="26" fill="#03131e" stroke="#28516d" stroke-width="2" stroke-dasharray="5 5"/>
+<text x="1590" y="3984" text-anchor="middle" fill="#9dceff" font-size="27" font-weight="600"><tspan x="1590" dy="0">ผู้แจ้งเปิดเรื่องซ้ำหรือไม่</tspan></text>
+</g>
+<g id="node-Q_REOPEN" data-node="Q_REOPEN">
+<circle cx="1590" cy="4130" r="25" fill="#031522" stroke="#326589" stroke-width="2"/>
+<text x="1590" y="4139" text-anchor="middle" fill="#9dceff" font-size="27" font-weight="600"><tspan x="1590" dy="0">Q</tspan></text>
+</g>
+<g id="node-Z_RESOLVE" data-node="Z_RESOLVE">
+<circle cx="1870" cy="3975" r="25" fill="#031522" stroke="#326589" stroke-width="2"/>
+<text x="1870" y="3984" text-anchor="middle" fill="#9dceff" font-size="27" font-weight="600"><tspan x="1870" dy="0">Z</tspan></text>
+</g>
+<g id="node-S_STATS" data-node="S_STATS">
+<circle cx="310" cy="3300" r="25" fill="#031522" stroke="#326589" stroke-width="2"/>
+<text x="310" y="3309" text-anchor="middle" fill="#9dceff" font-size="27" font-weight="600"><tspan x="310" dy="0">S</tspan></text>
+</g>
+<g id="node-REFRESH" data-node="REFRESH">
+<rect x="60" y="3400" width="500" height="110" rx="26" fill="#062e50" stroke="#28516d" stroke-width="2" />
+<text x="310" y="3444.5" text-anchor="middle" fill="#9dceff" font-size="27" font-weight="600"><tspan x="310" dy="0">ผู้ดูแลเรียก stats:refresh</tspan><tspan x="310" dy="39">เป็นกระบวนการแยก</tspan></text>
+</g>
+<g id="node-STATS" data-node="STATS">
+<rect x="60" y="3590" width="500" height="110" rx="26" fill="#062e50" stroke="#28516d" stroke-width="2" />
+<text x="310" y="3634.5" text-anchor="middle" fill="#9dceff" font-size="27" font-weight="600"><tspan x="310" dy="0">สรุปราคาเสนอที่เข้าเกณฑ์</tspan><tspan x="310" dy="39">จากประกาศย้อนหลัง 7 วัน</tspan></text>
+</g>
+<g id="node-DAILY" data-node="DAILY">
+<rect x="60" y="3790" width="500" height="110" rx="26" fill="#062e50" stroke="#28516d" stroke-width="2" />
+<text x="310" y="3854" text-anchor="middle" fill="#9dceff" font-size="27" font-weight="600"><tspan x="310" dy="0">บันทึก daily_market_stats</tspan></text>
+</g>
+<g id="node-Z_STATS" data-node="Z_STATS">
+<circle cx="310" cy="4000" r="25" fill="#031522" stroke="#326589" stroke-width="2"/>
+<text x="310" y="4009" text-anchor="middle" fill="#9dceff" font-size="27" font-weight="600"><tspan x="310" dy="0">Z</tspan></text>
+</g>
+<g id="node-Z_END" data-node="Z_END">
+<circle cx="950" cy="4050" r="25" fill="#031522" stroke="#326589" stroke-width="2"/>
+<text x="950" y="4059" text-anchor="middle" fill="#9dceff" font-size="27" font-weight="600"><tspan x="950" dy="0">Z</tspan></text>
+</g>
+<path d="M60 4290 H1840" stroke="#183147" stroke-width="2"/>
+<text x="950" y="4340" text-anchor="middle" fill="#9dceff" font-size="25" font-weight="600"><tspan x="950" dy="0">วิธีอ่านจุดเชื่อม</tspan></text>
+<circle cx="105" cy="4390" r="18" fill="#031522" stroke="#326589"/>
+<text x="105" y="4397" text-anchor="middle" fill="#9dceff" font-size="20" font-weight="600"><tspan x="105" dy="0">A</tspan></text>
+<text x="135" y="4397" fill="#a5b6c6" font-size="20">บัญชีสมาชิก</text>
+<circle cx="565" cy="4390" r="18" fill="#031522" stroke="#326589"/>
+<text x="565" y="4397" text-anchor="middle" fill="#9dceff" font-size="20" font-weight="600"><tspan x="565" dy="0">O</tspan></text>
+<text x="595" y="4397" fill="#a5b6c6" font-size="20">ยืนยัน OTP</text>
+<circle cx="1025" cy="4390" r="18" fill="#031522" stroke="#326589"/>
+<text x="1025" y="4397" text-anchor="middle" fill="#9dceff" font-size="20" font-weight="600"><tspan x="1025" dy="0">B</tspan></text>
+<text x="1055" y="4397" fill="#a5b6c6" font-size="20">งานแอดมิน</text>
+<circle cx="1485" cy="4390" r="18" fill="#031522" stroke="#326589"/>
+<text x="1485" y="4397" text-anchor="middle" fill="#9dceff" font-size="20" font-weight="600"><tspan x="1485" dy="0">P</tspan></text>
+<text x="1515" y="4397" fill="#a5b6c6" font-size="20">ประกาศสาธารณะ</text>
+<circle cx="105" cy="4438" r="18" fill="#031522" stroke="#326589"/>
+<text x="105" y="4445" text-anchor="middle" fill="#9dceff" font-size="20" font-weight="600"><tspan x="105" dy="0">R</tspan></text>
+<text x="135" y="4445" fill="#a5b6c6" font-size="20">ขอเพิ่มบทบาท</text>
+<circle cx="565" cy="4438" r="18" fill="#031522" stroke="#326589"/>
+<text x="565" y="4445" text-anchor="middle" fill="#9dceff" font-size="20" font-weight="600"><tspan x="565" dy="0">C</tspan></text>
+<text x="595" y="4445" fill="#a5b6c6" font-size="20">รายงานประกาศ</text>
+<circle cx="1025" cy="4438" r="18" fill="#031522" stroke="#326589"/>
+<text x="1025" y="4445" text-anchor="middle" fill="#9dceff" font-size="20" font-weight="600"><tspan x="1025" dy="0">J</tspan></text>
+<text x="1055" y="4445" fill="#a5b6c6" font-size="20">กลับไปเจรจา</text>
+<circle cx="1485" cy="4438" r="18" fill="#031522" stroke="#326589"/>
+<text x="1485" y="4445" text-anchor="middle" fill="#9dceff" font-size="20" font-weight="600"><tspan x="1485" dy="0">H</tspan></text>
+<text x="1515" y="4445" fill="#a5b6c6" font-size="20">ศูนย์ช่วยเหลือ</text>
+<circle cx="105" cy="4486" r="18" fill="#031522" stroke="#326589"/>
+<text x="105" y="4493" text-anchor="middle" fill="#9dceff" font-size="20" font-weight="600"><tspan x="105" dy="0">Q</tspan></text>
+<text x="135" y="4493" fill="#a5b6c6" font-size="20">เข้าคิวใหม่</text>
+<circle cx="565" cy="4486" r="18" fill="#031522" stroke="#326589"/>
+<text x="565" y="4493" text-anchor="middle" fill="#9dceff" font-size="20" font-weight="600"><tspan x="565" dy="0">S</tspan></text>
+<text x="595" y="4493" fill="#a5b6c6" font-size="20">คำนวณสถิติ</text>
+<circle cx="1025" cy="4486" r="18" fill="#031522" stroke="#326589"/>
+<text x="1025" y="4493" text-anchor="middle" fill="#9dceff" font-size="20" font-weight="600"><tspan x="1025" dy="0">Z</tspan></text>
+<text x="1055" y="4493" fill="#a5b6c6" font-size="20">สิ้นสุดขั้นตอน</text>
+</svg>

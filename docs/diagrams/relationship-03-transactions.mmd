@@ -1,0 +1,8 @@
+erDiagram
+    marketplace_posts ||--o{ chat_rooms : opens_negotiations
+    chat_rooms ||--o{ chat_messages : contains
+    marketplace_posts ||--o{ deals : records_agreements
+    deals ||--o{ user_reviews : receives
+    marketplace_posts ||--o{ post_reports : receives
+    chat_rooms ||--o{ support_tickets : provides_context
+    support_tickets ||--o{ support_messages : contains

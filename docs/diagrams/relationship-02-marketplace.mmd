@@ -1,0 +1,10 @@
+erDiagram
+    users ||--o{ marketplace_posts : publishes
+    regional_seasons o|--o{ locations : describes_region
+    locations ||--o{ marketplace_posts : locates
+    durian_varieties o|--o{ marketplace_posts : classifies_variety
+    durian_grades o|--o{ marketplace_posts : classifies_grade
+    marketplace_posts ||--o{ post_images : contains
+    locations ||--o{ daily_market_stats : groups_area
+    durian_varieties ||--o{ daily_market_stats : groups_variety
+    durian_grades ||--o{ daily_market_stats : groups_grade

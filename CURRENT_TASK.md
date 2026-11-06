@@ -1,8 +1,53 @@
 # 📌 Project State & Active Task Tracker
 
 **Project:** Durian Hub (ตลาดกลางทุเรียน)
-**Last Updated:** 2026-11-03
-**Current Status:** SCHEMA STUDIO DBML SUBSET — COMPLETED
+**Last Updated:** 2026-11-07
+**Current Status:** APPROVED COMMIT AND PUSH — READY TO PUBLISH
+**Latest Backup:** `D:\csc481_backup_20261030_013531`
+**Presentation Deck & ERD:** `D:\durian_hub_presentation\index.html`
+
+## Latest Git Publication Task — 2026-11-07
+- **Authorization:** ผู้ใช้อนุมัติ “ลุย” ให้ commit งานค้างทั้งหมด 19 ไฟล์และ push ไป origin/main ที่ https://github.com/armgun0072-debug/durian-hub01.git
+- **Scope:** แก้ syntax posts API, เอกสาร/ภาพฐานข้อมูลและ Flowchart, สคริปต์ renderer และบันทึกสถานะ; ไฟล์ชั่วคราวที่เคลียร์เป็น ignored files จึงไม่มีรายการลบใน commit
+- **Validation:** git diff --check และ node --check scripts/render-system-flowchart.cjs ผ่าน; TypeScript ไม่ผ่านเนื่องจาก generated Prisma Client ในเครื่องไม่มี closedAt/supportTicket/supportMessage ที่ source ใช้ ยังไม่ได้แก้ปัญหานี้ในงานเผยแพร่
+- **Remote check:** GitHub main ชี้ไป 12f3c0ac41bdb741a15502a71d5746e3e155a549 ตรงกับ local HEAD ก่อน commit
+- **Next:** สร้าง commit แล้ว push แบบปกติและตรวจ remote hash; ผลสำเร็จของ push รายงานในแชตหลังดำเนินการ
+
+## Latest Temporary File Cleanup — 2026-11-07
+- **Authorization:** ผู้ใช้อนุมัติ “ลุย” ตามแผนลบเฉพาะ .next-ui-test/, scratch/flowchart-render/ และ tsconfig.tsbuildinfo
+- **Changes:** ลบไฟล์ชั่วคราว/ผล build รวม 497 ไฟล์ ขนาดรวม 151,095,340 bytes (ประมาณ 144.1 MiB); เก็บ source, docs, dependencies, ZIP และไฟล์สำรองเดิมไว้
+- **Validation:** ยืนยันพาธอยู่ภายใน D:\csc481 และไม่มี reparse points; ทดลองเปิดไฟล์ทั้ง 497 ไฟล์แบบ exclusive ผ่านก่อนลบ ตรวจ CIM process command lines ไม่ได้เพราะ access denied จึงใช้การตรวจ file locks แทน
+- **Impact:** การ build/ทดสอบ/เรนเดอร์ครั้งถัดไปจะสร้างแคชและพื้นที่ชั่วคราวใหม่ ไม่เปลี่ยนโค้ดแอปหรือฐานข้อมูล
+- **Next:** งานเคลียร์ตามรายการที่อนุมัติเสร็จแล้ว; รายการอื่นต้องประเมินแยกก่อนลบ
+
+## Latest Hotfix Task — 2026-11-06
+- **Authorization:** ผู้ใช้อนุมัติแก้ไข Syntax error จากภาพหน้าจอเบราว์เซอร์
+- **Root Cause:** พบเครื่องหมาย `+` เกินมาที่บรรทัด 56 ของ `src/app/api/posts/route.ts` ภายใน Docker container `durian_hub_web` ทำให้ Next.js เกิด Build Error `Expression expected`
+- **Resolution:** ซิงค์ไฟล์ที่ถูกต้องเข้า container และสั่งรีสตาร์ท `durian_hub_web`
+- **Validation:** ทดสอบยิง HTTP Request ไปที่ `http://localhost:3000/api/posts` และ `http://localhost:3000` ตอบกลับ `200 OK` สมบูรณ์ หน้าเว็บใช้งานได้ปกติ 100%
+
+## Latest Vertical Flowchart Redesign Task — 2026-11-04
+- **Authorization:** ผู้ใช้อนุมัติ “ลุย” หลังเสนอแผนปรับ Flowchart ตามภาพอ้างอิง: แนวตั้ง เส้นหักมุม พื้นดำ กล่องน้ำเงิน ตัวอักษรฟ้า
+- **Changes:** Flowchart SVG/PNG จัดตำแหน่งเอง ใช้จุดเชื่อมอักษรเดียวกันแทนเส้นข้ามภาพ; MMD/เอกสารอัปเดตขั้นตอนตรงกัน มีคำอธิบายจุดเชื่อม; เพิ่ม scripts/render-system-flowchart.cjs สร้างซ้ำด้วย Chrome และแก้ caption ภาษาไทยที่แสดงเป็นเครื่องหมายคำถามในเอกสาร
+- **Validation:** Chrome render ผ่าน PNG 3800×9080, SVG 1900×4540, 73 nodes (รวม connectors), 68 arrows, ไม่มีข้อความล้นกล่อง/foreignObject; geometry check พบ 0 กล่องทับกัน / 0 เส้นผ่านกล่องอื่น / 0 เส้นตัดกัน; Mermaid 11.12.2 parse MMD ผ่าน; source ตรงเอกสาร, ลิงก์ docs overview/diagrams README 72 จุดผ่าน และ git diff --check ผ่าน
+- **Scope:** แก้ภาพและเอกสาร ไม่เปลี่ยน ER/API/schema หรือข้อมูลจริง ไม่ใส่ flow COMPLETED ที่ยังไม่ได้ยืนยันการใช้งานจริง
+- **Next:** เปิด docs/diagrams/system-flowchart.png หรือ SVG ใหม่; สร้างซ้ำได้ด้วย node scripts/render-system-flowchart.cjs (ใช้ local Chrome ไม่ต้องดาวน์โหลด dependencies)
+
+## Latest Database Diagram Image Export Task — 2026-11-04
+- **Authorization:** ผู้ใช้อนุมัติ “ลุย” ให้ส่งออก ER 3 กลุ่มและ Flowchart เป็น PNG/SVG ตามแผน
+- **Deliverables:** docs/diagrams/ มี PNG/SVG/MMD อย่างละ 4 ไฟล์ พร้อม README และ render-checks.json; docs/database-overview.md แสดง PNG พร้อมลิงก์ PNG/SVG และพับ Mermaid ต้นฉบับไว้
+- **Rendering:** Mermaid 11.12.2 / Chrome headless, Tahoma, PNG 2x, SVG ไม่มี foreignObject; ปรับสีป้ายเส้นและตำแหน่ง groups_area เพื่อให้อ่านได้ ไม่เปลี่ยนความสัมพันธ์
+- **Validation:** เรนเดอร์สำเร็จทั้ง 4 ภาพ ตรวจภาพและภาษาไทย; Node ตรวจ PNG signature/dimensions 4 ไฟล์, SVG 4 ไฟล์ไม่มี script/foreignObject, MMD ตรงเอกสารทั้ง 4, ER ครบ 18 ตาราง/19 เส้นและป้ายชื่อครบ; local links 70 จุดและ git diff --check ผ่าน
+- **Scope:** ดาวน์โหลด renderer ไว้ scratch/diagram-renderer และใช้ helper ชั่วคราว ไม่แก้ package dependencies/schema/API หรือฐานข้อมูลจริง
+- **Next:** เปิดรูปขนาดเต็มจาก docs/diagrams/README.md; SVG เหมาะกับขยาย Flowchart และงานพิมพ์
+
+## Latest Database Overview Documentation Task — 2026-11-04
+- **Authorization:** ผู้ใช้อนุมัติ “ลุยเลย” ตามแผน Relationship Diagram 3 กลุ่ม, Flowchart ภาพรวม และข้อเสนอแนะฐานข้อมูล
+- **Changes:** เพิ่ม docs/database-overview.md พร้อม Mermaid ER 3 กลุ่ม ครบ 18 ตารางและ FK หลัก, flowchart และข้อเสนอแนะอ้างอิง source; database/README.md เพิ่มลิงก์
+- **Evidence:** ตรวจ prisma/schema.prisma และ auth/posts/chat/deals/reviews/support/admin APIs รวม market-stats/repair scripts; ไม่เพิ่มเส้น FK handled_by_id หรือ deals.room_id ที่ไม่มีจริง
+- **Validation:** Node ตรวจผ่าน 18 tables / 31 FK จาก Prisma; ER 3 กลุ่มครอบคลุม 18 ตาราง เส้นหลัก 19 เส้นตรง FK และ optional cardinality; รวม Mermaid 4 blocks; local links 50 จุดผ่าน และ git diff --check ผ่าน ไม่ได้ทดสอบ render ด้วย Mermaid parser/viewer โดยตรง
+- **Scope:** เอกสารเท่านั้น ไม่แก้ schema/API ไม่เชื่อมหรือแก้ฐานข้อมูลจริง
+- **Next:** เอกสารพร้อมอ่านผ่าน docs/database-overview.md หรือ database/README.md; ใช้ Markdown viewer ที่รองรับ Mermaid เพื่อดูภาพ ข้อเสนอแนะฐานข้อมูลยังไม่ได้ดำเนินการ
 
 ## Latest Schema Studio Compatibility Task — 2026-11-03
 - **Authorization:** ผู้ใช้อนุมัติ “ลุย” หลังแจ้ง Schema Studio DBML subset error ที่ Project บรรทัด 2
