@@ -2,7 +2,7 @@
 
 **Project:** Durian Hub (ตลาดกลางทุเรียน)
 **Last Updated:** 2026-11-07
-**Current Status:** GITHUB PAGES DEMO BUILT AND VERIFIED — DEPLOYMENT IN PROGRESS
+**Current Status:** GITHUB PAGES DEMO DEPLOYED — LIVE BROWSER CHECKS PASSED
 **Latest Backup:** `D:\csc481_backup_20261030_013531`
 **Presentation Deck & ERD:** `D:\durian_hub_presentation\index.html`
 
@@ -12,8 +12,9 @@
 - **Build:** scripts/build-pages-demo.cjs คัดลอก source แบบ allowlist ไป .pages-demo-build (Git/TypeScript ignore) และ static export พร้อม basePath /durian-hub01; ไม่รวม API, admin, .env, public/uploads หรือข้อมูลฐานข้อมูล; เพิ่ม workflow และคู่มือ
 - **Validation:** static production build ผ่าน; TypeScript ผ่าน; Chrome browser 18/18 checks ผ่าน desktop 1440px/mobile 390px, ไม่มี runtime errors/API requests/broken assets; ตรวจภาพ scratch/pages-demo-desktop.png และ pages-demo-mobile-dark.png
 - **Existing regression results:** tests/*.test.cjs ผ่าน 136/143, ไม่ผ่าน 7 ใน tests/post-roles.test.cjs (role validation และ author role); API source ส่วนนั้นไม่มี diff ในงานเดโมนี้ ไม่ได้แก้ข้อผิดพลาดเหล่านี้
-- **Hosting:** เปิด Pages build_type=workflow สำเร็จที่ public repository; URL เป้าหมาย https://armgun0072-debug.github.io/durian-hub01/
-- **Next:** commit/push และรอ Actions deploy สำเร็จ จากนั้นตรวจ URL จริงและบันทึกผล
+- **Hosting:** เปิด Pages build_type=workflow ที่ public repository; deploy commit 42f0e4af2a2bfaf6436c10acabe8fe56d49b9d04 สำเร็จผ่าน Actions https://github.com/armgun0072-debug/durian-hub01/actions/runs/42272598705 (build/deploy success)
+- **Live validation:** https://armgun0072-debug.github.io/durian-hub01/ เปิดได้; Chrome checks บน URL จริงผ่าน 18/18 ไม่มี runtime errors/API requests/broken assets; เพิ่ม PAGES_DEMO_URL สำหรับตรวจเว็บจริงซ้ำได้
+- **Next:** งาน deploy demo เสร็จแล้ว; source/build configuration ที่ push ไป main จะ deploy ใหม่อัตโนมัติ บันทึกเอกสารและ browser tests ไม่กระตุ้น deploy; ยังมีข้อผิดพลาด API role tests เดิม 7 ข้อตามบันทึกข้างต้น
 
 ## Latest Prisma Client Refresh — 2026-11-07
 - **Authorization:** ผู้ใช้อนุมัติ “ช่วยจัดการที” ตามแผนสร้าง Client ใหม่และตรวจ TypeScript

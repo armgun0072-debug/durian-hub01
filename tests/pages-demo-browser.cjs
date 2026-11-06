@@ -57,7 +57,7 @@ async function main() {
   assert.ok(fs.existsSync(path.join(output, 'index.html')), 'Run npm run build:pages first');
   assert.ok(!fs.existsSync(path.join(output, 'uploads')), 'No uploaded files in artifact');
   await new Promise(resolve => server.listen(0, '127.0.0.1', resolve));
-  const base = `http://127.0.0.1:${server.address().port}${prefix}/`;
+  const base = process.env.PAGES_DEMO_URL || `http://127.0.0.1:${server.address().port}${prefix}/`;
   chrome = spawn(process.env.CHROME_PATH || 'C:/Program Files/Google/Chrome/Application/chrome.exe', ['--headless=new', '--disable-gpu', '--no-first-run', '--disable-extensions', '--remote-debugging-port=0', `--user-data-dir=${profile}`, 'about:blank'], { windowsHide: true, stdio: 'ignore' });
   chrome.on('error', error => errors.push(error.message));
   const portFile = path.join(profile, 'DevToolsActivePort');

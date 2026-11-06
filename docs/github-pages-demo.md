@@ -28,3 +28,5 @@ Verify the Actions run, public URL, asset paths, filters, theme controls and dia
 ## Browser verification
 
 After building, run `node tests/pages-demo-browser.cjs` with Node 22+ and Chrome installed (or set `CHROME_PATH`). The test serves the actual static export under `/durian-hub01/` and checks desktop/mobile layouts, filters, dialogs, chat reset, themes, broken assets and absence of application API requests. It uses no database. Screenshots are written to ignored `scratch/` files.
+
+To repeat the same checks against the published demo, set `PAGES_DEMO_URL=https://armgun0072-debug.github.io/durian-hub01/` before running the browser test.
