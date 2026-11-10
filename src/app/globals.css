@@ -70,7 +70,7 @@
   :focus-visible { outline: 2px solid rgb(var(--brand-ink)); outline-offset: 3px; }
   input:not([type="checkbox"]):not([type="radio"]):not([type="file"]), select, textarea { min-height: 44px; }
   input, select, textarea { accent-color: #047857; }
-  input::placeholder, textarea::placeholder { color: rgb(var(--muted-foreground)); opacity: 0.8; }
+  input::placeholder, textarea::placeholder { color: rgb(var(--muted-foreground)); opacity: 1; }
   select option { background: rgb(var(--surface)); color: rgb(var(--foreground)); }
   input:-webkit-autofill { -webkit-text-fill-color: rgb(var(--foreground)); box-shadow: 0 0 0 1000px rgb(var(--surface)) inset; }
   * { scrollbar-width: thin; scrollbar-color: rgb(var(--line-strong)) transparent; }
@@ -82,7 +82,7 @@
 
 @layer components {
   .theme-switcher { @apply inline-flex shrink-0 items-center gap-0.5 rounded-lg border border-line bg-subtle p-1; }
-  .theme-switcher button { @apply flex h-9 w-9 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-hover hover:text-foreground; }
+  .theme-switcher button { @apply flex h-11 w-11 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-hover hover:text-foreground; }
   .theme-switcher button[aria-pressed="true"] { @apply bg-surface text-brand-ink shadow-sm; }
   .ui-button { @apply inline-flex min-h-11 items-center justify-center gap-2 rounded-lg border px-4 py-2.5 text-sm font-semibold transition-colors disabled:opacity-50; }
   .ui-button-primary { @apply border-emerald-700 bg-emerald-700 text-white hover:border-emerald-800 hover:bg-emerald-800; }

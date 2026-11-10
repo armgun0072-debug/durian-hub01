@@ -1,12 +1,13 @@
 import type { Metadata } from "next";
 import "./globals.css";
+import "./ux-layout.css";
 import { ThemeProvider } from "@/components/theme-provider";
 import { themeBootstrap } from "@/lib/theme";
 
 export const metadata: Metadata = {
   title: "Durian Hub | ตลาดกลางทุเรียนไทยครบวงจร (ชาวสวน • ล้งรับซื้อ • ทีมรับตัด)",
   description:
-    "ระบบตลาดกลางทุเรียน วิเคราะห์ราคากลางแบบเรียลไทม์แยกสายพันธุ์และพื้นที่ พร้อมระบบประกาศขาย รับซื้อ และรับจ้างตัดทุเรียนตามบทบาทสมาชิก",
+    "ระบบตลาดกลางทุเรียน แสดงราคาเสนอจากประกาศแยกสายพันธุ์และพื้นที่ พร้อมระบบประกาศขาย รับซื้อ และรับจ้างตัดทุเรียนตามบทบาทสมาชิก",
 };
 
 export default function RootLayout({

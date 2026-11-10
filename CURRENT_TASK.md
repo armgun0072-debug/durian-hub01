@@ -1,10 +1,47 @@
 # 📌 Project State & Active Task Tracker
 
 **Project:** Durian Hub (ตลาดกลางทุเรียน)
-**Last Updated:** 2026-11-07
-**Current Status:** GITHUB PAGES DEMO DEPLOYED — LIVE BROWSER CHECKS PASSED
+**Last Updated:** 2026-11-11
+**Current Status:** USER + ADMIN UX/UI IMPROVEMENTS IMPLEMENTED AND VERIFIED — 7 EXISTING ROLE TEST FAILURES REMAIN
 **Latest Backup:** `D:\csc481_backup_20261030_013531`
 **Presentation Deck & ERD:** `D:\durian_hub_presentation\index.html`
+
+## Latest UX/UI Implementation — 2026-11-11
+- **Authorization:** ผู้ใช้อนุมัติ “ลุยปรับทั้งผู้ใช้และแอดมิน” ตามแผน audit
+- **Completed:** responsive navigation/chat/admin tables; mobile section selector; real empty/loading/error/retry states; admin outage retains session/data; in-app confirmation and pending controls; truthful review/price labels; listing images; accessible send/theme/filter controls
+- **Files:** src/app/page.tsx, src/app/admin/page.tsx, src/app/ux-layout.css, src/app/globals.css, src/app/layout.tsx, src/components/{review-summary,listing-card,account-settings-dialog,ui}.tsx, src/lib/ui-feedback.ts, src/data/mockData.ts, tests/ui-feedback.test.cjs, scripts/build-pages-demo.cjs
+- **Verification:** TypeScript ผ่าน; targeted tests 13/13; full suite 139/146 (7 failures เดิมใน post-roles); static demo build/export ผ่าน; browser ตรวจ mobile/tablet/desktop ตาม matrix ในรายงาน รวม offline/retry และยกเลิก confirmation โดยไม่เปลี่ยนคะแนน
+- **Runtime:** ซิงก์ source เข้า Docker local แล้ว; browser คืน online, ปิด DevTools, หน้าหลัก dark; ไม่ deploy public หรือเปลี่ยน DB/API
+- **Report:** docs/ux-ui-improvements-2026-11-11.md; ประวัติเดิมใน docs/ui-redesign-results.md
+- **Limits/Next:** scope UX ที่อนุมัติเสร็จแล้ว; role tests 7 ข้อเป็นงานค้างเดิม; ยังไม่รับรอง screen reader/WCAG/physical mobile หรือธุรกรรมครบวงจร
+
+## Prior UX/UI Audit — 2026-11-11 (historical)
+- **Authorization:** ผู้ใช้ขอวิเคราะห์/ปรับ UX/UI เพิ่มแอดมิน และอนุญาต “ตรวจทุกอย่างเลยได้เต็มที่”; รอบนี้ตรวจและทำรายงาน ยังไม่ได้อนุมัติ implementation plan ใหม่
+- **UI inspected:** Edge native + device emulation 320px, 390x844, 768x1024, 1440x900 ตาม matrix ในรายงาน; light/dark; สมาชิก/marketplace/ราคา/inbox/chat/account; admin ทั้ง 5 หมวด; guest login/register/forgot; login EN/200%/offline
+- **Findings:** มือถือ chat actions แตกแนวตั้ง, ตารางสมาชิกแอดมินบีบและเลื่อนยาก, แสดง 5.0 ทั้งที่ 0 รีวิว, ราคาสำรองไม่ระบุที่มา, error/retry/auth ambiguity, admin search ไม่มี empty state, send button ไม่มีชื่อสำหรับ accessibility
+- **Report:** docs/ux-ui-audit-2026-11-11.md มี coverage จริง, UI vs code-only findings, หลักฐานไฟล์/บรรทัด, ความเสี่ยงและแผนแก้; ไม่อ้างว่าตรวจครบทุก combination หรือผ่าน WCAG
+- **Validation:** theme/market-stats unit tests ผ่าน 10/10; TypeScript --noEmit --incremental false ผ่าน; CSS token contrast หลักดี แต่ placeholder light บน surface คำนวณได้ 3.42:1
+- **Side effects:** ไม่มีส่งข้อความ/ลงประกาศ/OTP/ลงโทษ/ลบข้อมูล; offline test ทำใน InPrivate ด้วยข้อมูลสมมติ คืน online ล้างข้อมูลและปิดหน้าต่างแล้ว; คืนหน้าต่างหลักหน้าแรก dark zoom 90%; ไม่แก้ application source
+- **Limits:** ไม่มี physical mobile, screen reader, pixel scan, performance benchmark หรือธุรกรรมครบวงจร; role tests เดิม 7 ข้อไม่ได้รันใหม่
+- **Next:** ให้ผู้ใช้อนุมัติ implementation plan ในรายงานก่อนแก้หน้า marketplace/chat/admin; เริ่ม P1 ของ mobile layout และความถูกต้องของสถานะ/ข้อมูล
+
+## Latest Design Skills Setup — 2026-11-11
+- **Authorization:** ผู้ใช้อนุมัติ “ลุย” ตามแผนติดตั้ง Taste Skill/Hallmark ตรวจ Impeccable เดิม และเพิ่มคู่มือทั้งสามตัว
+- **Changes:** เพิ่ม design-taste-frontend (Taste 2.5.1) และ hallmark (2.0.0) พร้อม assets/references/scripts/LICENSE; Impeccable 4.8.2 คง revision เดิม
+- **Compatibility:** เอา Claude Stop hook ของ Taste ออกจาก frontmatter; เพิ่มหมายเหตุ runtime/scope/approval ให้ทั้งสอง Skills; ไม่เปิด hooks/live mode ไม่เรียก API หรือเปลี่ยน source แอป
+- **Provenance:** Taste f6b76575f949707b4e3c37cd86cb44b0b98643e8; Hallmark 407fa689f4a276f2fd389208d271d0fef08f5058; อัปเดต skills-lock.json พร้อม local adaptations
+- **Guide:** docs/design-skills-guide.md มีตารางเลือกใช้ ตัวอย่างคำขอภาษาไทย ชื่อเรียกจริง และข้อกำหนด browser/Node/API; เชื่อมจาก docs/agent-skills.md
+- **Validation:** python scripts/verify-agent-skills.py ผ่าน (10 managed Skills, 13 ชื่อไม่ซ้ำ, 1,903 file hashes, metadata/LICENSE/local Markdown links); Node v26.7.0; node --check ผ่าน Taste gate/copy-lint และ Hallmark sloplint/theme; Hallmark sloplint --help ผ่าน; git diff --check ผ่าน
+- **Limits:** ยังไม่รัน browser gate, render audit หรือ Impeccable engine กับแอป; ไม่ได้แก้หรือทดสอบ role tests เดิม 7 ข้อใหม่
+- **Next:** งานติดตั้งและคู่มือเสร็จแล้ว; เรียก $design-taste-frontend, $impeccable หรือ $hallmark ในเทิร์นถัดไป หาก IDE ไม่เห็นให้โหลด session ใหม่
+
+## Latest Agent Skills Setup — 2026-11-11
+- **Authorization:** ผู้ใช้อนุมัติ “ลุย” ตามแผนติดตั้ง Find Skills, Skills ที่เลือกจาก Superpowers และ Impeccable พร้อมคู่มือและบันทึกเวอร์ชัน
+- **Changes:** เพิ่ม 8 Skills ใน .agents/skills; ปรับ writing-plans และ executing-plans ให้ใช้ CURRENT_TASK.md และทำงาน inline; คง LICENSE และไฟล์ประกอบ
+- **Provenance:** skills-lock.json เป็น manifest เฉพาะโปรเจกต์ เก็บ pinned commit และ SHA-256; คู่มือ docs/agent-skills.md ระบุขอบเขตและ local adaptations
+- **Scope:** ยังไม่ติดตั้ง claude-mem/task-observer; ไม่เปิด hooks/live mode หรือดาวน์โหลด Impeccable engine; ไม่แก้ source แอป/ฐานข้อมูล/deployment
+- **Validation:** python scratch/verify-agent-skills.py ผ่าน: 8 Skills ใหม่, 11 ชื่อไม่ซ้ำรวมของเดิม, metadata/LICENSE/local Markdown links ครบ, ตรวจ SHA-256 ทั้ง 84 ไฟล์ตรงกับ manifest; git diff --check ผ่าน
+- **Next:** งานติดตั้งเสร็จแล้ว; Skills พร้อมให้ค้นพบในเทิร์นถัดไปหรือโหลด session ใหม่; role tests เดิม 7 ข้อยังไม่ได้แก้หรือทดสอบใหม่ในงานนี้
 
 ## Latest GitHub Pages Demo — 2026-11-07
 - **Authorization:** ผู้ใช้เลือกเว็บเดโมบน GitHub Pages และอนุมัติ “ลุย” ตามแผน static demo, ทดสอบ, commit/push และ deploy

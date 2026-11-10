@@ -1,0 +1,54 @@
+/* Responsive task controls share the existing palette and focus system. */
+.chat-room-actions {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: .5rem;
+  width: 100%;
+}
+.chat-room-actions > :is(button, div) {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 44px;
+  border-radius: .5rem;
+  padding: .625rem .75rem;
+  font-size: .875rem;
+  line-height: 1.5;
+  white-space: normal;
+  overflow-wrap: normal;
+  min-width: 0;
+}
+.chat-room-actions svg { flex-shrink: 0; }
+.mobile-main-nav > button { min-width: 0; min-height: 44px; padding: .5rem .25rem; white-space: normal; overflow-wrap: normal; font-size: .8125rem; justify-content: center; }
+.admin-workspace :is(button, select) { min-height: 44px; }
+.admin-data-table { min-width: 960px; }
+.admin-data-table td { vertical-align: top; overflow-wrap: anywhere; }
+.admin-data-table td > :is(p, div, span) { max-width: 100%; }
+.admin-data-table td[data-label="คะแนนและรีวิว"] > div { flex-wrap: wrap; gap: .5rem; }
+.admin-data-table button { min-height: 44px; padding: .5rem .75rem; margin: .125rem; }
+.admin-data-table button:disabled { opacity: .5; }
+.admin-data-table [data-label="การจัดการ"] { white-space: nowrap; }
+.admin-empty-row td { white-space: normal; }
+
+@media (min-width: 640px) {
+  .chat-room-actions { display: flex; flex-wrap: wrap; width: auto; }
+}
+@media (max-width: 1023px) {
+  .admin-data-table { display: block; width: 100%; min-width: 0; }
+  .admin-data-table thead { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); }
+  .admin-data-table tbody { display: block; padding: .75rem; }
+  .admin-data-table tbody tr { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: .75rem 1rem; padding: 1rem 0; }
+  .admin-data-table td { display: block; padding: 0; max-width: none; min-width: 0; white-space: normal; font-size: .875rem; }
+  .admin-data-table td::before { display: block; content: attr(data-label); color: rgb(var(--muted-foreground)); font-size: .75rem; font-weight: 500; margin-bottom: .375rem; }
+  .admin-data-table td:first-child, .admin-data-table td[data-label="ติดต่อ"], .admin-data-table td[data-label="คะแนนและรีวิว"], .admin-data-table td[data-label="การจัดการ"] { grid-column: 1 / -1; }
+  .admin-data-table td:first-child p { font-size: 1rem; }
+  .admin-data-table td[data-label="การจัดการ"] { text-align: left; display: flex; flex-wrap: wrap; gap: .5rem; }
+  .admin-data-table td[data-label="การจัดการ"]::before { width: 100%; }
+  .admin-data-table .admin-empty-row { display: block; padding: 1.5rem .5rem; }
+  .admin-data-table .admin-empty-row td::before { display: none; }
+}
+@media (max-width: 639px) {
+  .market-tabs { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); width: 100%; }
+  .market-tabs > button { min-width: 0; white-space: normal; padding: .5rem .25rem; gap: .25rem; font-size: .8125rem; }
+  .theme-switcher { gap: 0; padding: 0; border: 0; background: transparent; }
+}

@@ -20,12 +20,14 @@ const files = {
   'src/demo/page.tsx': 'src/app/page.tsx',
   'src/app/layout.tsx': 'src/app/layout.tsx',
   'src/app/globals.css': 'src/app/globals.css',
+  'src/app/ux-layout.css': 'src/app/ux-layout.css',
+  'src/lib/ui-feedback.ts': 'src/lib/ui-feedback.ts',
   'src/data/mockData.ts': 'src/data/mockData.ts',
   'src/lib/theme.ts': 'src/lib/theme.ts',
   'tailwind.config.ts': 'tailwind.config.ts',
   'postcss.config.js': 'postcss.config.js',
 };
-for (const component of ['listing-card', 'theme-provider', 'theme-switcher', 'dialog-frame', 'ui']) {
+for (const component of ['listing-card', 'review-summary', 'theme-provider', 'theme-switcher', 'dialog-frame', 'ui']) {
   files[`src/components/${component}.tsx`] = `src/components/${component}.tsx`;
 }
 for (const [source, target] of Object.entries(files)) {

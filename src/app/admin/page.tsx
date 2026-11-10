@@ -1,10 +1,12 @@
 "use client";
+import { ReviewSummary } from "@/components/review-summary";
+import { loadAdminOverview } from "@/lib/ui-feedback";
 import { SupportCenter } from "@/components/support-center";
 
 import { ThemeSwitcher } from "@/components/theme-switcher";
 import { PageHeading } from "@/components/ui";
 import { DialogFrame } from "@/components/dialog-frame";
-import React, { useState, useEffect, useTransition } from "react";
+import React, { useState, useEffect, useTransition, useRef } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import {
@@ -171,25 +173,58 @@ export default function AdminPortalPage() {
   const [selectedGrantRole, setSelectedGrantRole] = useState<"SELLER" | "BUYER" | "CUTTER">("SELLER");
   const [grantBusinessName, setGrantBusinessName] = useState("");
 
-  // Check current admin session on load
+  const [overviewError, setOverviewError] = useState(false);
+  const [mutationPending, setMutationPending] = useState(false);
+  const mutationLock = useRef(false);
+  const [notice, setNotice] = useState<{ text: string; kind: "error" | "success" } | null>(null);
+  const [confirmMessage, setConfirmMessage] = useState<string | null>(null);
+  const confirmation = useRef<((confirmed: boolean) => void) | null>(null);
+  useEffect(() => () => { confirmation.current?.(false); }, []);
+  const notify = (text: string, kind: "error" | "success" = "error") => setNotice({ text, kind });
+  const requestConfirmation = (message: string): Promise<boolean> => {
+    if (confirmation.current || mutationLock.current) return Promise.resolve(false);
+    setConfirmMessage(message);
+    return new Promise(resolve => { confirmation.current = resolve; });
+  };
+  const finishConfirmation = (confirmed: boolean) => {
+    const resolve = confirmation.current;
+    confirmation.current = null;
+    setConfirmMessage(null);
+    resolve?.(confirmed);
+  };
+  const adminActionFetch: typeof fetch = async (input, init) => {
+    if (mutationLock.current) throw new Error("Action already in progress");
+    mutationLock.current = true;
+    setMutationPending(true);
+    setNotice(null);
+    try { return await fetch(input, init); }
+    finally { mutationLock.current = false; setMutationPending(false); }
+  };
+
   const checkAdminAuth = async () => {
-    try {
-      const res = await fetch("/api/admin/overview");
-      if (res.ok) {
-        const data = await res.json();
-        setIsAdminAuthenticated(true);
-        setAdminUser(data.admin);
-        setSummary(data.summary);
-        setRoleRequests(data.roleRequests || []);
-        setPostReports(data.postReports || []);
-        setPosts(data.posts || []);
-        setUsers(data.users || []);
-      } else {
-        setIsAdminAuthenticated(false);
-      }
-    } catch {
+    setIsLoadingData(true);
+    setOverviewError(false);
+    const result = await loadAdminOverview<{
+      admin: NonNullable<typeof adminUser>; summary: typeof summary;
+      roleRequests?: RoleRequestItem[]; postReports?: PostReportItem[];
+      posts?: PostItem[]; users?: UserSummary[];
+    }>();
+    if (result.kind === "ready") {
+      const data = result.data;
+      setIsAdminAuthenticated(true);
+      setAdminUser(data.admin);
+      setSummary(data.summary);
+      setRoleRequests(data.roleRequests || []);
+      setPostReports(data.postReports || []);
+      setPosts(data.posts || []);
+      setUsers(data.users || []);
+    } else if (result.kind === "unauthenticated") {
       setIsAdminAuthenticated(false);
+      setAdminUser(null);
+    } else {
+      setOverviewError(true);
     }
+    setIsLoadingData(false);
   };
 
   useEffect(() => {
@@ -247,7 +282,7 @@ export default function AdminPortalPage() {
     setActionLoading(true);
 
     try {
-      const res = await fetch(`/api/admin/role-requests/${actionModal.id}`, {
+      const res = await adminActionFetch(`/api/admin/role-requests/${actionModal.id}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -258,14 +293,14 @@ export default function AdminPortalPage() {
 
       const data = await res.json();
       if (!res.ok) {
-        alert(data.error || "เกิดข้อผิดพลาด");
+        notify(data.error || "เกิดข้อผิดพลาด");
       } else {
         setActionModal(null);
         setAdminRemarkInput("");
         await refreshData();
       }
     } catch {
-      alert("เกิดข้อผิดพลาดในการดำเนินการ");
+      notify("เกิดข้อผิดพลาดในการดำเนินการ");
     } finally {
       setActionLoading(false);
     }
@@ -292,7 +327,7 @@ export default function AdminPortalPage() {
 
     if (
       action === "HIDE_POST_AND_RESOLVE" &&
-      !confirm(
+      !await requestConfirmation(
         `ยืนยันการซ่อนประกาศนี้ออกจากระบบ และหักคะแนนความประพฤติผู้ลงประกาศ (-${deductScore} คะแนน)?`
       )
     ) {
@@ -300,20 +335,20 @@ export default function AdminPortalPage() {
     }
 
     try {
-      const res = await fetch(`/api/admin/reports/${reportId}`, {
+      const res = await adminActionFetch(`/api/admin/reports/${reportId}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ action, deductScore }),
       });
       const data = await res.json();
       if (!res.ok) {
-        alert(data.error || "เกิดข้อผิดพลาด");
+        notify(data.error || "เกิดข้อผิดพลาด");
       } else {
-        if (data.message) alert(data.message);
+        if (data.message) notify(data.message, "success");
         await refreshData();
       }
     } catch {
-      alert("เกิดข้อผิดพลาดในการดำเนินการ");
+      notify("เกิดข้อผิดพลาดในการดำเนินการ");
     }
   };
 
@@ -322,65 +357,65 @@ export default function AdminPortalPage() {
       delta < 0
         ? `ยืนยันการหักคะแนนความประพฤติของคุณ ${name} จำนวน ${delta} คะแนน?\n(ระบบจะคำนวณวันระงับบัญชีอัตโนมัติตามระดับคะแนนคงเหลือ)`
         : `ยืนยันการเพิ่ม/คืนคะแนนความประพฤติให้คุณ ${name} จำนวน +${delta} คะแนน (สูงสุด 100)?`;
-    if (!confirm(msg)) return;
+    if (!await requestConfirmation(msg)) return;
 
     try {
-      const res = await fetch(`/api/admin/users/${userId}`, {
+      const res = await adminActionFetch(`/api/admin/users/${userId}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ action: "ADJUST_TRUST", delta }),
       });
       const data = await res.json();
       if (res.ok) {
-        if (data.message) alert(data.message);
+        if (data.message) notify(data.message, "success");
         await refreshData();
       } else {
-        alert(data.error || "ไม่สามารถปรับคะแนนได้");
+        notify(data.error || "ไม่สามารถปรับคะแนนได้");
       }
     } catch {
-      alert("เกิดข้อผิดพลาดในการปรับคะแนน");
+      notify("เกิดข้อผิดพลาดในการปรับคะแนน");
     }
   };
 
   const handleResetUserTrust = async (userId: number, name: string) => {
-    if (!confirm(`ยืนยันการรีเซ็ตคะแนนความประพฤติของคุณ ${name} กลับเป็น 100/100 และปลดล็อกบัญชี?`)) return;
+    if (!await requestConfirmation(`ยืนยันการรีเซ็ตคะแนนความประพฤติของคุณ ${name} กลับเป็น 100/100 และปลดล็อกบัญชี?`)) return;
     try {
-      const res = await fetch(`/api/admin/users/${userId}`, {
+      const res = await adminActionFetch(`/api/admin/users/${userId}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ action: "RESET_TRUST" }),
       });
       const data = await res.json();
       if (res.ok) {
-        if (data.message) alert(data.message);
+        if (data.message) notify(data.message, "success");
         await refreshData();
       } else {
-        alert(data.error || "ไม่สามารถรีเซ็ตคะแนนได้");
+        notify(data.error || "ไม่สามารถรีเซ็ตคะแนนได้");
       }
     } catch {
-      alert("เกิดข้อผิดพลาดในการรีเซ็ตคะแนน");
+      notify("เกิดข้อผิดพลาดในการรีเซ็ตคะแนน");
     }
   };
 
   // Handle Post Moderation (Hide/Restore/Delete)
   const handlePostAction = async (postId: number, action: "HIDE" | "RESTORE" | "TOGGLE_OUTLIER" | "DELETE") => {
     if (action === "DELETE") {
-      if (!confirm("คุณแน่ใจหรือไม่ว่าต้องการลบประกาศนี้ออกจากระบบอย่างถาวร?")) return;
+      if (!await requestConfirmation("คุณแน่ใจหรือไม่ว่าต้องการลบประกาศนี้ออกจากระบบอย่างถาวร?")) return;
       try {
-        const res = await fetch(`/api/admin/posts/${postId}`, { method: "DELETE" });
+        const res = await adminActionFetch(`/api/admin/posts/${postId}`, { method: "DELETE" });
         if (res.ok) {
           await refreshData();
         } else {
-          alert("ไม่สามารถลบประกาศได้");
+          notify("ไม่สามารถลบประกาศได้");
         }
       } catch {
-        alert("เกิดข้อผิดพลาดในการลบประกาศ");
+        notify("เกิดข้อผิดพลาดในการลบประกาศ");
       }
       return;
     }
 
     try {
-      const res = await fetch(`/api/admin/posts/${postId}`, {
+      const res = await adminActionFetch(`/api/admin/posts/${postId}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ action }),
@@ -388,10 +423,10 @@ export default function AdminPortalPage() {
       if (res.ok) {
         await refreshData();
       } else {
-        alert("ไม่สามารถดำเนินการได้");
+        notify("ไม่สามารถดำเนินการได้");
       }
     } catch {
-      alert("เกิดข้อผิดพลาดในการดำเนินการ");
+      notify("เกิดข้อผิดพลาดในการดำเนินการ");
     }
   };
 
@@ -403,10 +438,10 @@ export default function AdminPortalPage() {
         ? `ยืนยันการระงับการใช้งานบัญชีของคุณ ${name}?`
         : `ยืนยันการปลดระงับและเปิดใช้งานบัญชีของคุณ ${name}?`;
 
-    if (!confirm(confirmMsg)) return;
+    if (!await requestConfirmation(confirmMsg)) return;
 
     try {
-      const res = await fetch(`/api/admin/users/${userId}`, {
+      const res = await adminActionFetch(`/api/admin/users/${userId}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ action }),
@@ -414,17 +449,17 @@ export default function AdminPortalPage() {
       if (res.ok) {
         await refreshData();
       } else {
-        alert("ไม่สามารถเปลี่ยนสถานะได้");
+        notify("ไม่สามารถเปลี่ยนสถานะได้");
       }
     } catch {
-      alert("เกิดข้อผิดพลาด");
+      notify("เกิดข้อผิดพลาด");
     }
   };
 
   const handleGrantRoleSubmit = async () => {
     if (!grantRoleModal) return;
     try {
-      const res = await fetch(`/api/admin/users/${grantRoleModal.userId}`, {
+      const res = await adminActionFetch(`/api/admin/users/${grantRoleModal.userId}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -435,15 +470,15 @@ export default function AdminPortalPage() {
       });
       const data = await res.json();
       if (res.ok) {
-        alert(data.message || "มอบสิทธิ์สำเร็จ");
+        notify(data.message || "มอบสิทธิ์สำเร็จ", "success");
         setGrantRoleModal(null);
         setGrantBusinessName("");
         await refreshData();
       } else {
-        alert(data.error || "เกิดข้อผิดพลาด");
+        notify(data.error || "เกิดข้อผิดพลาด");
       }
     } catch {
-      alert("เกิดข้อผิดพลาดในการมอบบทบาท");
+      notify("เกิดข้อผิดพลาดในการมอบบทบาท");
     }
   };
 
@@ -477,8 +512,9 @@ export default function AdminPortalPage() {
     return (
       <div className="min-h-screen bg-surface flex items-center justify-center">
         <div className="flex flex-col items-center gap-3">
-          <RefreshCw className="w-8 h-8 text-brand-ink animate-spin" />
-          <p className="text-muted-foreground text-sm">กำลังตรวจสอบสิทธิ์ผู้ดูแลระบบ...</p>
+          <RefreshCw className={`w-8 h-8 text-brand-ink ${overviewError ? "" : "animate-spin"}`} aria-hidden="true" />
+          <p className="text-secondary text-sm" role={overviewError ? "alert" : "status"}>{overviewError ? "โหลดข้อมูลผู้ดูแลไม่สำเร็จ โปรดตรวจการเชื่อมต่อแล้วลองใหม่" : "กำลังตรวจสอบสิทธิ์ผู้ดูแลระบบ…"}</p>
+          {overviewError && <button type="button" className="ui-button ui-button-primary" disabled={isLoadingData} onClick={() => void checkAdminAuth()}>ลองใหม่</button>}
         </div>
       </div>
     );
@@ -560,7 +596,7 @@ export default function AdminPortalPage() {
             <div className="mt-6 pt-5 border-t border-line flex items-center justify-between text-xs text-muted-foreground">
               <span className="flex items-center gap-1.5">
                 <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-                ระบบรักษาความปลอดภัย 256-bit
+                สำหรับเจ้าหน้าที่ที่ได้รับสิทธิ์เท่านั้น
               </span>
               <Link
                 href="/"
@@ -591,7 +627,7 @@ export default function AdminPortalPage() {
 
   const filteredUsers = users.filter((u) => {
     if (!userSearch.trim()) return true;
-    const q = userSearch.toLowerCase();
+    const q = userSearch.trim().toLowerCase();
     return (
       u.fullName.toLowerCase().includes(q) ||
       u.email.toLowerCase().includes(q) ||
@@ -668,13 +704,16 @@ export default function AdminPortalPage() {
       </header>
 
       {/* Main Body */}
-      <main id="admin-main" className="app-main space-y-6">
+      <main id="admin-main" className="app-main admin-workspace space-y-6" aria-busy={isLoadingData}>
+        {overviewError && <div role="alert" className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-danger-line bg-danger-soft p-4 text-sm text-danger-ink"><span>โหลดข้อมูลล่าสุดไม่สำเร็จ กำลังแสดงข้อมูลที่โหลดไว้ก่อนหน้า</span><button className="ui-button ui-button-secondary" disabled={isLoadingData} onClick={() => void refreshData()}>ลองใหม่</button></div>}
+        {notice && <div role={notice.kind === "error" ? "alert" : "status"} className={`flex items-start justify-between gap-3 rounded-xl border p-4 text-sm ${notice.kind === "error" ? "border-danger-line bg-danger-soft text-danger-ink" : "border-brand-line bg-brand-soft text-brand-ink"}`}><span>{notice.text}</span><button type="button" className="min-h-11 shrink-0 px-3" aria-label="ปิดข้อความแจ้งผล" onClick={() => setNotice(null)}>ปิด</button></div>}
+        {mutationPending && <p role="status" className="text-sm text-secondary">กำลังบันทึกการดำเนินการ…</p>}
         <PageHeading eyebrow="ADMIN WORKSPACE" title="ภาพรวมการดูแลระบบ" description="ตรวจสอบรายการที่รอดำเนินการ และจัดการข้อมูลตลาดกลาง" />
         {/* KPI / Summary Cards */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
           {/* Card 1: Pending Role Requests */}
           <div
-            onClick={() => setActiveTab("ROLE_REQUESTS")}
+            aria-pressed={activeTab === "ROLE_REQUESTS"} onClick={() => setActiveTab("ROLE_REQUESTS")}
             className={`cursor-pointer p-5 rounded-xl border transition-all ${
               activeTab === "ROLE_REQUESTS"
                 ? "bg-brand-soft/40 border-brand-line/40 shadow-panel "
@@ -700,7 +739,7 @@ export default function AdminPortalPage() {
 
           {/* Card 2: User Reports */}
           <div
-            onClick={() => setActiveTab("REPORTS")}
+            aria-pressed={activeTab === "REPORTS"} onClick={() => setActiveTab("REPORTS")}
             className={`cursor-pointer p-5 rounded-xl border transition-all ${
               activeTab === "REPORTS"
                 ? "bg-danger-soft/40 border-danger-line/40 shadow-panel "
@@ -730,7 +769,7 @@ export default function AdminPortalPage() {
 
           {/* Card 3: Marketplace Posts */}
           <div
-            onClick={() => setActiveTab("POSTS")}
+            aria-pressed={activeTab === "POSTS"} onClick={() => setActiveTab("POSTS")}
             className={`cursor-pointer p-5 rounded-xl border transition-all ${
               activeTab === "POSTS"
                 ? "bg-info-soft/40 border-info-line/40 shadow-panel "
@@ -756,7 +795,7 @@ export default function AdminPortalPage() {
 
           {/* Card 4: Total Users */}
           <div
-            onClick={() => setActiveTab("USERS")}
+            aria-pressed={activeTab === "USERS"} onClick={() => setActiveTab("USERS")}
             className={`cursor-pointer p-5 rounded-xl border transition-all ${
               activeTab === "USERS"
                 ? "bg-accent-soft/40 border-accent-line/40 shadow-panel "
@@ -780,10 +819,20 @@ export default function AdminPortalPage() {
         </div>
 
         {/* Tab Navigation */}
-        <div className="border-b border-line flex items-center gap-2 overflow-x-auto pb-1">
-          <button className={`px-4 py-2.5 rounded-lg text-sm font-semibold shrink-0 ${activeTab === "SUPPORT" ? "bg-brand-soft text-brand-ink" : "text-muted-foreground"}`} onClick={() => setActiveTab("SUPPORT")}>ศูนย์ช่วยเหลือ · แชตกับผู้ใช้</button>
+        <label className="block space-y-2 text-sm font-semibold text-secondary lg:hidden">
+          หมวดงานผู้ดูแล
+          <select className="w-full rounded-lg border border-line bg-surface px-3 py-2.5 text-foreground" value={activeTab} onChange={event => setActiveTab(event.target.value as typeof activeTab)}>
+            <option value="ROLE_REQUESTS">คำขอเพิ่มบทบาท ({summary.pendingRoleRequestsCount} รอตรวจ)</option>
+            <option value="REPORTS">รายงานปัญหา ({summary.pendingReportsCount} รอตรวจ)</option>
+            <option value="POSTS">ประกาศและราคา</option>
+            <option value="USERS">สมาชิก</option>
+            <option value="SUPPORT">ศูนย์ช่วยเหลือ</option>
+          </select>
+        </label>
+        <div role="group" aria-label="หมวดงานผู้ดูแล" className="hidden border-b border-line items-center gap-2 overflow-x-auto pb-1 lg:flex">
+          <button className={`px-4 py-2.5 rounded-lg text-sm font-semibold shrink-0 ${activeTab === "SUPPORT" ? "bg-brand-soft text-brand-ink" : "text-muted-foreground"}`} aria-pressed={activeTab === "SUPPORT"} onClick={() => setActiveTab("SUPPORT")}>ศูนย์ช่วยเหลือ · แชตกับผู้ใช้</button>
           <button
-            onClick={() => setActiveTab("ROLE_REQUESTS")}
+            aria-pressed={activeTab === "ROLE_REQUESTS"} onClick={() => setActiveTab("ROLE_REQUESTS")}
             className={`px-4 py-2.5 rounded-lg text-sm font-semibold flex items-center gap-2 transition-all shrink-0 ${
               activeTab === "ROLE_REQUESTS"
                 ? "bg-emerald-500/20 text-brand-ink border border-brand-line/30"
@@ -800,7 +849,7 @@ export default function AdminPortalPage() {
           </button>
 
           <button
-            onClick={() => setActiveTab("REPORTS")}
+            aria-pressed={activeTab === "REPORTS"} onClick={() => setActiveTab("REPORTS")}
             className={`px-4 py-2.5 rounded-lg text-sm font-semibold flex items-center gap-2 transition-all shrink-0 ${
               activeTab === "REPORTS"
                 ? "bg-rose-500/20 text-danger-ink border border-danger-line/30"
@@ -817,7 +866,7 @@ export default function AdminPortalPage() {
           </button>
 
           <button
-            onClick={() => setActiveTab("POSTS")}
+            aria-pressed={activeTab === "POSTS"} onClick={() => setActiveTab("POSTS")}
             className={`px-4 py-2.5 rounded-lg text-sm font-semibold flex items-center gap-2 transition-all shrink-0 ${
               activeTab === "POSTS"
                 ? "bg-cyan-500/20 text-info-ink border border-info-line/30"
@@ -829,7 +878,7 @@ export default function AdminPortalPage() {
           </button>
 
           <button
-            onClick={() => setActiveTab("USERS")}
+            aria-pressed={activeTab === "USERS"} onClick={() => setActiveTab("USERS")}
             className={`px-4 py-2.5 rounded-lg text-sm font-semibold flex items-center gap-2 transition-all shrink-0 ${
               activeTab === "USERS"
                 ? "bg-purple-500/20 text-accent-ink border border-accent-line/30"
@@ -862,6 +911,7 @@ export default function AdminPortalPage() {
                 {(["PENDING", "APPROVED", "REJECTED", "ALL"] as const).map((filter) => (
                   <button
                     key={filter}
+                    aria-pressed={requestFilter === filter}
                     onClick={() => setRequestFilter(filter)}
                     className={`px-3 py-1.5 rounded-lg font-medium transition-all ${
                       requestFilter === filter
@@ -886,7 +936,7 @@ export default function AdminPortalPage() {
                 <FileCheck className="w-12 h-12 text-muted-foreground mx-auto mb-3" />
                 <p className="text-secondary font-semibold text-sm">ไม่มีคำขอในหมวดหมู่นี้</p>
                 <p className="text-muted-foreground text-xs mt-1">
-                  เมื่อมีผู้ใช้ยื่นเอกสารขอเพิ่มบทบาท รายการจะปรากฏที่นี่แบบ Real-time
+                  กดรีเฟรชข้อมูลเพื่อตรวจคำขอที่เข้ามาใหม่
                 </p>
               </div>
             ) : (
@@ -1194,7 +1244,8 @@ export default function AdminPortalPage() {
 
                           <div className="flex items-center justify-end gap-2.5">
                             <button
-                              onClick={() => handleReportAction(rep.id, "DISMISS")}
+                              disabled={mutationPending}
+                          onClick={() => handleReportAction(rep.id, "DISMISS")}
                               className="px-4 py-2 rounded-lg bg-muted hover:bg-hover text-secondary text-xs font-semibold transition-all cursor-pointer"
                             >
                               ยกเลิกคำร้อง (ประกาศปกติ)
@@ -1239,6 +1290,7 @@ export default function AdminPortalPage() {
                 {(["ALL", "OUTLIER", "HIDDEN"] as const).map((f) => (
                   <button
                     key={f}
+                    aria-pressed={postFilter === f}
                     onClick={() => setPostFilter(f)}
                     className={`px-3 py-1.5 rounded-lg font-medium transition-all ${
                       postFilter === f
@@ -1257,21 +1309,22 @@ export default function AdminPortalPage() {
             </div>
 
             <div className="overflow-x-auto bg-surface/80 rounded-xl border border-line">
-              <table className="w-full text-left text-xs">
-                <thead className="bg-canvas/80 text-muted-foreground font-semibold border-b border-line">
-                  <tr>
-                    <th className="py-3 px-4">หัวข้อประกาศ</th>
-                    <th className="py-3 px-4">หมวดหมู่</th>
-                    <th className="py-3 px-4">ราคา / หน่วย</th>
-                    <th className="py-3 px-4">ผู้ลงประกาศ</th>
-                    <th className="py-3 px-4">สถานะ</th>
-                    <th className="py-3 px-4 text-right">การจัดการ</th>
+              <table role="table" aria-label="ประกาศในตลาดกลาง" className="admin-data-table w-full text-left text-sm">
+                <thead role="rowgroup" className="bg-canvas/80 text-muted-foreground font-semibold border-b border-line">
+                  <tr role="row">
+                    <th scope="col" className="py-3 px-4">หัวข้อประกาศ</th>
+                    <th scope="col" className="py-3 px-4">หมวดหมู่</th>
+                    <th scope="col" className="py-3 px-4">ราคา / หน่วย</th>
+                    <th scope="col" className="py-3 px-4">ผู้ลงประกาศ</th>
+                    <th scope="col" className="py-3 px-4">สถานะ</th>
+                    <th scope="col" className="py-3 px-4 text-right">การจัดการ</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-line/60">
+                <tbody role="rowgroup" className="divide-y divide-line/60">
+                  {filteredPosts.length === 0 && <tr role="row" className="admin-empty-row"><td role="cell" colSpan={6} className="p-8 text-center"><p className="font-semibold">ไม่มีประกาศในตัวกรองนี้</p><button className="ui-button ui-button-secondary mt-4" onClick={() => setPostFilter("ALL")}>ดูประกาศทั้งหมด</button></td></tr>}
                   {filteredPosts.map((post) => (
-                    <tr key={post.id} className="hover:bg-muted/40 transition-colors">
-                      <td className="py-3.5 px-4 font-medium text-foreground max-w-xs truncate">
+                    <tr role="row" key={post.id} className="hover:bg-muted/40 transition-colors">
+                      <td role="cell" data-label="หัวข้อประกาศ" className="py-3.5 px-4 font-medium text-foreground max-w-xs truncate">
                         {post.title}
                         <div className="text-xs text-muted-foreground font-normal">
                           {post.variety?.nameTh} • เกรด {post.grade?.nameTh || "ทั่วไป"} • จ.
@@ -1279,7 +1332,7 @@ export default function AdminPortalPage() {
                         </div>
                       </td>
 
-                      <td className="py-3.5 px-4">
+                      <td role="cell" data-label="ประเภท" className="py-3.5 px-4">
                         <span
                           className={`px-2 py-0.5 rounded-full text-xs font-semibold ${
                             post.postType === "SELL"
@@ -1297,7 +1350,7 @@ export default function AdminPortalPage() {
                         </span>
                       </td>
 
-                      <td className="py-3.5 px-4">
+                      <td role="cell" data-label="ราคาและหน่วย" className="py-3.5 px-4">
                         <span className="font-semibold text-foreground text-sm">
                           ฿{post.price}
                         </span>{" "}
@@ -1311,12 +1364,12 @@ export default function AdminPortalPage() {
                         )}
                       </td>
 
-                      <td className="py-3.5 px-4">
+                      <td role="cell" data-label="ผู้ลงประกาศ" className="py-3.5 px-4">
                         <p className="text-foreground font-medium">{post.user.fullName}</p>
                         <p className="text-muted-foreground text-xs">โทร {post.user.phone}</p>
                       </td>
 
-                      <td className="py-3.5 px-4">
+                      <td role="cell" data-label="สถานะ" className="py-3.5 px-4">
                         {post.status === "HIDDEN_BY_ADMIN" ? (
                           <span className="px-2 py-0.5 rounded-full text-xs font-semibold bg-rose-500/20 text-danger-ink border border-danger-line/30">
                             ถูกซ่อน
@@ -1332,9 +1385,10 @@ export default function AdminPortalPage() {
                         )}
                       </td>
 
-                      <td className="py-3.5 px-4 text-right space-x-2">
+                      <td role="cell" data-label="การจัดการ" className="py-3.5 px-4 text-right space-x-2">
                         {post.status === "HIDDEN_BY_ADMIN" ? (
                           <button
+                            disabled={mutationPending}
                             onClick={() => handlePostAction(post.id, "RESTORE")}
                             className="px-2.5 py-1 rounded-lg bg-emerald-700/20 hover:bg-emerald-700/30 text-brand-ink border border-brand-line/30 text-xs font-medium transition-all"
                           >
@@ -1342,6 +1396,7 @@ export default function AdminPortalPage() {
                           </button>
                         ) : (
                           <button
+                            disabled={mutationPending}
                             onClick={() => handlePostAction(post.id, "HIDE")}
                             className="px-2.5 py-1 rounded-lg bg-muted hover:bg-hover text-danger-ink text-xs font-medium transition-all"
                           >
@@ -1350,6 +1405,7 @@ export default function AdminPortalPage() {
                         )}
 
                         <button
+                            disabled={mutationPending}
                           onClick={() => handlePostAction(post.id, "TOGGLE_OUTLIER")}
                           className="px-2.5 py-1 rounded-lg bg-muted hover:bg-hover text-warning-ink text-xs font-medium transition-all"
                           title="สลับสถานะราคาผิดปกติ"
@@ -1358,6 +1414,7 @@ export default function AdminPortalPage() {
                         </button>
 
                         <button
+                            disabled={mutationPending}
                           onClick={() => handlePostAction(post.id, "DELETE")}
                           className="px-2.5 py-1 rounded-lg bg-rose-500/10 hover:bg-rose-500/20 text-danger-ink text-xs font-medium transition-all"
                           title="ลบถาวร"
@@ -1388,6 +1445,7 @@ export default function AdminPortalPage() {
                 </p>
               </div>
 
+              {userSearch && <button className="ui-button ui-button-ghost" onClick={() => setUserSearch("")}>ล้างคำค้น ({filteredUsers.length} รายการ)</button>}
               {/* Search bar */}
               <div className="relative w-full sm:w-64">
                 <Search className="w-4 h-4 text-muted-foreground absolute left-3 top-2.5" />
@@ -1395,6 +1453,7 @@ export default function AdminPortalPage() {
                   type="text"
                   value={userSearch}
                   onChange={(e) => setUserSearch(e.target.value)}
+                  aria-label="ค้นหาสมาชิกด้วยชื่อ อีเมล เบอร์โทร หรือจังหวัด"
                   placeholder="ค้นหาชื่อ, อีเมล, เบอร์โทร..."
                   className="w-full pl-9 pr-4 py-2 bg-canvas border border-line rounded-lg text-xs text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-accent-line"
                 />
@@ -1402,41 +1461,42 @@ export default function AdminPortalPage() {
             </div>
 
             <div className="overflow-x-auto bg-surface/80 rounded-xl border border-line">
-              <table className="w-full text-left text-xs">
-                <thead className="bg-canvas/80 text-muted-foreground font-semibold border-b border-line">
-                  <tr>
-                    <th className="py-3 px-4">ผู้ใช้งาน</th>
-                    <th className="py-3 px-4">เบอร์โทร & อีเมล</th>
-                    <th className="py-3 px-4">จังหวัด</th>
-                    <th className="py-3 px-4">บทบาทที่ได้รับอนุมัติ</th>
-                    <th className="py-3 px-4">คะแนนความประพฤติ (100) & ดาวรีวิว</th>
-                    <th className="py-3 px-4">สถานะ & วันระงับ</th>
-                    <th className="py-3 px-4 text-right">ช่วยเหลือ / ดำเนินการ</th>
+              <table role="table" aria-label="สมาชิกในระบบ" className="admin-data-table w-full text-left text-sm">
+                <thead role="rowgroup" className="bg-canvas/80 text-muted-foreground font-semibold border-b border-line">
+                  <tr role="row">
+                    <th scope="col" className="py-3 px-4">ผู้ใช้งาน</th>
+                    <th scope="col" className="py-3 px-4">เบอร์โทร & อีเมล</th>
+                    <th scope="col" className="py-3 px-4">จังหวัด</th>
+                    <th scope="col" className="py-3 px-4">บทบาทที่ได้รับอนุมัติ</th>
+                    <th scope="col" className="py-3 px-4">คะแนนความประพฤติ (100) & ดาวรีวิว</th>
+                    <th scope="col" className="py-3 px-4">สถานะ & วันระงับ</th>
+                    <th scope="col" className="py-3 px-4 text-right">ช่วยเหลือ / ดำเนินการ</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-line/60">
+                <tbody role="rowgroup" className="divide-y divide-line/60">
+                  {filteredUsers.length === 0 && <tr role="row" className="admin-empty-row"><td role="cell" colSpan={7} className="p-8 text-center"><p className="font-semibold">ไม่พบสมาชิกที่ตรงกับคำค้น</p><p className="mt-2 text-sm text-secondary">ลองค้นหาด้วยชื่อ อีเมล เบอร์โทร หรือจังหวัดอื่น</p><button className="ui-button ui-button-secondary mt-4" onClick={() => setUserSearch("")}>ล้างคำค้น</button></td></tr>}
                   {filteredUsers.map((u) => {
                     const approvedRoleTypes = u.roles
                       .filter((r) => r.status === "ACTIVE")
                       .map((r) => r.roleType);
 
                     return (
-                      <tr key={u.id} className="hover:bg-muted/40 transition-colors">
-                        <td className="py-3.5 px-4">
+                      <tr role="row" key={u.id} className="hover:bg-muted/40 transition-colors">
+                        <td role="cell" data-label="สมาชิก" className="py-3.5 px-4">
                           <p className="font-semibold text-foreground">{u.fullName}</p>
                           <span className="text-xs text-muted-foreground">ID: #{u.id}</span>
                         </td>
 
-                        <td className="py-3.5 px-4">
+                        <td role="cell" data-label="ติดต่อ" className="py-3.5 px-4">
                           <p className="text-foreground font-mono">{u.phone}</p>
                           <p className="text-muted-foreground text-xs">{u.email}</p>
                         </td>
 
-                        <td className="py-3.5 px-4 text-secondary">
-                          {u.location?.province || "จันทบุรี"}
+                        <td role="cell" data-label="จังหวัด" className="py-3.5 px-4 text-secondary">
+                          {u.location?.province || "ไม่ระบุจังหวัด"}
                         </td>
 
-                        <td className="py-3.5 px-4">
+                        <td role="cell" data-label="บทบาท" className="py-3.5 px-4">
                           <div className="flex flex-wrap gap-1">
                             {approvedRoleTypes.map((r) => (
                               <span
@@ -1457,7 +1517,7 @@ export default function AdminPortalPage() {
                           </div>
                         </td>
 
-                        <td className="py-3.5 px-4 space-y-1.5">
+                        <td role="cell" data-label="คะแนนและรีวิว" className="py-3.5 px-4 space-y-1.5">
                           <div className="flex items-center gap-2">
                             <span
                               className={`font-semibold text-sm ${
@@ -1471,11 +1531,12 @@ export default function AdminPortalPage() {
                               🛡️ {u.trustScore}/100
                             </span>
                             <span className="text-warning-ink font-semibold text-xs">
-                              ★ {Number(u.ratingAvg ?? 5).toFixed(1)} ({u.ratingCount ?? 0} รีวิว)
+                              <ReviewSummary average={u.ratingAvg} count={u.ratingCount} />
                             </span>
                           </div>
                           <div className="flex flex-wrap items-center gap-1">
                             <button
+                            disabled={mutationPending}
                               type="button"
                               onClick={() => handleAdjustUserTrust(u.id, -10, u.fullName)}
                               className="px-1.5 py-0.5 rounded bg-rose-500/15 hover:bg-rose-500/30 text-danger-ink text-xs font-semibold border border-danger-line/20 cursor-pointer"
@@ -1484,6 +1545,7 @@ export default function AdminPortalPage() {
                               -10
                             </button>
                             <button
+                            disabled={mutationPending}
                               type="button"
                               onClick={() => handleAdjustUserTrust(u.id, -20, u.fullName)}
                               className="px-1.5 py-0.5 rounded bg-rose-500/15 hover:bg-rose-500/30 text-danger-ink text-xs font-semibold border border-danger-line/20 cursor-pointer"
@@ -1492,6 +1554,7 @@ export default function AdminPortalPage() {
                               -20
                             </button>
                             <button
+                            disabled={mutationPending}
                               type="button"
                               onClick={() => handleAdjustUserTrust(u.id, -30, u.fullName)}
                               className="px-1.5 py-0.5 rounded bg-rose-500/15 hover:bg-rose-500/30 text-danger-ink text-xs font-semibold border border-danger-line/20 cursor-pointer"
@@ -1501,6 +1564,7 @@ export default function AdminPortalPage() {
                             </button>
                             {u.trustScore < 100 && (
                               <button
+                            disabled={mutationPending}
                                 type="button"
                                 onClick={() => handleResetUserTrust(u.id, u.fullName)}
                                 className="px-1.5 py-0.5 rounded bg-emerald-500/20 hover:bg-emerald-800/30 text-brand-ink text-xs font-semibold border border-brand-line/30 cursor-pointer"
@@ -1512,7 +1576,7 @@ export default function AdminPortalPage() {
                           </div>
                         </td>
 
-                        <td className="py-3.5 px-4">
+                        <td role="cell" data-label="สถานะบัญชี" className="py-3.5 px-4">
                           {u.status === "BANNED" ? (
                             <div>
                               <span className="px-2 py-0.5 rounded-full text-xs font-semibold bg-rose-600/30 text-danger-ink border border-danger-line/50">
@@ -1546,8 +1610,9 @@ export default function AdminPortalPage() {
                           )}
                         </td>
 
-                        <td className="py-3.5 px-4 text-right space-x-2">
+                        <td role="cell" data-label="การจัดการ" className="py-3.5 px-4 text-right space-x-2">
                           <button
+                            disabled={mutationPending}
                             onClick={() =>
                               setGrantRoleModal({
                                 userId: u.id,
@@ -1561,6 +1626,7 @@ export default function AdminPortalPage() {
                           </button>
 
                           <button
+                            disabled={mutationPending}
                             onClick={() => handleUserStatusToggle(u.id, u.status, u.fullName)}
                             className={`px-2.5 py-1 rounded-lg text-xs font-medium transition-all ${
                               u.status === "ACTIVE"
@@ -1582,6 +1648,14 @@ export default function AdminPortalPage() {
       </main>
 
       {/* ==================================================================== */}
+      {confirmMessage && <DialogFrame label="ยืนยันคำสั่งผู้ดูแล" onClose={() => finishConfirmation(false)} className="fixed inset-0 z-[60] flex items-center justify-center bg-black/50 p-4">
+        <div className="w-full max-w-lg space-y-5 rounded-2xl border border-line bg-surface p-6 shadow-panel">
+          <h2 className="text-xl font-semibold">ตรวจสอบก่อนดำเนินการ</h2>
+          <p className="whitespace-pre-line text-base leading-relaxed text-secondary">{confirmMessage}</p>
+          <p className="text-sm text-muted-foreground">ตรวจชื่อสมาชิกหรือรายการ และผลกระทบให้ครบก่อนยืนยัน</p>
+          <div className="flex flex-wrap justify-end gap-3"><button className="ui-button ui-button-secondary" onClick={() => finishConfirmation(false)}>ยกเลิก</button><button className="ui-button border-danger-line bg-danger-soft text-danger-ink" onClick={() => finishConfirmation(true)}>ยืนยันดำเนินการ</button></div>
+        </div>
+      </DialogFrame>}
       {/* MODAL 1: DOCUMENT PREVIEW */}
       {/* ==================================================================== */}
       {previewDocUrl && (
@@ -1664,14 +1738,14 @@ export default function AdminPortalPage() {
             <div className="flex items-center justify-end gap-3 pt-2">
               <button
                 onClick={() => setActionModal(null)}
-                disabled={actionLoading}
+                disabled={actionLoading || mutationPending}
                 className="px-4 py-2 rounded-lg bg-muted hover:bg-hover text-secondary text-xs font-semibold transition-all"
               >
                 ยกเลิก
               </button>
               <button
                 onClick={confirmRoleRequestAction}
-                disabled={actionLoading}
+                disabled={actionLoading || mutationPending}
                 className={`px-4 py-2 rounded-lg text-white text-xs font-semibold transition-all shadow-panel flex items-center gap-1.5 ${
                   actionModal.action === "APPROVE"
                     ? "bg-emerald-700 hover:bg-emerald-800 "
@@ -1738,6 +1812,7 @@ export default function AdminPortalPage() {
                 ยกเลิก
               </button>
               <button
+                disabled={mutationPending}
                 onClick={handleGrantRoleSubmit}
                 className="px-4 py-2 rounded-lg bg-emerald-700 hover:bg-emerald-800 text-white text-xs font-semibold transition-all shadow-panel "
               >

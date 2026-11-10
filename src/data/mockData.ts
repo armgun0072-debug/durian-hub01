@@ -114,6 +114,7 @@ export interface VarietyStripItem {
 }
 
 export interface MarketplacePostItem {
+  imageUrl?: string;
   id: number;
   userId?: number;
   authorName: string;

@@ -1,4 +1,6 @@
 "use client";
+import { ReviewSummary } from "@/components/review-summary";
+import { loadMarketplacePosts, reviewLabel } from "@/lib/ui-feedback";
 import { SupportPortal } from "@/components/support-portal";
 import { chatHistory } from "@/lib/chat-history";
 import { AccountSettingsDialog } from "@/components/account-settings-dialog";
@@ -710,6 +712,7 @@ export default function DurianHubApp() {
   const [showMyPostsModal, setShowMyPostsModal] = useState<boolean>(false);
   // Language state (TH | EN สลับภาษาทำงานจริง)
   const [currentLang, setCurrentLang] = useState<"TH" | "EN">("TH");
+  useEffect(() => { document.documentElement.lang = currentLang === "TH" ? "th" : "en"; }, [currentLang]);
   const [languageReady, setLanguageReady] = useState(false);
   useEffect(() => {
     try { const saved = localStorage.getItem("durian-hub-language"); if (saved === "TH" || saved === "EN") setCurrentLang(saved); } catch { /* Keep the default when storage is unavailable. */ }
@@ -827,19 +830,24 @@ export default function DurianHubApp() {
     | "CHAT_ROOM"
   >("ROLE_HOME");
 
-  // Fetch real posts from API
+  const [marketplaceDays, setMarketplaceDays] = useState(7);
+  const [postsLoading, setPostsLoading] = useState(true);
+  const [postsError, setPostsError] = useState(false);
+  const [postsUpdatedAt, setPostsUpdatedAt] = useState<string | null>(null);
+  const postsRequest = React.useRef(0);
   const fetchPosts = async () => {
-    try {
-      const res = await fetch("/api/posts");
-      if (res.ok) {
-        const data = await res.json();
-        if (Array.isArray(data.posts)) {
-          setPosts(data.posts);
-        }
-      }
-    } catch (err) {
-      console.error("fetch posts error", err);
+    const request = ++postsRequest.current;
+    setPostsLoading(true);
+    setPostsError(false);
+    const result = await loadMarketplacePosts(fetch, marketplaceDays);
+    if (request !== postsRequest.current) return;
+    if (result.kind === "ready") {
+      setPosts(result.posts);
+      setPostsUpdatedAt(new Date().toISOString());
+    } else {
+      setPostsError(true);
     }
+    setPostsLoading(false);
   };
 
   // Fetch chat rooms for current user
@@ -941,7 +949,7 @@ export default function DurianHubApp() {
     }, 2000);
 
     return () => clearInterval(interval);
-  }, [isAuthenticated, activeChatRoomId, currentView]);
+  }, [isAuthenticated, activeChatRoomId, currentView, marketplaceDays]);
 
   // When switching active chat room or navigating to CHAT_ROOM, fetch messages immediately
   useEffect(() => {
@@ -956,7 +964,7 @@ export default function DurianHubApp() {
   const [selectedDashboardVariety, setSelectedDashboardVariety] = useState<string>("ALL");
 
   // Marketplace State (อ้างอิงรูปที่ 2)
-  const [posts, setPosts] = useState<MarketplacePostItem[]>(INITIAL_POSTS);
+  const [posts, setPosts] = useState<MarketplacePostItem[]>([]);
   const [selectedVarietyStrip, setSelectedVarietyStrip] =
     useState<string>("ALL");
   const [selectedRegionFilter, setSelectedRegionFilter] =
@@ -1079,7 +1087,7 @@ export default function DurianHubApp() {
       setIsAuthenticated(true);
       setCurrentView("ROLE_HOME");
     } catch {
-      setAuthError("ไม่สามารถเชื่อมต่อเซิร์ฟเวอร์ได้ กรุณาลองใหม่อีกครั้ง");
+      setAuthError("NETWORK");
     } finally {
       setIsAuthLoading(false);
     }
@@ -1124,7 +1132,7 @@ export default function DurianHubApp() {
       setOtpCodeInput("");
       setShowOtpModal(true);
     } catch {
-      setAuthError("ไม่สามารถเชื่อมต่อเซิร์ฟเวอร์ได้ กรุณาลองใหม่อีกครั้ง");
+      setAuthError("NETWORK");
     } finally {
       setIsAuthLoading(false);
     }
@@ -1843,7 +1851,10 @@ export default function DurianHubApp() {
         avgBuyPrice: dynamicAvgBuy,
         avgCutWage: dynamicAvgCut,
         activeLotsCount:
-          regionPosts.length > 0 ? regionPosts.length : reg.activeLotsCount,
+          regionPosts.length,
+        sellSampleCount: sellPosts.length,
+        buySampleCount: buyPosts.length,
+        cutSampleCount: cutPosts.length,
         hasLivePosts: regionPosts.length > 0,
         livePostsCount: regionPosts.length,
         priceByVariety: dynamicPriceByVariety,
@@ -1929,9 +1940,9 @@ export default function DurianHubApp() {
 
             {/* Alert Messages */}
             {authError && (
-              <div className="mb-5 p-3.5 rounded-xl bg-danger-soft border border-danger-line text-danger-ink text-xs flex items-center gap-2.5">
+              <div role="alert" className="mb-5 p-3.5 rounded-xl bg-danger-soft border border-danger-line text-danger-ink text-xs flex items-center gap-2.5">
                 <AlertTriangle className="w-4 h-4 shrink-0 text-danger-ink" />
-                <span>{authError}</span>
+                <span>{authError === "NETWORK" ? (currentLang === "TH" ? "ไม่สามารถเชื่อมต่อเซิร์ฟเวอร์ได้ กรุณาลองใหม่อีกครั้ง" : "Could not connect to the server. Please try again.") : authError}</span>
               </div>
             )}
             {authSuccessMsg && (
@@ -2568,6 +2579,7 @@ export default function DurianHubApp() {
 
           {/* Right User Role Status & Switcher */}
           <div className="flex items-center gap-2">
+
             <ThemeSwitcher language={currentLang} />
             <div className="hidden 2xl:flex items-center gap-2 bg-muted px-3 py-1.5 rounded-lg border border-line/80">
               <span className="text-xs text-muted-foreground">{t.roleLabel}</span>
@@ -2772,7 +2784,7 @@ export default function DurianHubApp() {
         </div>
 
         {/* Mobile Navigation Bar */}
-        <div className="xl:hidden flex overflow-x-auto border-t border-line px-4 py-2 gap-2 bg-surface">
+        <div role="navigation" aria-label={currentLang === "TH" ? "เมนูหลัก" : "Main navigation"} className="mobile-main-nav xl:hidden grid grid-cols-4 border-t border-line px-4 py-2 gap-1 bg-surface">
           <button
             onClick={() => setCurrentView("ROLE_HOME")}
             className={`text-xs px-3 py-1.5 rounded-lg whitespace-nowrap font-semibold cursor-pointer ${
@@ -2858,7 +2870,7 @@ export default function DurianHubApp() {
                     <ShieldCheck className="w-3.5 h-3.5" /> {currentLang === "TH" ? "ความประพฤติ" : "Trust"} {userProfile.trustScore}/100
                   </span>
                   <span className="inline-flex items-center gap-1 text-xs font-semibold text-warning-ink bg-warning-soft border border-warning-line px-2.5 py-1 rounded-full">
-                    <Star className="w-3.5 h-3.5 fill-amber-400 text-warning-ink" /> {(userProfile.rating ?? 5.0).toFixed(1)} ({userProfile.ratingCount ?? 0} {currentLang === "TH" ? "รีวิว" : "reviews"})
+                    <ReviewSummary average={userProfile.rating} count={userProfile.ratingCount} language={currentLang} />
                   </span>
                 </div>
 
@@ -2977,6 +2989,7 @@ export default function DurianHubApp() {
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                {postsLoading ? <p role="status" className="col-span-full py-5 text-sm text-secondary">{currentLang === "TH" ? "กำลังโหลดประกาศ…" : "Loading listings…"}</p> : postsError ? <div role="alert" className="col-span-full flex flex-wrap items-center justify-between gap-3 py-4 text-sm text-danger-ink"><span>{currentLang === "TH" ? "โหลดประกาศไม่สำเร็จ" : "Could not load listings"}</span><Button variant="secondary" onClick={() => void fetchPosts()}>{currentLang === "TH" ? "ลองใหม่" : "Try again"}</Button></div> : posts.length === 0 ? <p className="col-span-full py-5 text-sm text-secondary">{currentLang === "TH" ? "ยังไม่มีประกาศในช่วงเวลาที่เลือก เปิดตลาดกลางเพื่อขยายช่วงเวลาได้" : "No listings in this period. Open the marketplace to expand the period."}</p> : null}
                 {posts.slice(0, 3).map((post) => (
                   <div
                     key={post.id}
@@ -2988,7 +3001,7 @@ export default function DurianHubApp() {
                           {post.authorName}
                         </span>
                         <span className="text-warning-ink font-semibold">
-                          ★ {post.rating.toFixed(1)}
+                          <ReviewSummary average={post.rating} count={post.reviewCount} language={currentLang} />
                         </span>
                       </div>
                       <div className="font-semibold text-sm text-foreground line-clamp-1">
@@ -3022,6 +3035,12 @@ export default function DurianHubApp() {
            =================================================================== */}
         {currentView === "REGIONAL_DASHBOARD" && (
           <div className="space-y-6">
+            <div role="note" className="rounded-xl border border-warning-line bg-warning-soft p-4 text-sm leading-relaxed text-warning-ink">
+              <strong>{currentLang === "TH" ? "ที่มาของราคา" : "Price sources"}</strong>
+              <p>{currentLang === "TH" ? `ใช้ราคาเสนอจากประกาศที่ยังเปิด${marketplaceDays ? `ใน ${marketplaceDays} วันล่าสุด` : "ทั้งหมด"} ไม่ใช่ราคาซื้อขายสำเร็จ; พื้นที่ สายพันธุ์ หรือเกรดที่ไม่มีประกาศใช้ตัวเลขตัวอย่างเพื่อแสดงรูปแบบ ห้ามใช้เป็นราคายืนยัน` : `Asking prices from ${marketplaceDays ? `the last ${marketplaceDays} days` : "all open listings"}, not completed trades. Areas, varieties and grades without listings use illustrative figures, not verified prices.`}</p>
+              <p className="mt-1">{postsError ? (currentLang === "TH" ? "โหลดข้อมูลล่าสุดไม่สำเร็จ" : "Latest data could not be loaded") : postsLoading ? (currentLang === "TH" ? "กำลังโหลดข้อมูลประกาศ…" : "Loading listing data…") : (currentLang === "TH" ? "โหลดประกาศเมื่อ: " : "Listings fetched: ") + (postsUpdatedAt ? new Date(postsUpdatedAt).toLocaleString(currentLang === "TH" ? "th-TH" : "en-GB", { timeZone: "Asia/Bangkok" }) : "—")}</p>
+              {postsError && <Button variant="secondary" className="mt-2" onClick={() => void fetchPosts()}>{currentLang === "TH" ? "ลองใหม่" : "Try again"}</Button>}
+            </div>
             <PageHeading eyebrow={currentLang === "TH" ? "ข้อมูลตลาด" : "Market insights"} title={t.heroTitle} description={t.heroSub} />
 
             {/* ส่วนที่ 1: แถบเลือก 6 ภูมิภาคด้านบน (Compact Regional Selector Strip - Full Width) */}
@@ -3148,6 +3167,7 @@ export default function DurianHubApp() {
                       </div>
                       <div className="text-2xl font-semibold text-brand-ink mt-1">
                         ฿{selectedRegionalData.avgSellPrice}
+                        <span className="mt-1 block text-xs font-normal">{selectedRegionalData.sellSampleCount ? (currentLang === "TH" ? `จาก ${selectedRegionalData.sellSampleCount} ประกาศ` : `${selectedRegionalData.sellSampleCount} listings`) : (currentLang === "TH" ? "ตัวเลขตัวอย่าง" : "Illustrative")}</span>
                       </div>
                       <div className="text-xs text-brand-ink mt-0.5">{t.perKg}</div>
                     </div>
@@ -3158,6 +3178,7 @@ export default function DurianHubApp() {
                       </div>
                       <div className="text-2xl font-semibold text-info-ink mt-1">
                         ฿{selectedRegionalData.avgBuyPrice}
+                        <span className="mt-1 block text-xs font-normal">{selectedRegionalData.buySampleCount ? (currentLang === "TH" ? `จาก ${selectedRegionalData.buySampleCount} ประกาศ` : `${selectedRegionalData.buySampleCount} listings`) : (currentLang === "TH" ? "ตัวเลขตัวอย่าง" : "Illustrative")}</span>
                       </div>
                       <div className="text-xs text-info-ink mt-0.5">{t.perKg}</div>
                     </div>
@@ -3168,6 +3189,7 @@ export default function DurianHubApp() {
                       </div>
                       <div className="text-2xl font-semibold text-warning-ink mt-1">
                         ฿{selectedRegionalData.avgCutWage}
+                        <span className="mt-1 block text-xs font-normal">{selectedRegionalData.cutSampleCount ? (currentLang === "TH" ? `จาก ${selectedRegionalData.cutSampleCount} ประกาศ` : `${selectedRegionalData.cutSampleCount} listings`) : (currentLang === "TH" ? "ตัวเลขตัวอย่าง" : "Illustrative")}</span>
                       </div>
                       <div className="text-xs text-warning-ink mt-0.5">{t.perKg}</div>
                     </div>
@@ -3444,7 +3466,13 @@ export default function DurianHubApp() {
             <div className="bg-surface rounded-2xl p-5 border border-line/80 shadow-sm space-y-4">
               <PageHeading eyebrow={currentLang === "TH" ? "ซื้อขายและบริการ" : "Trade & services"} title={t.marketTitle} description={t.marketSub} action={<Button onClick={handleOpenCreatePostModal}><Plus className="h-4 w-4" />{t.newPostBtn}</Button>} />
 
-              <div className="flex flex-wrap items-center gap-2" role="group" aria-label={currentLang === "TH" ? "กรองสายพันธุ์" : "Filter by variety"}>
+              <label className="block space-y-1 text-sm font-medium text-secondary md:hidden">
+                {currentLang === "TH" ? "สายพันธุ์ทุเรียน" : "Variety"}
+                <select value={selectedVarietyStrip} onChange={event => setSelectedVarietyStrip(event.target.value)} className="w-full rounded-lg border border-line bg-surface px-3 py-2 text-foreground">
+                  {VARIETY_STRIP_ITEMS.map(item => <option key={item.id} value={item.id}>{item.id === "ALL" ? (currentLang === "TH" ? "ทุกสายพันธุ์" : "All varieties") : translateVarietyName(item.nameTh, currentLang)}</option>)}
+                </select>
+              </label>
+              <div className="hidden flex-wrap items-center gap-2 md:flex" role="group" aria-label={currentLang === "TH" ? "กรองสายพันธุ์" : "Filter by variety"}>
                 {VARIETY_STRIP_ITEMS.map(item => <button key={item.id} type="button" aria-pressed={selectedVarietyStrip === item.id} onClick={() => setSelectedVarietyStrip(item.id)} className={`min-h-11 rounded-lg border px-3 py-2 text-xs font-medium transition-colors ${selectedVarietyStrip === item.id ? "border-brand-line bg-brand-soft text-brand-ink" : "border-line bg-surface text-secondary hover:bg-subtle"}`}>{item.id === "ALL" ? (currentLang === "TH" ? "ทุกสายพันธุ์" : "All varieties") : translateVarietyName(item.nameTh, currentLang)}</button>)}
               </div>
 
@@ -3452,6 +3480,7 @@ export default function DurianHubApp() {
               <div className="flex flex-wrap items-center justify-between gap-3 pt-2 border-t border-line">
                 <div className="flex flex-wrap items-center gap-2.5 flex-1">
                   <select
+                    aria-label={currentLang === "TH" ? "ภูมิภาค" : "Region"}
                     value={selectedRegionFilter}
                     onChange={(e) => setSelectedRegionFilter(e.target.value)}
                     className="text-xs font-semibold border border-line rounded-lg px-3.5 py-2.5 bg-subtle text-secondary focus:outline-none"
@@ -3493,12 +3522,17 @@ export default function DurianHubApp() {
                 </div>
 
                 <div className="flex items-center gap-2 text-xs">
-                  <span className="px-3 py-1.5 rounded-lg bg-muted text-secondary font-medium border border-line flex items-center gap-1.5">
-                    <Clock className="w-3.5 h-3.5 text-brand-ink" />
-                    {t.filterRecent7Days}
-                  </span>
+                  <label className="flex items-center gap-2 text-sm text-secondary">
+                    <Clock className="h-4 w-4 shrink-0" aria-hidden="true" />
+                    <span className="sr-only">{currentLang === "TH" ? "ช่วงเวลาประกาศ" : "Listing period"}</span>
+                    <select value={marketplaceDays} onChange={event => setMarketplaceDays(Number(event.target.value))} className="rounded-lg border border-line bg-surface px-3 py-2 text-foreground">
+                      <option value={7}>{currentLang === "TH" ? "7 วันล่าสุด" : "Last 7 days"}</option>
+                      <option value={30}>{currentLang === "TH" ? "30 วันล่าสุด" : "Last 30 days"}</option>
+                      <option value={0}>{currentLang === "TH" ? "ประกาศที่ยังเปิดทั้งหมด" : "All open listings"}</option>
+                    </select>
+                  </label>
                   <span className="px-3 py-1.5 rounded-lg bg-brand-soft text-brand-ink font-semibold border border-brand-line">
-                    {t.freshCountLabel} {filteredMarketplacePosts.length} {currentLang === "TH" ? "โพสต์" : "Posts"}
+                    {currentLang === "TH" ? "ผลลัพธ์" : "Results"} {filteredMarketplacePosts.length} {currentLang === "TH" ? "โพสต์" : "Posts"}
                   </span>
                 </div>
               </div>
@@ -3580,24 +3614,17 @@ export default function DurianHubApp() {
                 </button>
               </div>
 
-              {/* Quick Posting CTA Button in tab bar matching current active role */}
-              <button
-                onClick={() => handleOpenCreatePostModal()}
-                className="hidden sm:inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-brand-soft hover:bg-brand-soft text-brand-ink font-semibold text-xs transition border border-brand-line cursor-pointer shrink-0"
-              >
-                <Plus className="w-4 h-4 text-brand-ink" />
-                <span>
-                  {currentLang === "TH"
-                    ? `ลงประกาศในบทบาท: ${ROLE_CONFIG[userProfile.activeRole].shortTitle}`
-                    : `Post as: ${ROLE_CONFIG[userProfile.activeRole].shortTitle}`}
-                </span>
-              </button>
+
             </div>
 
             <div className="flex flex-wrap items-center justify-between gap-3 px-1 text-sm text-muted-foreground" role="status"><span>{currentLang === "TH" ? `พบ ${selectedMarketTab === "SELL" ? sellOrders.length : selectedMarketTab === "BUY" ? buyOrders.length : cutOrders.length} ประกาศ` : `${selectedMarketTab === "SELL" ? sellOrders.length : selectedMarketTab === "BUY" ? buyOrders.length : cutOrders.length} listings`}</span>{(searchQuery || selectedRegionFilter !== "ALL" || selectedVarietyStrip !== "ALL") && <Button variant="ghost" onClick={() => { setSearchQuery(""); setSelectedRegionFilter("ALL"); setSelectedVarietyStrip("ALL"); }}>{currentLang === "TH" ? "ล้างตัวกรอง" : "Clear filters"}</Button>}</div>
 
             {/* Selected Category Listing Grid (กว้างขวาง สบายตา ไม่เบียด 3 คอลัมน์) */}
-            <div className="listing-grid">
+            <div aria-live="polite" aria-busy={postsLoading}>
+              {postsLoading && <p role="status" className="rounded-xl border border-line bg-surface p-5 text-sm text-secondary">{currentLang === "TH" ? "กำลังโหลดประกาศ…" : "Loading listings…"}</p>}
+              {postsError && <div role="alert" className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-danger-line bg-danger-soft p-4 text-sm text-danger-ink"><span>{currentLang === "TH" ? "โหลดประกาศไม่สำเร็จ ข้อมูลที่เคยโหลดอาจไม่ใช่ข้อมูลล่าสุด" : "Could not load listings. Previously loaded information may be out of date."}</span><Button variant="secondary" onClick={() => void fetchPosts()}>{currentLang === "TH" ? "ลองใหม่" : "Try again"}</Button></div>}
+            </div>
+            {!postsLoading && !postsError && <div className="listing-grid">
               {/* TAB 1: SELL ORDERS */}
               {selectedMarketTab === "SELL" &&
                 (sellOrders.length === 0 ? (
@@ -3610,8 +3637,8 @@ export default function DurianHubApp() {
                     </h3>
                     <p className="text-xs text-muted-foreground max-w-sm mb-4">
                       {currentLang === "TH"
-                        ? "ลองเลือกภูมิภาคอื่น หรือล้างตัวกรองสายพันธุ์ด้านบนเพื่อค้นหาเพิ่มเติม"
-                        : "Try selecting another region or clear filters above to view more listings."}
+                        ? "ลองล้างตัวกรอง หรือขยายช่วงเวลาประกาศด้านบน หากยังไม่มีรายการ คุณสามารถกลับมาตรวจใหม่ได้"
+                        : "Clear filters or expand the listing period above. You can also check back later."}
                     </p>
                     {ROLE_CONFIG[userProfile.activeRole].allowedPostType === "SELL" && (
                       <button
@@ -3639,8 +3666,8 @@ export default function DurianHubApp() {
                     </h3>
                     <p className="text-xs text-muted-foreground max-w-sm mb-4">
                       {currentLang === "TH"
-                        ? "ลองเลือกภูมิภาคอื่น หรือล้างตัวกรองสายพันธุ์ด้านบนเพื่อค้นหาเพิ่มเติม"
-                        : "Try selecting another region or clear filters above to view more listings."}
+                        ? "ลองล้างตัวกรอง หรือขยายช่วงเวลาประกาศด้านบน หากยังไม่มีรายการ คุณสามารถกลับมาตรวจใหม่ได้"
+                        : "Clear filters or expand the listing period above. You can also check back later."}
                     </p>
                     {ROLE_CONFIG[userProfile.activeRole].allowedPostType === "BUY" && (
                       <button
@@ -3668,8 +3695,8 @@ export default function DurianHubApp() {
                     </h3>
                     <p className="text-xs text-muted-foreground max-w-sm mb-4">
                       {currentLang === "TH"
-                        ? "ลองเลือกภูมิภาคอื่น หรือล้างตัวกรองสายพันธุ์ด้านบนเพื่อค้นหาเพิ่มเติม"
-                        : "Try selecting another region or clear filters above to view more listings."}
+                        ? "ลองล้างตัวกรอง หรือขยายช่วงเวลาประกาศด้านบน หากยังไม่มีรายการ คุณสามารถกลับมาตรวจใหม่ได้"
+                        : "Clear filters or expand the listing period above. You can also check back later."}
                     </p>
                     {ROLE_CONFIG[userProfile.activeRole].allowedPostType === "CUT_SERVICE" && (
                       <button
@@ -3684,16 +3711,8 @@ export default function DurianHubApp() {
                 ) : (
                   cutOrders.map(post => <ListingCard key={post.id} post={post} own={checkIsMyOwnPost(post)} language={currentLang} time={formatRelativeTime(post.createdAt)} onOpen={() => handleOpenPostDetail(post)} />)
                 ))}
-            </div>
+            </div>}
 
-            {/* Floating Action Button (+) มุมขวาล่างเหมือนในรูปที่ 2 */}
-            <button
-              onClick={() => handleOpenCreatePostModal()}
-              title={ROLE_CONFIG[userProfile.activeRole].actionLabel}
-              className="fixed bottom-6 right-6 z-20 w-14 h-14 rounded-full bg-emerald-700 hover:bg-emerald-800 text-white shadow-panel flex items-center justify-center transition hover:scale-105 cursor-pointer"
-            >
-              <Plus className="w-6 h-6" />
-            </button>
           </div>
         )}
 
@@ -3830,8 +3849,7 @@ export default function DurianHubApp() {
                   {/* Stats Pills: Rating | คะแนนเครดิต | ชมร้านค้า */}
                   <div className="flex flex-wrap items-center gap-2 pt-2 border-t border-line text-xs">
                     <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-warning-soft text-warning-ink border border-warning-line font-semibold">
-                      <Star className="w-3.5 h-3.5 fill-amber-400 text-warning-ink" />
-                      {selectedPost.rating.toFixed(1)} ({selectedPost.reviewCount})
+                      <ReviewSummary average={selectedPost.rating} count={selectedPost.reviewCount} language={currentLang} />
                     </span>
                     <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-brand-soft text-brand-ink border border-brand-line font-semibold">
                       <ShieldCheck className="w-3.5 h-3.5 text-brand-ink" />
@@ -4165,8 +4183,7 @@ export default function DurianHubApp() {
                         <div className="font-semibold text-sm text-foreground flex flex-wrap items-center gap-1.5">
                           <span>{activeChatRoom.partnerName}</span>
                           <span className="inline-flex items-center gap-0.5 text-xs font-semibold px-2 py-0.5 rounded-full bg-warning-soft text-warning-ink border border-warning-line">
-                            <Star className="w-3 h-3 fill-amber-400 text-warning-ink" />
-                            {(activeChatRoom.partnerRating ?? 5.0).toFixed(1)} ({activeChatRoom.partnerRatingCount ?? 0})
+                            <ReviewSummary average={activeChatRoom.partnerRating} count={activeChatRoom.partnerRatingCount} language={currentLang} />
                           </span>
                           <span className="inline-flex items-center gap-0.5 text-xs font-semibold px-2 py-0.5 rounded-full bg-brand-soft text-brand-ink border border-brand-line">
                             🛡️ {activeChatRoom.partnerTrustScore ?? 100}/100
@@ -4181,7 +4198,7 @@ export default function DurianHubApp() {
                       </div>
                     </div>
 
-                    <div className="flex items-center gap-2">
+                    <div className="chat-room-actions">
                       {activeChatRoom.status === "DEAL_CLOSED" ? (
                         <div className="px-3.5 py-1.5 rounded-full bg-brand-soft text-brand-ink border border-brand-line font-semibold text-xs flex items-center gap-1.5 shadow-2xs">
                           <CheckCircle2 className="w-3.5 h-3.5 text-brand-ink" />
@@ -4408,7 +4425,7 @@ export default function DurianHubApp() {
                         <button
                           key={idx}
                           type="button"
-                          onClick={() => handleSendMessage(chip)}
+                          onClick={() => setChatInputText(chip)}
                           className="shrink-0 text-xs font-medium px-3 py-1.5 rounded-full bg-muted hover:bg-brand-soft hover:text-brand-ink text-secondary border border-line/80 transition cursor-pointer"
                         >
                           {chip}
@@ -4425,15 +4442,18 @@ export default function DurianHubApp() {
                       className="flex items-center gap-2"
                     >
                       <input
+                        aria-label={currentLang === "TH" ? "ข้อความถึงคู่ค้า" : "Message to your partner"}
                         type="text"
                         value={chatInputText}
                         onChange={(e) => setChatInputText(e.target.value)}
                         placeholder={t.typeMessagePlaceholder}
-                        className="flex-1 bg-muted border border-line rounded-full px-4 py-2.5 text-sm focus:bg-surface focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                        className="min-w-0 flex-1 bg-muted border border-line rounded-full px-4 py-2.5 text-sm focus:bg-surface focus:outline-none focus:ring-2 focus:ring-emerald-500"
                       />
                       <button
                         type="submit"
-                        className="w-10 h-10 rounded-full bg-amber-400 hover:bg-amber-500 text-slate-950 flex items-center justify-center shadow-sm transition shrink-0 cursor-pointer"
+                        aria-label={currentLang === "TH" ? "ส่งข้อความ" : "Send message"}
+                        disabled={!chatInputText.trim()}
+                        className="w-11 h-11 rounded-full bg-amber-400 hover:bg-amber-500 text-slate-950 flex items-center justify-center shadow-sm transition shrink-0 cursor-pointer"
                       >
                         <Send className="w-4 h-4" />
                       </button>
@@ -5387,7 +5407,7 @@ export default function DurianHubApp() {
                 <div className="text-right">
                   <span className="text-muted-foreground">ความประพฤติ & รีวิว:</span>
                   <div className="font-semibold text-brand-ink text-sm">
-                    🛡️ {userProfile.trustScore}/100 • ★ {(userProfile.rating ?? 5.0).toFixed(1)}
+                    🛡️ {userProfile.trustScore}/100 · {reviewLabel(userProfile.rating, userProfile.ratingCount, currentLang)}
                   </div>
                 </div>
               </div>
