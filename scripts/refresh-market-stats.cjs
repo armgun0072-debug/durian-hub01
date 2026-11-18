@@ -2,8 +2,8 @@ const { PrismaClient, Prisma } = require('@prisma/client');
 
 const prisma = new PrismaClient();
 async function main() {
-  // Node 22.18+ loads erasable TypeScript directly, without a separate tsx process.
-  const { refreshMarketStats } = await import('../src/lib/market-stats.ts');
+  require("tsx/cjs");
+  const { refreshMarketStats } = require("../src/lib/market-stats.ts");
   for (let attempt = 0; attempt < 3; attempt++) {
     try {
       const result = await prisma.$transaction((tx) => refreshMarketStats(tx), { isolationLevel: Prisma.TransactionIsolationLevel.Serializable, timeout: 30000 });

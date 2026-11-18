@@ -3,32 +3,14 @@ export type PostType = "SELL" | "BUY" | "CUT_SERVICE";
 
 export type DurianGradeKey = "GRADE_A" | "GRADE_B" | "GRADE_C" | "GRADE_D";
 
-export interface GradePriceItem {
-  gradeKey: DurianGradeKey;
-  gradeName: string;
-  gradeDescription: string;
-  buyPrice: number;
-  sellPrice: number;
-  refPrice: number;
-}
-
-export interface VarietyPriceMatrixItem {
-  variety: string;
-  buyPrice: number;
-  sellPrice: number;
-  refPrice: number;
-  sellSampleCount?: number;
-  buySampleCount?: number;
-  grades: Record<DurianGradeKey, { buyPrice: number; sellPrice: number; refPrice: number }>;
-}
-
 export const DURIAN_GRADES_CONFIG: Record<
   DurianGradeKey,
-  { key: DurianGradeKey; code: string; name: string; shortName: string; desc: string; badgeColor: string; ratio: number }
+  { key: DurianGradeKey; code: string; gradeCode: string; name: string; shortName: string; desc: string; badgeColor: string; ratio: number }
 > = {
   GRADE_A: {
     key: "GRADE_A",
     code: "A",
+    gradeCode: "GRADE_A",
     name: "เกรด A (ส่งออก)",
     shortName: "เกรด A",
     desc: "4-5 พูเต็ม รูปทรงสวย น้ำหนัก 2.5 - 4.5 กก. แป้งมาตรฐานส่งออก",
@@ -38,6 +20,7 @@ export const DURIAN_GRADES_CONFIG: Record<
   GRADE_B: {
     key: "GRADE_B",
     code: "B",
+    gradeCode: "GRADE_B",
     name: "เกรด B (รองส่งออก)",
     shortName: "เกรด B",
     desc: "ทรงสวย 3-4 พู ผิวเรียบ น้ำหนักมาตรฐาน",
@@ -47,6 +30,7 @@ export const DURIAN_GRADES_CONFIG: Record<
   GRADE_C: {
     key: "GRADE_C",
     code: "C",
+    gradeCode: "C_GRADE",
     name: "เกรด C (ในประเทศ)",
     shortName: "เกรด C",
     desc: "2-3 พู สำหรับตลาดบริโภคในประเทศ รสชาติหวานมันปกติ",
@@ -56,6 +40,7 @@ export const DURIAN_GRADES_CONFIG: Record<
   GRADE_D: {
     key: "GRADE_D",
     code: "D",
+    gradeCode: "OUT_SIZE",
     name: "เกรด D (ตกไซซ์ / ผิวลาย)",
     shortName: "เกรด D ตกไซซ์",
     desc: "ลูกเล็กกว่า 2 กก. หรือใหญ่เกินไป หรือผิวลาย แต่เนื้อสุกดี",
@@ -64,30 +49,7 @@ export const DURIAN_GRADES_CONFIG: Record<
   },
 };
 
-export function buildGradesForVariety(baseBuy: number, baseSell: number, baseRef: number) {
-  return {
-    GRADE_A: {
-      buyPrice: Math.round(baseBuy * 1.05),
-      sellPrice: Math.round(baseSell * 1.05),
-      refPrice: Math.round(baseRef * 1.05),
-    },
-    GRADE_B: {
-      buyPrice: Math.round(baseBuy * 0.92),
-      sellPrice: Math.round(baseSell * 0.92),
-      refPrice: Math.round(baseRef * 0.92),
-    },
-    GRADE_C: {
-      buyPrice: Math.round(baseBuy * 0.78),
-      sellPrice: Math.round(baseSell * 0.78),
-      refPrice: Math.round(baseRef * 0.78),
-    },
-    GRADE_D: {
-      buyPrice: Math.round(baseBuy * 0.58),
-      sellPrice: Math.round(baseSell * 0.58),
-      refPrice: Math.round(baseRef * 0.58),
-    },
-  };
-}
+export const MARKET_GRADES = Object.values(DURIAN_GRADES_CONFIG);
 
 export interface RegionalSeasonData {
   id: string;
@@ -99,11 +61,6 @@ export interface RegionalSeasonData {
   highlightNote: string;
   colorClass: string;
   dotColor: string;
-  avgBuyPrice: number;
-  avgSellPrice: number;
-  avgCutWage: number;
-  activeLotsCount: number;
-  priceByVariety: VarietyPriceMatrixItem[];
 }
 
 export interface VarietyStripItem {
@@ -111,7 +68,6 @@ export interface VarietyStripItem {
   nameTh: string;
   nameEn: string;
   badgeText: string;
-  avgPrice: number;
   accentColor: string;
 }
 
@@ -136,6 +92,8 @@ export interface MarketplacePostItem {
   content: string;
   itemDetailSummary: string;
   pricePerKg: number;
+  marketPricePerKg?: number | null;
+  gradeCode?: string | null;
   priceUnitLabel: string;
   quantityKg: number;
   dryMatterPct?: number;
@@ -152,7 +110,9 @@ export interface ChatMessageItem {
   sender: "ME" | "PARTNER";
   text: string;
   time: string;
+  messageType?: string;
   isProductCard?: boolean;
+  isImage?: boolean;
   isRead?: boolean;
   status?: "SENDING" | "SENT" | "READ";
 }
@@ -172,6 +132,7 @@ export interface ChatRoomItem {
   partnerRatingCount?: number;
   partnerTrustScore?: number;
   hasReviewedByMe?: boolean;
+  canReview?: boolean;
   lastActive: string;
   lastMessage: string;
   lastTime: string;
@@ -218,16 +179,6 @@ export const REGIONAL_SEASONS_DATA: RegionalSeasonData[] = [
       "แหล่งผลิตและส่งออกทุเรียนขนาดใหญ่ที่สุดของไทย ล้งรับซื้อและทีมตัดหนาแน่นที่สุด",
     colorClass: "bg-teal-50 border-teal-200 text-teal-900",
     dotColor: "#0d9488",
-    avgBuyPrice: 170,
-    avgSellPrice: 178,
-    avgCutWage: 5.0,
-    activeLotsCount: 64,
-    priceByVariety: [
-      { variety: "หมอนทอง", buyPrice: 170, sellPrice: 178, refPrice: 168, grades: buildGradesForVariety(170, 178, 168) },
-      { variety: "ชะนี", buyPrice: 128, sellPrice: 135, refPrice: 125, grades: buildGradesForVariety(128, 135, 125) },
-      { variety: "ก้านยาว", buyPrice: 220, sellPrice: 235, refPrice: 215, grades: buildGradesForVariety(220, 235, 215) },
-      { variety: "กระดุม", buyPrice: 118, sellPrice: 125, refPrice: 115, grades: buildGradesForVariety(118, 125, 115) },
-    ],
   },
   {
     id: "NORTH",
@@ -257,16 +208,6 @@ export const REGIONAL_SEASONS_DATA: RegionalSeasonData[] = [
       "ผลผลิตออกช่วงเมษายน-พฤษภาคม โดดเด่นด้วยทุเรียนภูเขาอุตรดิตถ์และแหล่งปลูกใหม่ในเพชรบูรณ์-กำแพงเพชร",
     colorClass: "bg-amber-50 border-amber-200 text-amber-900",
     dotColor: "#eab308",
-    avgBuyPrice: 162,
-    avgSellPrice: 170,
-    avgCutWage: 5.5,
-    activeLotsCount: 28,
-    priceByVariety: [
-      { variety: "หมอนทอง", buyPrice: 162, sellPrice: 170, refPrice: 160, grades: buildGradesForVariety(162, 170, 160) },
-      { variety: "ชะนี", buyPrice: 122, sellPrice: 130, refPrice: 120, grades: buildGradesForVariety(122, 130, 120) },
-      { variety: "ก้านยาว", buyPrice: 205, sellPrice: 220, refPrice: 200, grades: buildGradesForVariety(205, 220, 200) },
-      { variety: "กระดุม", buyPrice: 112, sellPrice: 120, refPrice: 110, grades: buildGradesForVariety(112, 120, 110) },
-    ],
   },
   {
     id: "CENTRAL",
@@ -297,16 +238,6 @@ export const REGIONAL_SEASONS_DATA: RegionalSeasonData[] = [
       "ทุเรียนนนท์ อร่อยหากินยาก ความเจริญทำให้พื้นที่ปลูกทุเรียนเหลือน้อย มูลค่าสูงระดับพรีเมียม",
     colorClass: "bg-indigo-50 border-indigo-200 text-indigo-900",
     dotColor: "#6366f1",
-    avgBuyPrice: 185,
-    avgSellPrice: 198,
-    avgCutWage: 6.0,
-    activeLotsCount: 19,
-    priceByVariety: [
-      { variety: "หมอนทอง", buyPrice: 172, sellPrice: 182, refPrice: 170, grades: buildGradesForVariety(172, 182, 170) },
-      { variety: "ชะนี", buyPrice: 132, sellPrice: 140, refPrice: 130, grades: buildGradesForVariety(132, 140, 130) },
-      { variety: "ก้านยาว", buyPrice: 245, sellPrice: 265, refPrice: 240, grades: buildGradesForVariety(245, 265, 240) },
-      { variety: "ทุเรียนนนท์", buyPrice: 450, sellPrice: 520, refPrice: 450, grades: buildGradesForVariety(450, 520, 450) },
-    ],
   },
   {
     id: "ISAN",
@@ -339,15 +270,6 @@ export const REGIONAL_SEASONS_DATA: RegionalSeasonData[] = [
       "ชัยภูมิโดดเด่นเรื่องทุเรียนโอโซน และศรีสะเกษขึ้นชื่อเรื่องทุเรียนภูเขาไฟ เปลือกบาง เนื้อแห้งเนียน",
     colorClass: "bg-sky-50 border-sky-200 text-sky-900",
     dotColor: "#0284c7",
-    avgBuyPrice: 178,
-    avgSellPrice: 190,
-    avgCutWage: 5.5,
-    activeLotsCount: 24,
-    priceByVariety: [
-      { variety: "ทุเรียนภูเขาไฟ", buyPrice: 185, sellPrice: 200, refPrice: 180, grades: buildGradesForVariety(185, 200, 180) },
-      { variety: "ทุเรียนโอโซน", buyPrice: 175, sellPrice: 188, refPrice: 172, grades: buildGradesForVariety(175, 188, 172) },
-      { variety: "หมอนทอง", buyPrice: 168, sellPrice: 176, refPrice: 165, grades: buildGradesForVariety(168, 176, 165) },
-    ],
   },
   {
     id: "SOUTH",
@@ -371,16 +293,6 @@ export const REGIONAL_SEASONS_DATA: RegionalSeasonData[] = [
       "ตลาดใหญ่ช่วงครึ่งปีหลัง (ก.ย.-ต.ค.) ศูนย์กลางล้งรับซื้อส่งออกอยู่ที่ชุมพรและสุราษฎร์ธานี",
     colorClass: "bg-emerald-50 border-emerald-200 text-emerald-900",
     dotColor: "#16a34a",
-    avgBuyPrice: 168,
-    avgSellPrice: 175,
-    avgCutWage: 5.0,
-    activeLotsCount: 47,
-    priceByVariety: [
-      { variety: "หมอนทอง", buyPrice: 168, sellPrice: 175, refPrice: 165, grades: buildGradesForVariety(168, 175, 165) },
-      { variety: "ชะนี", buyPrice: 125, sellPrice: 132, refPrice: 122, grades: buildGradesForVariety(125, 132, 122) },
-      { variety: "ก้านยาว", buyPrice: 210, sellPrice: 225, refPrice: 205, grades: buildGradesForVariety(210, 225, 205) },
-      { variety: "สายพันธุ์พื้นบ้าน", buyPrice: 95, sellPrice: 110, refPrice: 95, grades: buildGradesForVariety(95, 110, 95) },
-    ],
   },
   {
     id: "DEEP_SOUTH",
@@ -392,15 +304,6 @@ export const REGIONAL_SEASONS_DATA: RegionalSeasonData[] = [
       "เอกลักษณ์ทุเรียนบาตามัส เนื้อสีเหลืองเข้ม รสหวานมัน และทุเรียนคุณภาพสูงจากพื้นที่ยะลา-เบตง",
     colorClass: "bg-cyan-50 border-cyan-200 text-cyan-900",
     dotColor: "#0891b2",
-    avgBuyPrice: 165,
-    avgSellPrice: 176,
-    avgCutWage: 5.5,
-    activeLotsCount: 15,
-    priceByVariety: [
-      { variety: "ทุเรียนบาตามัส", buyPrice: 160, sellPrice: 175, refPrice: 158, grades: buildGradesForVariety(160, 175, 158) },
-      { variety: "หมอนทอง", buyPrice: 165, sellPrice: 174, refPrice: 162, grades: buildGradesForVariety(165, 174, 162) },
-      { variety: "มูซังคิงเบตง", buyPrice: 280, sellPrice: 310, refPrice: 275, grades: buildGradesForVariety(280, 310, 275) },
-    ],
   },
 ];
 
@@ -413,7 +316,6 @@ export const VARIETY_STRIP_ITEMS: VarietyStripItem[] = [
     nameTh: "ทุกสายพันธุ์",
     nameEn: "All Varieties",
     badgeText: "ทั้งหมด",
-    avgPrice: 170,
     accentColor: "from-emerald-500 to-teal-600",
   },
   {
@@ -421,7 +323,6 @@ export const VARIETY_STRIP_ITEMS: VarietyStripItem[] = [
     nameTh: "หมอนทอง",
     nameEn: "Monthong",
     badgeText: "ยอดนิยม",
-    avgPrice: 172,
     accentColor: "from-amber-400 to-amber-600",
   },
   {
@@ -429,7 +330,6 @@ export const VARIETY_STRIP_ITEMS: VarietyStripItem[] = [
     nameTh: "ก้านยาว",
     nameEn: "Kanyao",
     badgeText: "พรีเมียม",
-    avgPrice: 228,
     accentColor: "from-emerald-600 to-green-700",
   },
   {
@@ -437,7 +337,6 @@ export const VARIETY_STRIP_ITEMS: VarietyStripItem[] = [
     nameTh: "ชะนี",
     nameEn: "Chanee",
     badgeText: "หวานหอม",
-    avgPrice: 132,
     accentColor: "from-yellow-500 to-orange-500",
   },
   {
@@ -445,7 +344,6 @@ export const VARIETY_STRIP_ITEMS: VarietyStripItem[] = [
     nameTh: "กระดุม",
     nameEn: "Kradum",
     badgeText: "พันธุ์เบา",
-    avgPrice: 122,
     accentColor: "from-lime-500 to-emerald-600",
   },
   {
@@ -453,7 +351,6 @@ export const VARIETY_STRIP_ITEMS: VarietyStripItem[] = [
     nameTh: "ทุเรียนภูเขาไฟ",
     nameEn: "Sisaket GI",
     badgeText: "ภาคอีสาน",
-    avgPrice: 195,
     accentColor: "from-rose-500 to-orange-600",
   },
   {
@@ -461,7 +358,6 @@ export const VARIETY_STRIP_ITEMS: VarietyStripItem[] = [
     nameTh: "ทุเรียนนนท์",
     nameEn: "Nonthaburi",
     badgeText: "หายาก",
-    avgPrice: 480,
     accentColor: "from-indigo-500 to-purple-600",
   },
   {
@@ -469,7 +365,6 @@ export const VARIETY_STRIP_ITEMS: VarietyStripItem[] = [
     nameTh: "บาตามัส",
     nameEn: "Batamas",
     badgeText: "ชายแดนใต้",
-    avgPrice: 175,
     accentColor: "from-cyan-500 to-teal-600",
   },
 ];

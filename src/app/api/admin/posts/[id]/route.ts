@@ -25,7 +25,7 @@ export async function PATCH(
       where: { id: postId },
     });
 
-    if (!post) {
+    if (!post || post.status === "REMOVED_BY_ADMIN") {
       return NextResponse.json({ error: "ไม่พบประกาศนี้ในระบบ" }, { status: 404 });
     }
 
@@ -36,7 +36,7 @@ export async function PATCH(
 
     if (action === "HIDE") {
       const updated = await prisma.marketplacePost.update({
-        where: { id: postId },
+        where: { id: postId, status: { not: "REMOVED_BY_ADMIN" } },
         data: { status: "HIDDEN_BY_ADMIN" },
       });
       return NextResponse.json({
@@ -46,8 +46,8 @@ export async function PATCH(
       });
     } else if (action === "RESTORE") {
       const updated = await prisma.marketplacePost.update({
-        where: { id: postId },
-        data: { status: "OPEN" },
+        where: { id: postId, status: "HIDDEN_BY_ADMIN" },
+        data: { status: await prisma.deal.count({ where: { postId, status: { in: ["ACCEPTED", "COMPLETED"] } } }) ? "CLOSED" : "OPEN" },
       });
       return NextResponse.json({
         success: true,
@@ -56,7 +56,7 @@ export async function PATCH(
       });
     } else if (action === "TOGGLE_OUTLIER") {
       const updated = await prisma.marketplacePost.update({
-        where: { id: postId },
+        where: { id: postId, status: { not: "REMOVED_BY_ADMIN" } },
         data: { isPriceOutlier: !post.isPriceOutlier },
       });
       return NextResponse.json({
@@ -95,13 +95,18 @@ export async function DELETE(
       return NextResponse.json({ error: "รหัสประกาศไม่ถูกต้อง" }, { status: 400 });
     }
 
-    await prisma.marketplacePost.delete({
-      where: { id: postId },
+    const post = await prisma.marketplacePost.findUnique({ where: { id: postId } });
+    if (!post) return NextResponse.json({ error: "ไม่พบประกาศนี้" }, { status: 404 });
+    await prisma.$transaction(async tx => {
+      await tx.marketplacePost.update({
+        where: { id: postId }, data: { status: "REMOVED_BY_ADMIN", isPriceOutlier: true },
+      });
+      await tx.deal.updateMany({ where: { postId, status: "PENDING" }, data: { status: "CANCELLED" } });
     });
 
     return NextResponse.json({
       success: true,
-      message: "ลบประกาศออกจากระบบถาวรเรียบร้อยแล้ว",
+      message: "นำประกาศออกจากตลาดแล้ว",
     });
   } catch (error) {
     console.error("Admin Delete Post Error:", error);

@@ -71,7 +71,7 @@ export async function createAndSendOtp({
     },
   });
 
-  // Send email via Mailpit
+  // Send the email
   await sendOtpEmail({
     to: email,
     fullName,

@@ -30,7 +30,27 @@ async function initAndStart() {
     process.exit(1);
   }
 
-  // 2. Seed initial data (Varieties, Grades, Regions, Test Users, Marketplace Posts)
+  // Bring cached ratings from databases created before bilateral confirmation into line.
+  execSync("npx prisma db execute --schema prisma/schema.prisma --stdin", {
+    input: `
+      UPDATE users u
+      JOIN (
+        SELECT r.reviewee_id,
+          AVG(CASE WHEN d.status = 'COMPLETED' AND d.accepted_at IS NOT NULL
+            AND d.initiator_confirmed_at IS NOT NULL AND d.receiver_confirmed_at IS NOT NULL
+            THEN r.rating END) AS average_rating,
+          COUNT(CASE WHEN d.status = 'COMPLETED' AND d.accepted_at IS NOT NULL
+            AND d.initiator_confirmed_at IS NOT NULL AND d.receiver_confirmed_at IS NOT NULL
+            THEN 1 END) AS review_count
+        FROM user_reviews r JOIN deals d ON d.id = r.deal_id GROUP BY r.reviewee_id
+      ) ratings ON ratings.reviewee_id = u.id
+      SET u.rating_avg = COALESCE(ROUND(ratings.average_rating, 2), 0),
+          u.rating_count = ratings.review_count;
+    `,
+    stdio: ["pipe", "inherit", "inherit"],
+  });
+
+  // 2. Seed reference data and optionally demo data.
   try {
     console.log("🌱 Checking and seeding initial data...");
     execSync("npx prisma db seed", { stdio: "inherit" });

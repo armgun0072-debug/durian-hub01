@@ -69,6 +69,7 @@ enum PostStatus {
   OPEN
   CLOSED
   HIDDEN_BY_ADMIN
+  REMOVED_BY_ADMIN
 }
 
 enum ChatRoomStatus {
@@ -149,6 +150,28 @@ model User {
 }
 
 // รหัส OTP ทางอีเมล (เก็บเฉพาะ hash ไม่เก็บเลขจริง)
+model PendingRegistration {
+  browserKey String @id @db.Char(64)
+  revision String @unique @db.Char(36)
+  email String
+  phone String
+  fullName String
+  passwordHash String
+  businessName String
+  primaryRole RoleType
+  province String
+  region String
+  legacyUserId Int?
+  codeHash String
+  attempts Int @default(0)
+  sentAt DateTime
+  expiresAt DateTime
+
+  @@index([expiresAt])
+  @@index([email, sentAt])
+  @@map("pending_registrations")
+}
+
 model OtpCode {
   id        Int        @id @default(autoincrement())
   userId    Int        @map("user_id")
@@ -370,6 +393,16 @@ model SupportTicket {
   @@map("support_tickets")
 }
 
+model SupportEvidenceAccess {
+  id Int @id @default(autoincrement())
+  ticketId Int @map("ticket_id")
+  adminId Int @map("admin_id")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@index([ticketId, createdAt])
+  @@map("support_evidence_access")
+}
+
 model SupportMessage {
   id Int @id @default(autoincrement())
   ticketId Int @map("ticket_id")
@@ -404,6 +437,7 @@ model ChatMessage {
 // ----------------------------------------------------------------------------
 
 model DailyMarketStat {
+  methodologyVersion Int @default(0) @map("methodology_version")
   id                Int      @id @default(autoincrement())
   statDate          DateTime @db.Date @map("stat_date")
   varietyId         Int      @map("variety_id")
@@ -449,6 +483,10 @@ model PostReport {
 }
 
 model Deal {
+  roomId Int? @map("room_id")
+  acceptedAt DateTime? @map("accepted_at")
+  initiatorConfirmedAt DateTime? @map("initiator_confirmed_at")
+  receiverConfirmedAt DateTime? @map("receiver_confirmed_at")
   id               Int        @id @default(autoincrement())
   postId           Int        @map("post_id")
   initiatorId      Int        @map("initiator_id")

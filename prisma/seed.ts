@@ -128,6 +128,8 @@ async function main() {
   }
   console.log("✅ Seeded Locations");
 
+  if (process.env.SEED_DEMO_DATA !== "true") return;
+
   // 5. Default Test Users with Password: password123
   const defaultPasswordHash = await bcrypt.hash("password123", 10);
   const chanLoc = await prisma.location.findFirst({ where: { province: "จันทบุรี" } });

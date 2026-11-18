@@ -74,7 +74,7 @@ export function supportDetail(request: Request, id: string, admin = false) {
     if (!ticketId) throw new SupportError("รหัสคำร้องไม่ถูกต้อง", 400);
     const ticket = await prisma.supportTicket.findFirst({
       where: { id: ticketId, ...(!admin ? { requesterId: user.id } : {}) },
-      include: { requester: { select: { fullName: true } }, room: { select: { id: true, postId: true, post: { select: { title: true } } } } },
+      include: { requester: { select: { fullName: true } }, room: { select: { id: true, postId: true, post: { select: { title: true, price: true, priceUnit: true, status: true, isPriceOutlier: true } } } } },
     });
     if (!ticket) throw new SupportError("ไม่พบคำร้องหรือไม่มีสิทธิ์เข้าถึง", 404);
     const cursor = positiveId(new URL(request.url).searchParams.get("before"));
@@ -83,20 +83,24 @@ export function supportDetail(request: Request, id: string, admin = false) {
       include: { sender: { select: { fullName: true } } },
     });
     let evidence;
-    if (admin) {
+    const canManage = admin && ticket.status === "IN_PROGRESS" && ticket.handledById === user.id;
+    if (new URL(request.url).searchParams.get("evidence") === "1") {
+      if (!canManage) throw new SupportError("เฉพาะผู้ดูแลคำร้องที่รับเรื่องแล้วเท่านั้นที่เปิดหลักฐานได้", 403);
       const room = await prisma.chatRoom.findUniqueOrThrow({ where: { id: ticket.roomId } });
       evidence = {
-        messages: await prisma.chatMessage.findMany({ where: { roomId: room.id }, orderBy: { id: "asc" }, include: { sender: { select: { fullName: true } } } }),
+        messages: await prisma.chatMessage.findMany({ where: { roomId: room.id }, orderBy: { id: "desc" }, take: 50, include: { sender: { select: { fullName: true } } } }),
         deals: await prisma.deal.findMany({ where: { postId: room.postId, OR: [
           { initiatorId: room.initiatorId, receiverId: room.ownerId }, { initiatorId: room.ownerId, receiverId: room.initiatorId },
-        ] } }),
+        ] }, take: 20, orderBy: { id: "desc" } }),
       };
+      evidence.messages.reverse();
+      await prisma.supportEvidenceAccess.create({ data: { ticketId, adminId: user.id } });
     }
     const ahead = ticket.status === "OPEN" ? await prisma.supportTicket.count({ where: { status: "OPEN", OR: [
       { queuedAt: { lt: ticket.queuedAt } }, { queuedAt: ticket.queuedAt, id: { lt: ticket.id } },
     ] } }) : null;
     const handler = ticket.handledById ? await prisma.user.findUnique({ where: { id: ticket.handledById }, select: { fullName: true } }) : null;
-    return { ticket, ahead, handler, canManage: admin && ticket.status === "IN_PROGRESS" && ticket.handledById === user.id, messages: messages.slice(0, 50).reverse(), nextBefore: messages.length > 50 ? messages[49].id : null, evidence };
+    return { ticket, ahead, handler, canManage, messages: messages.slice(0, 50).reverse(), nextBefore: messages.length > 50 ? messages[49].id : null, evidence };
   });
 }
 export function updateSupport(request: Request, id: string, admin = false) {
@@ -111,12 +115,31 @@ export function updateSupport(request: Request, id: string, admin = false) {
     if (status && (!admin ? status !== "OPEN" : !["OPEN", "IN_PROGRESS", "RESOLVED"].includes(status))) throw new SupportError("สถานะไม่ถูกต้อง", 400);
     const resolution = data.resolution === undefined ? undefined : content(data.resolution);
     if (resolution && !admin) throw new SupportError("เฉพาะแอดมินเท่านั้นที่บันทึกผลแก้ไขได้", 403);
-    if (!text && !status) throw new SupportError("กรุณาระบุข้อความหรือสถานะ", 400);
+    const postAction = data.postAction;
+    if (postAction && (!admin || !["HIDE", "REMOVE", "FLAG_PRICE"].includes(postAction) || text || status))
+      throw new SupportError("คำสั่งจัดการประกาศไม่ถูกต้อง", 400);
+    if (!text && !status && !postAction) throw new SupportError("กรุณาระบุข้อความหรือสถานะ", 400);
     if (status === "RESOLVED" && !resolution) throw new SupportError("กรุณาระบุผลการแก้ปัญหาก่อนปิดเรื่อง", 400);
     await prisma.$transaction(async (tx) => {
       const ticket = await tx.supportTicket.findFirst({ where: { id: ticketId, ...(!admin ? { requesterId: user.id } : {}) } });
       if (!ticket) throw new SupportError("ไม่พบคำร้องหรือไม่มีสิทธิ์เข้าถึง", 404);
       if (admin && (ticket.status !== "IN_PROGRESS" || ticket.handledById !== user.id)) throw new SupportError("รับคิวก่อน และดำเนินการได้เฉพาะเรื่องที่คุณดูแล", 409);
+      if (postAction) {
+        const room = await tx.chatRoom.findUniqueOrThrow({ where: { id: ticket.roomId }, select: { postId: true } });
+        const result = await tx.marketplacePost.updateMany({
+          where: { id: room.postId, status: { not: "REMOVED_BY_ADMIN" } },
+          data: postAction === "REMOVE" ? { status: "REMOVED_BY_ADMIN", isPriceOutlier: true }
+            : postAction === "HIDE" ? { status: "HIDDEN_BY_ADMIN" } : { isPriceOutlier: true },
+        });
+        if (!result.count) throw new SupportError("ประกาศถูกนำออกจากตลาดแล้ว", 409);
+        if (postAction === "REMOVE") await tx.deal.updateMany({
+          where: { postId: room.postId, status: "PENDING" }, data: { status: "CANCELLED" },
+        });
+        const action = postAction === "REMOVE" ? "นำออกจากตลาด" : postAction === "HIDE" ? "ซ่อน" : "พักราคาเพื่อตรวจสอบ";
+        await tx.supportMessage.create({ data: { ticketId, senderId: user.id, isAdmin: true,
+          content: action + " · ประกาศ #" + room.postId } });
+        return;
+      }
       if (admin && status === "OPEN") throw new SupportError("ผู้แจ้งสามารถเปิดเรื่องซ้ำหลังปิดเรื่องแล้ว", 400);
       if (!admin && status === "OPEN" && ticket.status !== "RESOLVED") throw new SupportError("เปิดซ้ำได้เฉพาะเรื่องที่แก้ไขแล้ว", 409);
       if (text && ticket.status === "RESOLVED" && status !== "OPEN") throw new SupportError("กรุณาเปิดเรื่องอีกครั้งก่อนส่งข้อความ", 409);

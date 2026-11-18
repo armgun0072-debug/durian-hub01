@@ -1,10 +1,126 @@
 # 📌 Project State & Active Task Tracker
 
 **Project:** Durian Hub (ตลาดกลางทุเรียน)
-**Last Updated:** 2026-11-11
-**Current Status:** FULL SYSTEM DESIGN OVERHAUL (IMPECCABLE CRAFT-FLOOR & DISTILL) — 100% COMPLETED & VERIFIED
+**Last Updated:** 2026-11-19
+**Current Status:** เปิดใช้การจัดการประกาศ ดีลสองฝ่าย รีวิวหลังส่งมอบ ราคาอ้างอิง และการตรวจสิทธิ์หลักฐานแชตแล้ว
+**Latest Commit:** `0220001` (base before local UX/UI + Feature Expansion)
 **Latest Backup:** `D:\csc481_backup_20261030_013531`
 **Presentation Deck & ERD:** `D:\durian_hub_presentation\index.html`
+
+## ปรับหน้าศูนย์ช่วยเหลือ — 2026-11-19
+
+- ปรับ SupportCenter ให้แอดมินเห็นรายการและรายละเอียดเคสพร้อมกันบนเดสก์ท็อป บนมือถือใช้ปุ่มกลับไปรายการและคืนโฟกัสให้แถวเดิม แสดงฟอร์มผลการแก้ไขเมื่อเลือกปิดเรื่อง
+- ตรวจ TypeScript ผ่าน ทดสอบ Edge ด้วยข้อมูลจำลองทั้งหน้าแอดมินและผู้ใช้ ครอบคลุมรับเคส เปิดหลักฐาน พักราคา ตอบข้อความ ปิดเรื่อง การส่งคำร้อง และมุมมองมือถือ ตรวจภาพเดสก์ท็อปธีมสว่างและมืดกับภาพมือถือธีมมืด เก็บภาพใน .local/support-inbox-preview
+
+## ปรับข้อ 2–7 ของตลาดกลาง — 2026-11-19
+
+- แอดมินนำประกาศออกจากตลาดโดยเก็บดีล แชต และคำร้องเดิมไว้ ศูนย์ช่วยเหลือให้ผู้รับเรื่องจัดการประกาศจากคำร้องพร้อมบันทึกผลในเคส
+- ผู้รับข้อเสนอเท่านั้นที่ยอมรับได้ ทั้งสองฝ่ายยืนยันส่งมอบแยกกัน รีวิวใหม่ผูกกับดีลและนับคะแนนจากดีลที่ยืนยันครบ ดีลเก่าไม่มีสถานะยืนยันสองฝ่ายย้อนหลัง
+- ราคาอ้างอิงใช้มัธยฐานและนับแหล่งข้อมูลต่อกลุ่ม อาศัยอย่างน้อยสามผู้ลงประกาศ และกันราคาสุดโต่งจากช่วงราคา Snapshot เดิมเก็บไว้และไม่นำไปปนกับสูตรใหม่
+- การอ่านรูปแชตผ่าน URL ตรวจผู้ใช้ ผู้ดูแลที่รับคำร้องเปิดหลักฐานได้และมีประวัติการเข้าดู คู่มือแยกช่วงส่งข้อความ 7 วันออกจากระยะเก็บข้อมูลจริงซึ่งยังต้องกำหนดตามนโยบาย
+- ทดสอบ integration แยกผ่านตั้งแต่ข้อเสนอถึงการลบออกจากตลาดและตรวจสิทธิ์แชต TypeScript ผ่าน ชุดรวมผ่าน 138/148 โดย 10 กรณีที่ยังล้มเหลวเป็นรายการที่เคยล้มเหลวก่อนแก้ ตรวจ schema diff ก่อนอัปเดต หลังอัปเดต /, /admin, /api/posts และ /api/market-stats ตอบ 200 และโหมด SMTP เป็น Gmail
+
+## สมัครสมาชิกก่อนยืนยัน OTP — 2026-11-19
+
+- แยก pending_registrations ออกจาก users คำขอผูกกับคุกกี้ของเบราว์เซอร์และรุ่นของคำขอ อีเมลและเบอร์ในคำขอซ้ำกันได้ สร้างบัญชีและบทบาทพร้อมกันเมื่อ OTP ผ่าน หน้า OTP มีปุ่มกลับไปแก้อีเมลหรือเบอร์โดยคงข้อมูลฟอร์ม
+- บัญชีสมาชิกค้างเดิมใช้รหัสผ่านเดิมและข้อมูลติดต่อที่ตรงอย่างน้อยหนึ่งช่องเพื่อแก้ข้อมูล ยืนยันอีเมลใหม่ก่อนอัปเดตบัญชีเดิม ไม่มีการลบบัญชี แยกบัญชีแอดมินออกจากการแก้ผ่านการสมัคร
+- ทดสอบ integration กับ MySQL และ Mailpit แยก รวมสองเบราว์เซอร์ การแก้เมลและเบอร์ รหัสเก่า รหัสหมดอายุ ขอรหัสซ้ำ จำนวนครั้งที่กรอกผิด การยืนยันพร้อมกัน บัญชีค้างและแอดมิน ผ่าน TypeScript ผ่าน ชุดเดิมผ่าน 131/146 โดย 15 รายการที่ล้มเหลวตรงกับรายการเดิม ตรวจ schema diff ก่อนเปิดเว็บจริงพบเฉพาะ CREATE TABLE และตรวจหลังเปิดว่าแอดมินยัง ACTIVE
+
+## ล้างข้อมูลทดสอบและเพิ่มคำเตือนใน Launcher — 2026-11-19
+
+- Launcher แสดงข้อความให้กดเริ่มระบบเว็บหลังสลับ Gmail/Mailpit หรือแก้ App Password ตรวจข้อความจากฟอร์มที่คอมไพล์แล้ว
+- ล้าง 14 ตาราง รวมผู้ใช้ 9 บัญชีและประกาศ 18 รายการ ล้างไฟล์อัปโหลดทั้งใน workspace และ volume และลบคอนเทนเนอร์ Mailpit ที่เก็บจดหมายทดสอบ
+- หลังเปิดเว็บใหม่ 14 ตารางมีศูนย์แถว ไฟล์อัปโหลดศูนย์ หน้าเว็บ HTTP 200 และ API ประกาศส่งรายการว่าง SMTP_HOST เป็น smtp.gmail.com คงพื้นที่ 8 รายการ ฤดูกาลภูมิภาค 6 รายการ พันธุ์ 6 รายการ และเกรด 6 รายการ
+- โหมด seed ปกติสร้างเฉพาะข้อมูลอ้างอิง การสร้างข้อมูลตัวอย่างต้องเลือก SEED_DEMO_DATA=true เอง ยังไม่มีแอดมินสำหรับใช้งานจริง
+
+## โหมดส่ง OTP — 2026-11-19
+
+- ตรวจปัญหา OTP ไม่เข้า Gmail พบว่า .env เลือก Gmail แล้วแต่คอนเทนเนอร์เดิมยังใช้ Mailpit และพบอีเมลถึงบัญชีผู้ใช้ในกล่องทดสอบ 2 ฉบับ ตรวจ SMTP verify ผ่าน จากนั้นใช้ docker compose up -d --no-deps web ตรวจ SMTP_HOST ในเว็บได้ smtp.gmail.com และหยุด Mailpit รอผู้ใช้กดขอ OTP ใหม่เพื่อยืนยันการรับใน Gmail
+
+- เลือก Gmail หรือ Mailpit ด้วย COMPOSE_FILE ใน .env แล้วกดเริ่มระบบเว็บใน Launcher ตาม README ตั้งผู้ส่ง Gmail เป็น tobibotroo04@gmail.com พร้อมตรวจว่ามี App Password ก่อนเริ่ม Gmail
+- สร้างอิมเมจใหม่และย้ายไฟล์อัปโหลด 6 ไฟล์ไปยัง volume web_uploads ตรวจ SHA-256 ตรงกันทุกไฟล์ก่อนสร้างคอนเทนเนอร์เว็บใหม่
+- ทดสอบส่ง OTP ผ่านฟังก์ชันของแอปแล้วพบข้อความใน Mailpit เว็บตอบ HTTP 200 ทดสอบ Compose ทั้งสองโหมดและกรณีขาดรหัสแอป ผ่าน TypeScript ส่วน npm test ผ่าน 131 จาก 146 รายการ ล้มเหลว 15 รายการชุดเดิม ยังไม่ได้ทดสอบส่งถึง Gmail จริง
+
+## Windows Launcher — 2026-11-19
+
+- เปิด Docker Desktop แล้วดับเบิลคลิก `DurianHubLauncher.exe` ที่อยู่คู่กับ `docker-compose.yml` กด “เริ่มระบบเว็บ” แล้วรอสถานะพร้อมก่อนเปิดหน้าเว็บ แอดมิน หรือ Mailpit
+- “เริ่ม Studio” เปิดฐานข้อมูลที่ localhost:5555 ผ่านบริการ web ของ Compose เดิมและเปิดเบราว์เซอร์เมื่อพร้อม “เปิดลิงก์สาธารณะ” แชร์เว็บพอร์ต 3000 ผ่าน Cloudflare แล้วคัดลอก URL ได้ ปิด Launcher เพื่อยุติ Tunnel ได้ ส่วนบริการ Docker มีปุ่มหยุดแยก
+- ปุ่มหยุดระบบใช้ compose stop และเก็บ volume MySQL ไว้ เมื่อเริ่มคอนเทนเนอร์เว็บ สคริปต์เดิมเรียก prisma db push และ prisma db seed
+- คอมไพล์ scripts/DurianHubLauncher.cs ด้วย Windows Framework64 csc.exe /codepage:65001 /target:winexe /optimize+ /warnaserror+ ผ่าน ตรวจ PE subsystem, สร้างฟอร์มจาก assembly และทดสอบการแยก URL ผ่าน ตรวจ Compose พบ durian-hub01-main และบริการ web, mysql, mailpit
+- ทดสอบคำสั่ง Studio ได้ HTTP 200 จากพอร์ต 5555 แล้วหยุดคอนเทนเนอร์ทดสอบ ยังไม่ได้เปิด Tunnel สาธารณะหรือทดสอบหยุด/เปิดชุดเว็บที่ใช้งานอยู่ การทดสอบเว็บในคอนเทนเนอร์ด้วย npm test ผ่าน 131 จาก 146 รายการ อีก 15 รายการเกี่ยวกับประวัติประกาศ สิทธิ์ลงประกาศ ตลาด และรีวิว
+
+## Latest Phase 2 Feature Expansion Suite (5 Features) — 2026-11-18
+- **Authorization:** ผู้ใช้สั่ง “วาง Action Plan รวบทั้ง 5 ข้อ แล้วลุย”
+- **Implemented Features:**
+  1. **หน้าโปรไฟล์คู่ค้า & อ่านคอมเมนต์รีวิวจริง (`PartnerReviewsDialog`):** เพิ่ม `GET /api/reviews?userId=...` ใน `src/app/api/reviews/route.ts` และสร้าง `src/components/partner-reviews-dialog.tsx` เชื่อมปุ่ม "ดูโปรไฟล์ & รีวิว" ในหน้ารายละเอียดประกาศ
+  2. **ตัวกรองเกรดทุเรียน & ระบบจัดเรียงประกาศในตลาดกลาง:** เพิ่มตัวกรองเกรด (`A/AB`, `B`, `C`, `D`) และตัวเลือกเรียงลำดับ (`ล่าสุด`, `ราคาต่ำ→สูง`, `ราคาสูง→ต่ำ`, `ปริมาณมาก→น้อย`, `คะแนนรีวิวสูงสุด`) ใน `src/app/page.tsx`
+  3. **อัปเดตสถานะส่งมอบดีล (`COMPLETED`) & พิมพ์ใบสัญญาซื้อขายดิจิทัล:** เพิ่ม `src/app/api/deals/[id]/route.ts` (`PATCH`) และอัปเดต `src/components/my-deals-dialog.tsx` ให้กดยืนยันส่งมอบเสร็จสมบูรณ์และเปิด/พิมพ์ใบสรุปสัญญาซื้อขาย (Digital Contract Slip) ได้
+  4. **กระดิ่งแจ้งเตือนรวมบนแถบเมนู (`NotificationBell`):** เพิ่ม `src/app/api/notifications/route.ts` (`GET`) และ `src/components/notification-bell.tsx` แจ้งเตือนรวมเมื่อมีแชตใหม่ ปิดดีล/ส่งมอบดีล ได้รับรีวิว หรือผลอนุมัติบทบาท พร้อมบันทึกสถานะอ่านแล้วใน `localStorage` แยกตาม `userId` ไม่ให้ตัวเลขเด้งซ้ำหลัง Login ใหม่/รีเฟรช
+  5. **ปุ่มบันทึก Snapshot ราคารายวัน & Export CSV ในหน้า Admin:** เพิ่ม `src/app/api/admin/market-stats/refresh/route.ts` (`POST`) และเพิ่มปุ่มบันทึก Snapshot ราคากลางประจำวัน + ปุ่ม Export CSV สำหรับตารางประกาศและสมาชิกใน `src/app/admin/page.tsx`
+- **Validation:** `npx tsc --noEmit --incremental false` ผ่าน 0 errors, `node tests/ui-feedback.test.cjs` ผ่าน 3/3, `impeccable detect` 0 issues (`[]`), ทดสอบ HTTP endpoints จริงผ่านครบ (`/`, `/admin`, `/api/reviews?userId=1` = 200; `/api/notifications` unauth = 401; `/api/admin/market-stats/refresh` unauth = 403)
+
+## หน้าราคาตลาด — 2026-11-18
+
+- ฟอร์มลงประกาศอ่านจังหวัดจากโปรไฟล์เมื่อเปิดทุกครั้ง หากไม่มีพื้นที่ให้เลือกเอง ใช้เกรดตลาด A–D ร่วมกับตารางราคา ตรวจ TypeScript ผ่าน ทดสอบใน Edge ด้วยบัญชีผู้ขายทดสอบที่ตั้งเป็นยะลา แม้เปิดจากตัวกรองภาคตะวันออก ฟอร์มแสดง 3 จังหวัดชายแดนใต้ / ยะลา โพสต์หมอนทอง B ที่ 168 บาท/กก. (#13) แสดงเฉพาะช่องขายเกรด B ในตารางของภาคนั้น ปิด #13 และตรวจทั้งสี่เกรดกลับเป็นไม่มีข้อมูล ทดสอบกรณีโปรไฟล์ไม่มีจังหวัดและคืนจังหวัดเดิมของบัญชีทดสอบแล้ว
+- เอาราคาตั้งต้นระดับภาค/พันธุ์ ตัวคูณเกรด และราคาที่กรอกล่วงหน้าในฟอร์มออก หน้าราคาตลาดเฉลี่ยราคาเสนอจากประกาศ OPEN ตามช่วงเวลาที่เลือก โดยแยกประเภทและเกรดตามข้อมูลที่บันทึก คำนวณหน่วยบาท/กก. และแสดง “ยังไม่มีข้อมูล” เมื่อไม่มีตัวอย่าง
+- ทดสอบผ่านฟอร์มใน Edge บน localhost ด้วยบัญชีสวนและล้ง สำหรับหมอนทองเกรด C ใน 3 จังหวัดชายแดนใต้ เริ่มจากไม่มีข้อมูล → ขาย 120 (#10) → ขายเพิ่ม 160 (#11) ได้เฉลี่ย 140 → รับซื้อ 150 (#12) ได้รับซื้อ 150 และขาย 140 เกรดอื่น ภาคตะวันออก และค่าจ้างตัดยังไม่มีข้อมูล ปิดเฉพาะ #10–12 แล้วเปิดหน้าใหม่ ยืนยันกลับเป็นไม่มีข้อมูลและ 0 ประกาศเปิดในช่วง 7 วัน
+- ตรวจ TypeScript ผ่าน และชุดทดสอบ market-stats กับ ui-feedback ผ่าน 7/7
+- ถอดกล่องแนวโน้มราคาย้อนหลัง 30 วันออกจากหน้าราคาตลาดตามคำขอ เก็บคอมโพเนนต์และ API สำหรับนำกลับมาใช้ ตรวจใน Edge ที่ 390 และ 1440 พิกเซลแล้ว หน้าภาคกลางไม่มีส่วนกราฟค้างท้ายหน้า ไม่มีคำขอสถิติย้อนหลัง เลือกเกรด B และกลับไปยังตารางทุกเกรดได้ TypeScript ผ่าน
+- ปรับตัวเลือกภาคและพันธุ์ พับรายชื่อจังหวัด วางราคาสวนคู่กับราคาล้ง และแยกค่าจ้างตัดเป็นแถวรองใน `src/app/page.tsx`
+- ตารางมือถือแสดงเกรด สวนเสนอขาย และล้งรับซื้อ ส่วนจอใหญ่ใช้ตารางเปรียบเทียบหลายเกรด ตัวกรองพันธุ์ใช้กับทั้งตารางและมุมมองเกรดเดียว
+- ทดสอบใน Edge headless กับเว็บจริงบน localhost โดยใช้บัญชีทดสอบ ที่ความกว้าง 320, 390, 768 และ 1440 พิกเซล การเลือกภาค พันธุ์ เกรด เปิดปิดจังหวัด และกรณีพวงมณีไม่มีราคาแยกเกรดผ่าน หน้าไม่ล้นแนวนอน
+- ราคาตั้งต้นภาคตะวันออกตรงกับหน้าเดิมทั้ง 32 ค่าในตารางและ 3 ค่าสรุปทุกขนาด ทดสอบสลับภาษาอังกฤษ เลือกเกรดบนเดสก์ท็อป และอ่านตารางบนมือถือผ่าน
+- TypeScript ผ่าน และ Impeccable detect คืน `[]`
+
+- **Latest Marketplace Card & Post Detail Layout Fix — 2026-11-18:**
+  - ปรับ `ListingCard` (`src/components/listing-card.tsx`) ใช้ Thumbnail `w-24 h-24` (`object-contain`) ด้านข้างภายในตัวการ์ด และคืน `h-full` + `.listing-grid` แบบปกติ (`src/app/globals.css`) เพื่อไม่ให้เกิดช่องว่างระหว่างแถว และเห็นรูปเต็มใบไม่โดนครอป
+  - ตัดเลย์เอาท์ `POST_DETAIL` (`src/app/page.tsx`) ใหม่: นำรูปที่โพสต์จริงมาแสดงฝั่งซ้ายแทนกล่องเขียว `👑` เดิม พร้อม Lightbox Modal คลิกดูภาพขนาดเต็ม (`lightboxImageUrl`), แก้ `จ.undefined`, `ความประพฤติ undefined/100` (`?? 100`), และคำซ้ำ `เกรด เกรด A`
+- **Latest Auth Session Flash Fix — 2026-11-18:** เพิ่ม `isCheckingSession` ใน `src/app/page.tsx` แสดงหน้าจอตรวจสอบสถานะการเข้าสู่ระบบระหว่างรอ `/api/auth/me` เพื่อไม่ให้หน้า Login กระพริบเมื่อรีเฟรช (`tsc --noEmit` ผ่าน, `tests/ui-feedback.test.cjs` 3/3 ผ่าน, HTTP 200)
+## Latest Feature Expansion Suite — 2026-11-18
+- **Authorization:** ผู้ใช้อนุมัติให้ดำเนินการพัฒนาฟีเจอร์ที่วิเคราะห์ด้วยคำว่า “ลุยทำทั้งหมดเลย”
+- **Implemented Features:**
+  1. **แก้ไข / ปิดการขาย / ลบประกาศของตนเอง:** เพิ่ม `src/app/api/posts/[id]/route.ts` (`PATCH`, `DELETE`), อัปเดต `/api/posts/mine` และเพิ่มฟอร์มแก้ไขออนไลน์, ปุ่มปิด/เปิดรับ, และลบประกาศใน `src/components/my-posts-dialog.tsx`
+  2. **อัปโหลดรูปภาพประกอบประกาศ (`PostImage`):** เพิ่ม `src/lib/upload.ts` (ตรวจ magic bytes JPG/PNG/WebP ไม่เกิน 5MB) + `src/app/api/uploads/route.ts`, บันทึกลง `PostImage` ใน `POST /api/posts`, เพิ่มปุ่มอัปโหลด/พรีวิวในฟอร์มลงประกาศ และแสดงรูปในหน้ารายละเอียดประกาศ
+  3. **หน้าประวัติสัญญาดีล & สรุปยอดซื้อขาย (`MyDealsDialog`):** เพิ่ม `GET /api/deals` พร้อมสรุปยอดดีล/ปริมาณ/มูลค่า และสร้าง `src/components/my-deals-dialog.tsx` เชื่อมเข้าเมนูบัญชีผู้ใช้
+  4. **กราฟแนวโน้มราคาย้อนหลัง 30 วัน (`MarketTrendPanel`):** เพิ่ม `GET /api/market-stats` (ดึง `DailyMarketStat` และ Fallback อัตโนมัติไปรวมค่าเฉลี่ยรายวันจาก `MarketplacePost` จริงเมื่อยังไม่มี Snapshot), สร้าง `src/components/market-trend-panel.tsx` พร้อมกราฟเส้น SVG + แถบราคารายวัน และ Empty State ภาษาผู้ใช้ทั่วไปพร้อมปุ่มไปตลาดกลาง (ไม่มีศัพท์เทคนิค/CLI) รวมถึงแก้คำซ้ำหัวตาราง `เกรด D` ใน `src/app/page.tsx`
+  5. **ส่งรูปภาพในห้องแชตเจรจา (`ChatMessageType.IMAGE`):** อัปเดต `/api/chat/rooms/[id]/messages` ให้รองรับ `IMAGE` และเพิ่มปุ่มแนบรูปในห้องแชตพร้อมพรีวิวภาพในบับเบิล
+  *(หมายเหตุ: ฟีเจอร์แก้ไขจังหวัดในตั้งค่าบัญชีมีอยู่แล้วใน `/api/user/profile` และ `AccountSettingsDialog`)*
+- **Validation:**
+  - `npx tsc --noEmit --incremental false`: ผ่าน 0 errors
+  - `node tests/ui-feedback.test.cjs`: ผ่าน 3/3
+  - `impeccable detect`: 0 warnings/errors (`[]`)
+  - Live HTTP checks: `/` (200), `/admin` (200), `/api/market-stats` (200), `/api/deals` unauth (401), `/api/uploads` unauth (401)
+  - ซิงก์ไฟล์ทั้งหมดเข้า `durian_hub_web` เรียบร้อย
+
+## Latest UX/UI Refinement (User & Admin) — 2026-11-18
+- **Authorization:** ผู้ใช้อนุมัติ Action Plan ด้วยคำว่า “ลุย”
+- **Changes (User Page `src/app/page.tsx`):**
+  - แทนที่ `alert()` ทั้ง 6 จุดด้วย In-app `uiNotice` banner พร้อมรองรับภาษา TH/EN
+  - แก้ `border-l-4` (`side-tab`) บนรายการห้องแชตที่เลือก เป็น Soft Card Highlight (`ring-1 ring-inset ring-brand-line/50`)
+  - แก้ปุ่มให้คะแนนดาวคู่ค้าให้มี Hover State (`hover:bg-sky-800`) และเอา `animate-pulse` ออก
+  - แทนที่ Emoji ดิบที่หลงเหลือ (`📦`, `💡`, `🎉`, `⚠️`, `✅`, `🚩`, `👤`, `💬`, `🤝`, `🔒`, `🛡️`) ด้วย Lucide Icons และใช้ `<ReviewSummary />` ใน Modal รีวิวแทนค่า fallback `5.0`
+  - เพิ่ม `role="tablist"` / `role="tab"` / `aria-selected` ในแท็บตัวกรองห้องแชต
+- **Changes (Admin Page `src/app/admin/page.tsx`):**
+  - เปลี่ยนการ์ด KPI ทั้ง 4 ใบจาก `<div onClick>` เป็น `<button type="button">` เพื่อรองรับคีย์บอร์ด และเอา `animate-pulse` ออก
+  - จัดลำดับแท็บ Desktop ให้ตรงกับ Mobile `<select>` (`ROLE_REQUESTS`, `REPORTS`, `POSTS`, `USERS`, `SUPPORT`), ใช้ `role="tablist"` / `role="tab"` / `aria-selected`, และแก้ Badge Contrast (`bg-warning-soft text-warning-ink`)
+  - เพิ่มช่องค้นหาประกาศ (`postSearch`) พร้อมปุ่มล้างคำค้นในแท็บ `POSTS`
+  - ปรับปุ่มจัดการในตาราง `POSTS` ให้ใช้ `flex flex-wrap justify-end gap-1.5` และ Semantic Color Tokens
+- **Validation:**
+  - `impeccable detect`: 0 warnings/errors (`[]`)
+  - `tsc --noEmit --incremental false`: 0 errors
+  - `tests/ui-feedback.test.cjs`: 3/3 ผ่าน
+  - ซิงก์ไฟล์เข้า `durian_hub_web` และตรวจ HTTP 200 OK ทั้ง `/` และ `/admin`
+
+## Latest Docker Rebuild & Cleanup Task — 2026-11-18
+- **Authorization:** ผู้ใช้อนุมัติ "โอเคครับจัดไปแล้วก็พวกของตัวเก่าที่ไม่ใช้ลบไปเลย"
+- **Actions Performed:**
+  1. ลบคอนเทนเนอร์เก่าที่ค้างสะสม: `adoring_bohr` และ `durian_prisma_studio`
+  2. ตั้งค่า `.env` เพื่อล็อก `COMPOSE_PROJECT_NAME=durian-hub01-main` ให้ตรงกับระบบ Docker Network และ MySQL Volume เดิม
+  3. Rebuild คอนเทนเนอร์ `durian_hub_web` สำเร็จ พร้อมเริ่มทำงานด้วย Next.js 15.5 บนโค้ด Git ล่าสุด
+  4. ทำการ Prune แคชและ Image ส่วนเกิน Reclaim พื้นที่คืนได้ **4.348 GB**
+  5. ทดสอบ Smoke Test เข้า `http://localhost:3000` สำเร็จ ตอบกลับ `HTTP/1.1 200 OK`
+
+
 
 ## Latest System-Wide Design Overhaul (Master Action Plan) — 2026-11-11
 - **Authorization:** ผู้ใช้อนุมัติ "ลุยเลย" และยืนยัน Master Action Plan ให้รื้อและปรับปรุงดีไซน์ทั้งระบบให้ทันสมัย ใช้งานง่าย ไม่รกสายตา ตามเกณฑ์ของ Skill `impeccable` (`craft-floor.md`, `distill.md`, และ `operate.md`)

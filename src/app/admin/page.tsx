@@ -110,6 +110,7 @@ interface PostItem {
   price: number;
   pricePerKg?: number;
   priceUnit: string;
+  quantityKg?: number | null;
   isPriceOutlier: boolean;
   status: "OPEN" | "CLOSED" | "HIDDEN_BY_ADMIN";
   createdAt: string;
@@ -149,6 +150,7 @@ export default function AdminPortalPage() {
 
   // Filters & Search
   const [userSearch, setUserSearch] = useState("");
+  const [postSearch, setPostSearch] = useState("");
   const [postFilter, setPostFilter] = useState<"ALL" | "OUTLIER" | "HIDDEN">("ALL");
   const [requestFilter, setRequestFilter] = useState<"ALL" | "PENDING" | "APPROVED" | "REJECTED">("PENDING");
 
@@ -400,13 +402,13 @@ export default function AdminPortalPage() {
   // Handle Post Moderation (Hide/Restore/Delete)
   const handlePostAction = async (postId: number, action: "HIDE" | "RESTORE" | "TOGGLE_OUTLIER" | "DELETE") => {
     if (action === "DELETE") {
-      if (!await requestConfirmation("คุณแน่ใจหรือไม่ว่าต้องการลบประกาศนี้ออกจากระบบอย่างถาวร?")) return;
+      if (!await requestConfirmation("นำประกาศออกจากตลาดโดยเก็บดีล แชต และคำร้องไว้ใช่หรือไม่?")) return;
       try {
         const res = await adminActionFetch(`/api/admin/posts/${postId}`, { method: "DELETE" });
         if (res.ok) {
           await refreshData();
         } else {
-          notify("ไม่สามารถลบประกาศได้");
+          notify((await res.json().catch(() => ({}))).error || "ไม่สามารถนำประกาศออกจากตลาดได้");
         }
       } catch {
         notify("เกิดข้อผิดพลาดในการลบประกาศ");
@@ -620,9 +622,16 @@ export default function AdminPortalPage() {
   });
 
   const filteredPosts = posts.filter((p) => {
-    if (postFilter === "OUTLIER") return p.isPriceOutlier;
-    if (postFilter === "HIDDEN") return p.status === "HIDDEN_BY_ADMIN";
-    return true;
+    if (postFilter === "OUTLIER" && !p.isPriceOutlier) return false;
+    if (postFilter === "HIDDEN" && p.status !== "HIDDEN_BY_ADMIN") return false;
+    if (!postSearch.trim()) return true;
+    const q = postSearch.trim().toLowerCase();
+    return (
+      p.title.toLowerCase().includes(q) ||
+      (p.variety?.nameTh && p.variety.nameTh.toLowerCase().includes(q)) ||
+      (p.location?.province && p.location.province.toLowerCase().includes(q)) ||
+      (p.user?.fullName && p.user.fullName.toLowerCase().includes(q))
+    );
   });
 
   const filteredUsers = users.filter((u) => {
@@ -635,6 +644,79 @@ export default function AdminPortalPage() {
       (u.location?.province && u.location.province.includes(q))
     );
   });
+
+  const handleRefreshDailyMarketStats = async () => {
+    try {
+      const res = await adminActionFetch("/api/admin/market-stats/refresh", { method: "POST" });
+      const data = await res.json().catch(() => null);
+      if (res.ok && data?.message) {
+        notify(data.message, "success");
+      } else {
+        notify(data?.error || "ไม่สามารถอัปเดตสถิติราคากลางได้");
+      }
+    } catch {
+      notify("เกิดข้อผิดพลาดในการอัปเดตสถิติราคากลาง");
+    }
+  };
+
+  const downloadCsv = (filename: string, headers: string[], rows: Array<Array<string | number>>) => {
+    const escapeCell = (val: string | number) => {
+      const s = String(val ?? "").replace(/"/g, '""');
+      return `"${s}"`;
+    };
+    const csvContent =
+      "\uFEFF" +
+      [headers.map(escapeCell).join(","), ...rows.map((r) => r.map(escapeCell).join(","))].join("\r\n");
+    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = filename;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+  };
+
+  const handleExportPostsCsv = () => {
+    downloadCsv(
+      `durian-hub-posts-${new Date().toISOString().slice(0, 10)}.csv`,
+      ["ID", "หัวข้อประกาศ", "ประเภท", "สายพันธุ์", "เกรด", "จังหวัด", "ราคา", "หน่วย", "ปริมาณ (กก.)", "ผู้ลงประกาศ", "สถานะ", "วันที่สร้าง"],
+      filteredPosts.map((p) => [
+        p.id,
+        p.title,
+        p.postType,
+        p.variety?.nameTh || "",
+        p.grade?.nameTh || "",
+        p.location?.province || "",
+        Number(p.price),
+        p.priceUnit,
+        p.quantityKg ? Number(p.quantityKg) : 0,
+        p.user?.fullName || "",
+        p.status,
+        p.createdAt.slice(0, 10),
+      ])
+    );
+  };
+
+  const handleExportUsersCsv = () => {
+    downloadCsv(
+      `durian-hub-users-${new Date().toISOString().slice(0, 10)}.csv`,
+      ["ID", "ชื่อ-นามสกุล", "อีเมล", "เบอร์โทร", "จังหวัด", "บทบาทปัจจุบัน", "คะแนนความประพฤติ", "คะแนนรีวิวเฉลี่ย", "จำนวนรีวิว", "สถานะ"],
+      filteredUsers.map((u) => [
+        u.id,
+        u.fullName,
+        u.email,
+        u.phone,
+        u.location?.province || "",
+        u.activeRole,
+        u.trustScore,
+        Number(u.ratingAvg ?? 0),
+        u.ratingCount ?? 0,
+        u.status,
+      ])
+    );
+  };
 
   return (
     <div className="min-h-screen bg-canvas text-foreground flex flex-col font-sans">
@@ -708,13 +790,26 @@ export default function AdminPortalPage() {
         {overviewError && <div role="alert" className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-danger-line bg-danger-soft p-4 text-sm text-danger-ink"><span>โหลดข้อมูลล่าสุดไม่สำเร็จ กำลังแสดงข้อมูลที่โหลดไว้ก่อนหน้า</span><button className="ui-button ui-button-secondary" disabled={isLoadingData} onClick={() => void refreshData()}>ลองใหม่</button></div>}
         {notice && <div role={notice.kind === "error" ? "alert" : "status"} className={`flex items-start justify-between gap-3 rounded-xl border p-4 text-sm ${notice.kind === "error" ? "border-danger-line bg-danger-soft text-danger-ink" : "border-brand-line bg-brand-soft text-brand-ink"}`}><span>{notice.text}</span><button type="button" className="min-h-11 shrink-0 px-3" aria-label="ปิดข้อความแจ้งผล" onClick={() => setNotice(null)}>ปิด</button></div>}
         {mutationPending && <p role="status" className="text-sm text-secondary">กำลังบันทึกการดำเนินการ…</p>}
-        <PageHeading title="ภาพรวมการดูแลระบบ" description="ตรวจสอบรายการที่รอดำเนินการ และจัดการข้อมูลตลาดกลาง" />
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <PageHeading title="ภาพรวมการดูแลระบบ" description="ตรวจสอบรายการที่รอดำเนินการ และจัดการข้อมูลตลาดกลาง" />
+          <button
+            type="button"
+            disabled={mutationPending}
+            onClick={() => void handleRefreshDailyMarketStats()}
+            className="px-3.5 py-2 rounded-xl bg-brand-soft hover:bg-brand-soft/80 text-brand-ink border border-brand-line text-xs font-semibold inline-flex items-center gap-1.5 transition cursor-pointer disabled:opacity-50"
+          >
+            <RefreshCw className={`w-3.5 h-3.5 ${mutationPending ? "animate-spin" : ""}`} />
+            <span>บันทึก Snapshot ราคากลางประจำวัน</span>
+          </button>
+        </div>
         {/* KPI / Summary Cards */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3.5">
           {/* Card 1: Pending Role Requests */}
-          <div
-            aria-pressed={activeTab === "ROLE_REQUESTS"} onClick={() => setActiveTab("ROLE_REQUESTS")}
-            className={`cursor-pointer p-4 rounded-xl border transition-all ${
+          <button
+            type="button"
+            aria-pressed={activeTab === "ROLE_REQUESTS"}
+            onClick={() => setActiveTab("ROLE_REQUESTS")}
+            className={`text-left cursor-pointer p-4 rounded-xl border transition-all ${
               activeTab === "ROLE_REQUESTS"
                 ? "bg-brand-soft/70 border-brand-line shadow-2xs"
                 : "bg-surface border-line hover:border-line-strong hover:bg-hover/50"
@@ -735,12 +830,14 @@ export default function AdminPortalPage() {
                 <Clock className="w-3 h-3" /> รอการอนุมัติ
               </span>
             )}
-          </div>
+          </button>
 
           {/* Card 2: User Reports */}
-          <div
-            aria-pressed={activeTab === "REPORTS"} onClick={() => setActiveTab("REPORTS")}
-            className={`cursor-pointer p-4 rounded-xl border transition-all ${
+          <button
+            type="button"
+            aria-pressed={activeTab === "REPORTS"}
+            onClick={() => setActiveTab("REPORTS")}
+            className={`text-left cursor-pointer p-4 rounded-xl border transition-all ${
               activeTab === "REPORTS"
                 ? "bg-danger-soft/70 border-danger-line shadow-2xs"
                 : "bg-surface border-line hover:border-line-strong hover:bg-hover/50"
@@ -757,7 +854,7 @@ export default function AdminPortalPage() {
               <span className="text-xs text-muted-foreground">เรื่องรอตรวจ</span>
             </div>
             {summary.pendingReportsCount > 0 ? (
-              <span className="mt-1.5 inline-flex items-center gap-1 text-[11px] font-semibold text-danger-ink animate-pulse">
+              <span className="mt-1.5 inline-flex items-center gap-1 text-[11px] font-semibold text-danger-ink">
                 <ShieldAlert className="w-3 h-3" /> มีข้อร้องเรียนใหม่
               </span>
             ) : (
@@ -765,12 +862,14 @@ export default function AdminPortalPage() {
                 <CheckCircle2 className="w-3 h-3" /> จัดการครบแล้ว
               </span>
             )}
-          </div>
+          </button>
 
           {/* Card 3: Marketplace Posts */}
-          <div
-            aria-pressed={activeTab === "POSTS"} onClick={() => setActiveTab("POSTS")}
-            className={`cursor-pointer p-4 rounded-xl border transition-all ${
+          <button
+            type="button"
+            aria-pressed={activeTab === "POSTS"}
+            onClick={() => setActiveTab("POSTS")}
+            className={`text-left cursor-pointer p-4 rounded-xl border transition-all ${
               activeTab === "POSTS"
                 ? "bg-info-soft/70 border-info-line shadow-2xs"
                 : "bg-surface border-line hover:border-line-strong hover:bg-hover/50"
@@ -791,12 +890,14 @@ export default function AdminPortalPage() {
               <span>•</span>
               <span className="text-danger-ink num">ซ่อน: {summary.hiddenPostsCount}</span>
             </div>
-          </div>
+          </button>
 
           {/* Card 4: Total Users */}
-          <div
-            aria-pressed={activeTab === "USERS"} onClick={() => setActiveTab("USERS")}
-            className={`cursor-pointer p-4 rounded-xl border transition-all ${
+          <button
+            type="button"
+            aria-pressed={activeTab === "USERS"}
+            onClick={() => setActiveTab("USERS")}
+            className={`text-left cursor-pointer p-4 rounded-xl border transition-all ${
               activeTab === "USERS"
                 ? "bg-accent-soft/70 border-accent-line shadow-2xs"
                 : "bg-surface border-line hover:border-line-strong hover:bg-hover/50"
@@ -815,7 +916,7 @@ export default function AdminPortalPage() {
             <span className="mt-1.5 inline-flex items-center gap-1 text-[11px] font-medium text-muted-foreground">
               ระงับชั่วคราว: <strong className="text-danger-ink num">{summary.suspendedUsersCount}</strong>
             </span>
-          </div>
+          </button>
         </div>
 
         {/* Tab Navigation */}
@@ -829,47 +930,55 @@ export default function AdminPortalPage() {
             <option value="SUPPORT">ศูนย์ช่วยเหลือ</option>
           </select>
         </label>
-        <div role="group" aria-label="หมวดงานผู้ดูแล" className="hidden border-b border-line items-center gap-2 overflow-x-auto pb-1 lg:flex">
-          <button className={`px-4 py-2.5 rounded-lg text-sm font-semibold shrink-0 ${activeTab === "SUPPORT" ? "bg-brand-soft text-brand-ink" : "text-muted-foreground"}`} aria-pressed={activeTab === "SUPPORT"} onClick={() => setActiveTab("SUPPORT")}>ศูนย์ช่วยเหลือ · แชตกับผู้ใช้</button>
+        <div role="tablist" aria-label="หมวดงานผู้ดูแล" className="hidden border-b border-line items-center gap-2 overflow-x-auto pb-2 lg:flex">
           <button
-            aria-pressed={activeTab === "ROLE_REQUESTS"} onClick={() => setActiveTab("ROLE_REQUESTS")}
-            className={`px-4 py-2.5 rounded-lg text-sm font-semibold flex items-center gap-2 transition-all shrink-0 ${
+            type="button"
+            role="tab"
+            aria-selected={activeTab === "ROLE_REQUESTS"}
+            onClick={() => setActiveTab("ROLE_REQUESTS")}
+            className={`px-4 py-2 rounded-lg text-sm font-semibold flex items-center gap-2 transition-all shrink-0 cursor-pointer ${
               activeTab === "ROLE_REQUESTS"
-                ? "bg-emerald-500/20 text-brand-ink border border-brand-line/30"
+                ? "bg-brand-soft text-brand-ink border border-brand-line"
                 : "text-muted-foreground hover:text-foreground hover:bg-surface"
             }`}
           >
             <FileCheck className="w-4 h-4" />
             <span>คำขอเพิ่มบทบาท</span>
             {summary.pendingRoleRequestsCount > 0 && (
-              <span className="px-2 py-0.5 rounded-full text-xs bg-amber-500 text-muted-foreground font-semibold">
+              <span className="px-2 py-0.5 rounded-full text-xs bg-warning-soft text-warning-ink border border-warning-line font-semibold num">
                 {summary.pendingRoleRequestsCount}
               </span>
             )}
           </button>
 
           <button
-            aria-pressed={activeTab === "REPORTS"} onClick={() => setActiveTab("REPORTS")}
-            className={`px-4 py-2.5 rounded-lg text-sm font-semibold flex items-center gap-2 transition-all shrink-0 ${
+            type="button"
+            role="tab"
+            aria-selected={activeTab === "REPORTS"}
+            onClick={() => setActiveTab("REPORTS")}
+            className={`px-4 py-2 rounded-lg text-sm font-semibold flex items-center gap-2 transition-all shrink-0 cursor-pointer ${
               activeTab === "REPORTS"
-                ? "bg-rose-500/20 text-danger-ink border border-danger-line/30"
+                ? "bg-danger-soft text-danger-ink border border-danger-line"
                 : "text-muted-foreground hover:text-foreground hover:bg-surface"
             }`}
           >
             <AlertTriangle className="w-4 h-4" />
             <span>ศูนย์รับแจ้งปัญหา</span>
             {summary.pendingReportsCount > 0 && (
-              <span className="px-2 py-0.5 rounded-full text-xs bg-rose-500 text-white font-semibold">
+              <span className="px-2 py-0.5 rounded-full text-xs bg-rose-600 text-white font-semibold num">
                 {summary.pendingReportsCount}
               </span>
             )}
           </button>
 
           <button
-            aria-pressed={activeTab === "POSTS"} onClick={() => setActiveTab("POSTS")}
-            className={`px-4 py-2.5 rounded-lg text-sm font-semibold flex items-center gap-2 transition-all shrink-0 ${
+            type="button"
+            role="tab"
+            aria-selected={activeTab === "POSTS"}
+            onClick={() => setActiveTab("POSTS")}
+            className={`px-4 py-2 rounded-lg text-sm font-semibold flex items-center gap-2 transition-all shrink-0 cursor-pointer ${
               activeTab === "POSTS"
-                ? "bg-cyan-500/20 text-info-ink border border-info-line/30"
+                ? "bg-info-soft text-info-ink border border-info-line"
                 : "text-muted-foreground hover:text-foreground hover:bg-surface"
             }`}
           >
@@ -878,15 +987,32 @@ export default function AdminPortalPage() {
           </button>
 
           <button
-            aria-pressed={activeTab === "USERS"} onClick={() => setActiveTab("USERS")}
-            className={`px-4 py-2.5 rounded-lg text-sm font-semibold flex items-center gap-2 transition-all shrink-0 ${
+            type="button"
+            role="tab"
+            aria-selected={activeTab === "USERS"}
+            onClick={() => setActiveTab("USERS")}
+            className={`px-4 py-2 rounded-lg text-sm font-semibold flex items-center gap-2 transition-all shrink-0 cursor-pointer ${
               activeTab === "USERS"
-                ? "bg-purple-500/20 text-accent-ink border border-accent-line/30"
+                ? "bg-accent-soft text-accent-ink border border-accent-line"
                 : "text-muted-foreground hover:text-foreground hover:bg-surface"
             }`}
           >
             <Users className="w-4 h-4" />
             <span>จัดการสมาชิกและช่วยเหลือผู้ใช้</span>
+          </button>
+
+          <button
+            type="button"
+            role="tab"
+            aria-selected={activeTab === "SUPPORT"}
+            onClick={() => setActiveTab("SUPPORT")}
+            className={`px-4 py-2 rounded-lg text-sm font-semibold flex items-center gap-2 transition-all shrink-0 cursor-pointer ${
+              activeTab === "SUPPORT"
+                ? "bg-brand-soft text-brand-ink border border-brand-line"
+                : "text-muted-foreground hover:text-foreground hover:bg-surface"
+            }`}
+          >
+            <span>ศูนย์ช่วยเหลือ · แชตกับผู้ใช้</span>
           </button>
         </div>
 
@@ -1285,26 +1411,56 @@ export default function AdminPortalPage() {
                 </p>
               </div>
 
-              {/* Filters */}
-              <div className="flex items-center gap-1.5 bg-canvas p-1 rounded-lg border border-line text-xs">
-                {(["ALL", "OUTLIER", "HIDDEN"] as const).map((f) => (
+              {/* Filters & Search */}
+              <div className="flex flex-wrap items-center gap-2.5">
+                <button
+                  type="button"
+                  onClick={handleExportPostsCsv}
+                  className="px-3 py-1.5 rounded-lg bg-surface hover:bg-hover border border-line text-xs font-semibold text-foreground cursor-pointer transition"
+                >
+                  Export CSV ({filteredPosts.length})
+                </button>
+                {postSearch && (
                   <button
-                    key={f}
-                    aria-pressed={postFilter === f}
-                    onClick={() => setPostFilter(f)}
-                    className={`px-3 py-1.5 rounded-lg font-medium transition-all ${
-                      postFilter === f
-                        ? "bg-cyan-700 text-white shadow-sm"
-                        : "text-muted-foreground hover:text-foreground"
-                    }`}
+                    type="button"
+                    className="ui-button ui-button-ghost text-xs"
+                    onClick={() => setPostSearch("")}
                   >
-                    {f === "ALL"
-                      ? `ทั้งหมด (${posts.length})`
-                      : f === "OUTLIER"
-                      ? `ราคาโดด (${summary.outlierPostsCount})`
-                      : `ถูกซ่อน (${summary.hiddenPostsCount})`}
+                    ล้างคำค้น ({filteredPosts.length})
                   </button>
-                ))}
+                )}
+                <div className="relative w-full sm:w-56">
+                  <Search className="w-4 h-4 text-muted-foreground absolute left-3 top-2.5" />
+                  <input
+                    type="text"
+                    value={postSearch}
+                    onChange={(e) => setPostSearch(e.target.value)}
+                    aria-label="ค้นหาประกาศด้วยหัวข้อ สายพันธุ์ จังหวัด หรือชื่อผู้ลงประกาศ"
+                    placeholder="ค้นหาหัวข้อ, สายพันธุ์, จังหวัด..."
+                    className="w-full pl-9 pr-4 py-2 bg-canvas border border-line rounded-lg text-xs text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-info-line"
+                  />
+                </div>
+                <div className="flex items-center gap-1.5 bg-canvas p-1 rounded-lg border border-line text-xs">
+                  {(["ALL", "OUTLIER", "HIDDEN"] as const).map((f) => (
+                    <button
+                      type="button"
+                      key={f}
+                      aria-pressed={postFilter === f}
+                      onClick={() => setPostFilter(f)}
+                      className={`px-3 py-1.5 rounded-lg font-medium transition-all cursor-pointer ${
+                        postFilter === f
+                          ? "bg-info-soft text-info-ink border border-info-line shadow-2xs"
+                          : "text-muted-foreground hover:text-foreground"
+                      }`}
+                    >
+                      {f === "ALL"
+                        ? `ทั้งหมด (${posts.length})`
+                        : f === "OUTLIER"
+                        ? `ราคาโดด (${summary.outlierPostsCount})`
+                        : `ถูกซ่อน (${summary.hiddenPostsCount})`}
+                    </button>
+                  ))}
+                </div>
               </div>
             </div>
 
@@ -1321,7 +1477,23 @@ export default function AdminPortalPage() {
                   </tr>
                 </thead>
                 <tbody role="rowgroup" className="divide-y divide-line/60">
-                  {filteredPosts.length === 0 && <tr role="row" className="admin-empty-row"><td role="cell" colSpan={6} className="p-8 text-center"><p className="font-semibold">ไม่มีประกาศในตัวกรองนี้</p><button className="ui-button ui-button-secondary mt-4" onClick={() => setPostFilter("ALL")}>ดูประกาศทั้งหมด</button></td></tr>}
+                  {filteredPosts.length === 0 && (
+                    <tr role="row" className="admin-empty-row">
+                      <td role="cell" colSpan={6} className="p-8 text-center">
+                        <p className="font-semibold">ไม่พบประกาศที่ตรงกับตัวกรองหรือคำค้นนี้</p>
+                        <button
+                          type="button"
+                          className="ui-button ui-button-secondary mt-4"
+                          onClick={() => {
+                            setPostFilter("ALL");
+                            setPostSearch("");
+                          }}
+                        >
+                          แสดงประกาศทั้งหมด
+                        </button>
+                      </td>
+                    </tr>
+                  )}
                   {filteredPosts.map((post) => (
                     <tr role="row" key={post.id} className="hover:bg-muted/40 transition-colors">
                       <td role="cell" data-label="หัวข้อประกาศ" className="py-3.5 px-4 font-medium text-foreground max-w-xs truncate">
@@ -1385,42 +1557,48 @@ export default function AdminPortalPage() {
                         )}
                       </td>
 
-                      <td role="cell" data-label="การจัดการ" className="py-3.5 px-4 text-right space-x-2">
-                        {post.status === "HIDDEN_BY_ADMIN" ? (
-                          <button
-                            disabled={mutationPending}
-                            onClick={() => handlePostAction(post.id, "RESTORE")}
-                            className="px-2.5 py-1 rounded-lg bg-emerald-700/20 hover:bg-emerald-700/30 text-brand-ink border border-brand-line/30 text-xs font-medium transition-all"
-                          >
-                            คืนสถานะ
-                          </button>
-                        ) : (
-                          <button
-                            disabled={mutationPending}
-                            onClick={() => handlePostAction(post.id, "HIDE")}
-                            className="px-2.5 py-1 rounded-lg bg-muted hover:bg-hover text-danger-ink text-xs font-medium transition-all"
-                          >
-                            ซ่อนโพสต์
-                          </button>
-                        )}
+                      <td role="cell" data-label="การจัดการ" className="py-3.5 px-4 text-right">
+                        <div className="flex flex-wrap items-center justify-end gap-1.5">
+                          {post.status === "HIDDEN_BY_ADMIN" ? (
+                            <button
+                              type="button"
+                              disabled={mutationPending}
+                              onClick={() => handlePostAction(post.id, "RESTORE")}
+                              className="px-2.5 py-1 rounded-lg bg-brand-soft hover:bg-brand-soft/80 text-brand-ink border border-brand-line text-xs font-medium transition-all cursor-pointer"
+                            >
+                              คืนสถานะ
+                            </button>
+                          ) : (
+                            <button
+                              type="button"
+                              disabled={mutationPending}
+                              onClick={() => handlePostAction(post.id, "HIDE")}
+                              className="px-2.5 py-1 rounded-lg bg-muted hover:bg-hover text-danger-ink border border-line text-xs font-medium transition-all cursor-pointer"
+                            >
+                              ซ่อนโพสต์
+                            </button>
+                          )}
 
-                        <button
+                          <button
+                            type="button"
                             disabled={mutationPending}
-                          onClick={() => handlePostAction(post.id, "TOGGLE_OUTLIER")}
-                          className="px-2.5 py-1 rounded-lg bg-muted hover:bg-hover text-warning-ink text-xs font-medium transition-all"
-                          title="สลับสถานะราคาผิดปกติ"
-                        >
-                          {post.isPriceOutlier ? "ปลด Outlier" : "มาร์ก Outlier"}
-                        </button>
+                            onClick={() => handlePostAction(post.id, "TOGGLE_OUTLIER")}
+                            className="px-2.5 py-1 rounded-lg bg-muted hover:bg-hover text-warning-ink border border-line text-xs font-medium transition-all cursor-pointer"
+                            title="สลับสถานะราคาผิดปกติ"
+                          >
+                            {post.isPriceOutlier ? "ปลด Outlier" : "มาร์ก Outlier"}
+                          </button>
 
-                        <button
+                          <button
+                            type="button"
                             disabled={mutationPending}
-                          onClick={() => handlePostAction(post.id, "DELETE")}
-                          className="px-2.5 py-1 rounded-lg bg-rose-500/10 hover:bg-rose-500/20 text-danger-ink text-xs font-medium transition-all"
-                          title="ลบถาวร"
-                        >
-                          ลบ
-                        </button>
+                            onClick={() => handlePostAction(post.id, "DELETE")}
+                            className="px-2.5 py-1 rounded-lg bg-danger-soft hover:bg-danger-soft/80 text-danger-ink border border-danger-line text-xs font-medium transition-all cursor-pointer"
+                            title="ลบถาวร"
+                          >
+                            ลบ
+                          </button>
+                        </div>
                       </td>
                     </tr>
                   ))}
@@ -1445,18 +1623,27 @@ export default function AdminPortalPage() {
                 </p>
               </div>
 
-              {userSearch && <button className="ui-button ui-button-ghost" onClick={() => setUserSearch("")}>ล้างคำค้น ({filteredUsers.length} รายการ)</button>}
-              {/* Search bar */}
-              <div className="relative w-full sm:w-64">
-                <Search className="w-4 h-4 text-muted-foreground absolute left-3 top-2.5" />
-                <input
-                  type="text"
-                  value={userSearch}
-                  onChange={(e) => setUserSearch(e.target.value)}
-                  aria-label="ค้นหาสมาชิกด้วยชื่อ อีเมล เบอร์โทร หรือจังหวัด"
-                  placeholder="ค้นหาชื่อ, อีเมล, เบอร์โทร..."
-                  className="w-full pl-9 pr-4 py-2 bg-canvas border border-line rounded-lg text-xs text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-accent-line"
-                />
+              <div className="flex flex-wrap items-center gap-2">
+                <button
+                  type="button"
+                  onClick={handleExportUsersCsv}
+                  className="px-3 py-2 rounded-lg bg-surface hover:bg-hover border border-line text-xs font-semibold text-foreground cursor-pointer transition"
+                >
+                  Export CSV ({filteredUsers.length})
+                </button>
+                {userSearch && <button className="ui-button ui-button-ghost" onClick={() => setUserSearch("")}>ล้างคำค้น ({filteredUsers.length} รายการ)</button>}
+                {/* Search bar */}
+                <div className="relative w-full sm:w-64">
+                  <Search className="w-4 h-4 text-muted-foreground absolute left-3 top-2.5" />
+                  <input
+                    type="text"
+                    value={userSearch}
+                    onChange={(e) => setUserSearch(e.target.value)}
+                    aria-label="ค้นหาสมาชิกด้วยชื่อ อีเมล เบอร์โทร หรือจังหวัด"
+                    placeholder="ค้นหาชื่อ, อีเมล, เบอร์โทร..."
+                    className="w-full pl-9 pr-4 py-2 bg-canvas border border-line rounded-lg text-xs text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-accent-line"
+                  />
+                </div>
               </div>
             </div>
 

@@ -1,3 +1,4 @@
+import { completeRegistration, registrationError } from "@/lib/pending-registration";
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { verifyOtp } from "@/lib/otp";
@@ -8,32 +9,21 @@ export async function POST(request: Request) {
     const body = await request.json();
     const { userId, otpCode } = body;
 
-    if (!userId || !otpCode) {
-      return NextResponse.json(
-        { error: "กรุณาระบุข้อมูล userId และรหัส OTP ให้ครบถ้วน" },
-        { status: 400 }
-      );
+    let user;
+    if (body.registrationId) {
+      try { user = await completeRegistration(body.registrationId, String(otpCode ?? "").trim()); }
+      catch (error) { return registrationError(error); }
+    } else {
+      // Existing registrations created before temporary requests were introduced.
+      if (!userId || !otpCode) return NextResponse.json({ error: "กรุณาระบุรหัส OTP" }, { status: 400 });
+      const eligible = { id: Number(userId), status: "ACTIVE" as const, emailVerifiedAt: null,
+        activeRole: { not: "ADMIN" as const }, roles: { none: { roleType: "ADMIN" as const } } };
+      if (!await prisma.user.findFirst({ where: eligible }))
+        return NextResponse.json({ error: "ไม่พบบัญชีผู้สมัครที่รอยืนยัน" }, { status: 400 });
+      await verifyOtp({ userId: Number(userId), otpCode: otpCode.trim(), purpose: "VERIFY_EMAIL" });
+      user = await prisma.user.update({ where: eligible, data: { emailVerifiedAt: new Date() },
+        include: { roles: true, location: true } });
     }
-
-    // Verify OTP
-    await verifyOtp({
-      userId: Number(userId),
-      otpCode: otpCode.trim(),
-      purpose: "VERIFY_EMAIL",
-    });
-
-    // Mark email as verified
-    const user = await prisma.user.update({
-      where: { id: Number(userId) },
-      data: {
-        emailVerifiedAt: new Date(),
-      },
-      include: {
-        roles: true,
-        location: true,
-      },
-    });
-
     // Create session token and set cookie
     const token = await signSessionToken({
       userId: user.id,
@@ -56,7 +46,7 @@ export async function POST(request: Request) {
         email: user.email,
         phone: user.phone,
         businessName: primaryRoleObj?.businessName || user.fullName,
-        province: user.location?.province || "จันทบุรี",
+        province: user.location?.province || "",
         primaryRole: user.activeRole,
         approvedRoles: user.roles.map((r) => r.roleType),
         activeRole: user.activeRole,

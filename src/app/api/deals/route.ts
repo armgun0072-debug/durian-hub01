@@ -1,4 +1,4 @@
-﻿import { NextResponse } from "next/server";
+import { NextResponse } from "next/server";
 import { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { getCurrentUser } from "@/lib/auth";
@@ -6,6 +6,102 @@ import { positiveDecimal, positiveId } from "@/lib/input";
 
 class DealError extends Error {
   constructor(message: string, readonly status: number) { super(message); }
+}
+
+export async function GET() {
+  try {
+    const user = await getCurrentUser();
+    if (!user) {
+      return NextResponse.json({ error: "กรุณาเข้าสู่ระบบก่อนดูประวัติสัญญาดีล" }, { status: 401 });
+    }
+
+    const deals = await prisma.deal.findMany({
+      where: {
+        OR: [{ initiatorId: user.id }, { receiverId: user.id }],
+      },
+      orderBy: { createdAt: "desc" },
+      take: 50,
+      include: {
+        post: {
+          select: {
+            id: true,
+            title: true,
+            postType: true,
+            variety: { select: { nameTh: true, nameEn: true } },
+            grade: { select: { nameTh: true } },
+            location: { select: { province: true, region: true } },
+          },
+        },
+        initiator: { select: { id: true, fullName: true } },
+        receiver: { select: { id: true, fullName: true } },
+        reviews: {
+          where: { reviewerId: user.id },
+          select: { id: true, rating: true },
+        },
+      },
+    });
+
+    let totalVolumeKg = 0;
+    let totalValueThb = 0;
+
+    const items = deals.map((d) => {
+      const agreedPrice = Number(d.agreedPrice);
+      const agreedPricePerKg = d.agreedPricePerKg ? Number(d.agreedPricePerKg) : null;
+      const agreedQuantityKg = d.agreedQuantityKg ? Number(d.agreedQuantityKg) : null;
+
+      if (["ACCEPTED", "COMPLETED"].includes(d.status) && agreedQuantityKg) {
+        totalVolumeKg += agreedQuantityKg;
+      }
+      if (["ACCEPTED", "COMPLETED"].includes(d.status)) totalValueThb +=
+        agreedPricePerKg && agreedQuantityKg
+          ? agreedPricePerKg * agreedQuantityKg
+          : agreedPrice;
+
+      const isInitiator = d.initiatorId === user.id;
+      const partner = isInitiator ? d.receiver : d.initiator;
+
+      return {
+        id: d.id,
+        postId: d.postId,
+        postTitle: d.post.title,
+        postType: d.post.postType,
+        variety: d.post.variety?.nameTh || "หมอนทอง",
+        grade: d.post.grade?.nameTh || "ทั่วไป",
+        province: d.post.location?.province || "",
+        region: d.post.location?.region || "",
+        partnerId: partner.id,
+        partnerName: partner.fullName,
+        roleInDeal: isInitiator ? "INITIATOR" : "RECEIVER",
+        agreedPrice,
+        agreedPricePerKg,
+        agreedQuantityKg,
+        cutDate: d.cutDate ? d.cutDate.toISOString().slice(0, 10) : null,
+        note: d.note,
+        status: d.status,
+        myConfirmed: Boolean(isInitiator ? d.initiatorConfirmedAt : d.receiverConfirmedAt),
+        partnerConfirmed: Boolean(isInitiator ? d.receiverConfirmedAt : d.initiatorConfirmedAt),
+        hasMyReview: d.reviews.length > 0,
+        myRating: d.reviews[0]?.rating ?? null,
+        createdAt: d.createdAt.toISOString(),
+      };
+    });
+
+    return NextResponse.json(
+      {
+        success: true,
+        deals: items,
+        summary: {
+          totalDeals: items.length,
+          totalVolumeKg,
+          totalValueThb,
+        },
+      },
+      { headers: { "Cache-Control": "private, no-store" } }
+    );
+  } catch (error) {
+    console.error("GET Deals Error:", error);
+    return NextResponse.json({ error: "ไม่สามารถโหลดประวัติสัญญาดีลได้" }, { status: 500 });
+  }
 }
 
 export async function POST(request: Request) {
@@ -48,26 +144,18 @@ export async function POST(request: Request) {
           const post = await tx.marketplacePost.findUnique({ where: { id: postId } });
           if (!post) throw new DealError("ไม่พบประกาศสินค้านี้", 404);
           if (post.userId !== room.ownerId) throw new DealError("เจ้าของประกาศไม่ตรงกับห้องแชท", 403);
-          // Atomically claim an OPEN post. Rollback releases the claim if any later write fails.
-          const claimed = await tx.marketplacePost.updateMany({ where: { id: postId, status: "OPEN" }, data: { status: "CLOSED" } });
-          if (claimed.count !== 1) throw new DealError("ประกาศนี้ไม่เปิดให้ปิดดีลแล้ว", 409);
+          if (post.status !== "OPEN") throw new DealError("ประกาศนี้ไม่เปิดรับข้อเสนอแล้ว", 409);
+          const pending = await tx.deal.findFirst({ where: { roomId, status: "PENDING" } });
+          if (pending) throw new DealError("มีข้อเสนอรอคำตอบในห้องนี้แล้ว", 409);
           const created = await tx.deal.create({ data: {
-            postId, initiatorId: user.id, receiverId, agreedPrice,
-            agreedPricePerKg, agreedQuantityKg, cutDate, note, status: "ACCEPTED",
+            roomId, postId, initiatorId: user.id, receiverId, agreedPrice,
+            agreedPricePerKg, agreedQuantityKg, cutDate, note, status: "PENDING",
           } });
           await tx.chatMessage.create({ data: {
             roomId, senderId: user.id, messageType: "TEXT",
-            content: `🎉 ตกลงราคาซื้อขาย (ปิดดีล) สำเร็จ!\n• ราคาตกลง: ${agreedPrice.toLocaleString()} บาท${agreedPricePerKg ? ` (${agreedPricePerKg} บาท/กก.)` : ""}\n• ปริมาณ: ${agreedQuantityKg ? `${agreedQuantityKg.toLocaleString()} กก.` : "ตามตกลง"}\n• สถานะดีล: ยืนยันแล้ว (รหัสดีล #${created.id})`,
+            content: `ข้อเสนอ #${created.id}: ${agreedPrice.toLocaleString()} บาท · เปิดเมนูดีลเพื่อดูเงื่อนไขและตอบข้อเสนอ`,
           } });
-          await tx.chatRoom.update({ where: { id: roomId }, data: { status: "DEAL_CLOSED", closedAt: created.createdAt, lastMessageAt: new Date() } });
-          const otherRooms = await tx.chatRoom.findMany({ where: { postId, id: { not: roomId }, status: "ACTIVE" } });
-          for (const other of otherRooms) {
-            await tx.chatMessage.create({ data: {
-              roomId: other.id, senderId: user.id, messageType: "TEXT",
-              content: `📢 แจ้งเตือนจากระบบ: ประกาศ "${post.title}" ได้ทำการตกลงซื้อขาย (ปิดดีล) กับคู่ค้ารายอื่นเรียบร้อยแล้ว ขอบคุณที่ให้ความสนใจครับ (คุณยังสามารถพูดคุยเพื่อสอบถามข้อมูลผลผลิตล็อตถัดไปกับผู้ขายได้)`,
-            } });
-            await tx.chatRoom.update({ where: { id: other.id }, data: { status: "ARCHIVED", closedAt: created.createdAt, lastMessageAt: new Date() } });
-          }
+          await tx.chatRoom.update({ where: { id: roomId }, data: { lastMessageAt: created.createdAt } });
           return created;
         }, { isolationLevel: Prisma.TransactionIsolationLevel.Serializable });
         return NextResponse.json({ success: true, deal });

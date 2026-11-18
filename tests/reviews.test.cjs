@@ -3,6 +3,7 @@ const assert = require('node:assert/strict');
 const { readFileSync } = require('node:fs');
 const vm = require('node:vm');
 const ts = require('typescript');
+const { loadTs } = require("./helpers.cjs");
 const { Prisma } = require('@prisma/client');
 const { NextResponse } = require('next/server');
 
@@ -23,7 +24,12 @@ function harness(options = {}) {
         update: async () => { if (options.failLastWrite) throw new Error('write failure'); },
       },
       deal: { findFirst: async ({ where }) => {
-        assert.equal(where.status, 'ACCEPTED');
+        assert.equal(where.status, 'COMPLETED');
+        assert.equal(where.id, 3);
+        assert.equal(where.roomId, 1);
+        assert.equal(where.acceptedAt.not, null);
+        assert.equal(where.initiatorConfirmedAt.not, null);
+        assert.equal(where.receiverConfirmedAt.not, null);
         assert.equal(where.postId, 2);
         assert.deepEqual(JSON.parse(JSON.stringify(where.OR)), [{ initiatorId: 10, receiverId: 20 }, { initiatorId: 20, receiverId: 10 }]);
         return options.noDeal ? null : { id: 3 };
@@ -52,10 +58,11 @@ function harness(options = {}) {
     if (name === '@prisma/client') return { Prisma };
     if (name === '@/lib/prisma') return { prisma };
     if (name === '@/lib/auth') return { getCurrentUser: async () => options.anonymous ? null : { id: 10 } };
+    if (name === '@/lib/input') return loadTs('src/lib/input.ts');
     throw new Error(name);
   } });
   return { state, attempts: () => attempts, post: (changes = {}, raw) => exports.POST(new Request('http://localhost/api/reviews', {
-    method: 'POST', body: raw ?? JSON.stringify({ roomId: 1, postId: 2, revieweeId: 20, rating: 5, comment: ' good ', ...changes }),
+    method: 'POST', body: raw ?? JSON.stringify({ dealId: 3, roomId: 1, postId: 2, revieweeId: 20, rating: 5, comment: ' good ', ...changes }),
   })) };
 }
 

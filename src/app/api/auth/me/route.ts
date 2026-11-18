@@ -30,7 +30,7 @@ export async function GET() {
         email: user.email,
         phone: user.phone,
         businessName: activeRoleObj?.businessName || user.fullName,
-        province: user.location?.province || "จันทบุรี",
+        province: user.location?.province || "",
         primaryRole: user.activeRole,
         approvedRoles,
         activeRole: user.activeRole,

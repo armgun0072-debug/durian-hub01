@@ -81,8 +81,9 @@ export async function GET() {
       }));
       const lastMsg = allMessages[allMessages.length - 1];
       const ownDeal = room.post.deals.find(d =>
-        (d.initiatorId === room.initiatorId && d.receiverId === room.ownerId) ||
-        (d.initiatorId === room.ownerId && d.receiverId === room.initiatorId));
+        (d.roomId === room.id || d.roomId == null) && ["ACCEPTED", "COMPLETED"].includes(d.status) &&
+        ((d.initiatorId === room.initiatorId && d.receiverId === room.ownerId) ||
+        (d.initiatorId === room.ownerId && d.receiverId === room.initiatorId)));
 
       const unreadCount = (room.messages || []).filter(
         (m) => m.senderId !== user.id && !m.isRead
@@ -95,9 +96,9 @@ export async function GET() {
           : room.status;
 
       // ตรวจสอบว่าผู้ใช้ปัจจุบันเคยให้คะแนนรีวิวในดีลของห้องนี้หรือยัง
-      const hasReviewedByMe = (room.post.deals || []).some((d) =>
-        (d.reviews || []).some((rev) => rev.reviewerId === user.id)
-      );
+      const canReview = ownDeal?.roomId === room.id && ownDeal?.status === "COMPLETED" &&
+        Boolean(ownDeal.acceptedAt && ownDeal.initiatorConfirmedAt && ownDeal.receiverConfirmedAt);
+      const hasReviewedByMe = canReview && Boolean(ownDeal?.reviews.some(rev => rev.reviewerId === user.id));
 
       return {
         id: room.id,
@@ -112,7 +113,7 @@ export async function GET() {
         partnerRating: Number(partner.ratingAvg),
         partnerRatingCount: partner.ratingCount,
         partnerTrustScore: partner.trustScore,
-        hasReviewedByMe,
+        canReview, hasReviewedByMe,
         lastActive: "ออนไลน์เมื่อสักครู่",
         lastMessage: lastMsg ? lastMsg.text : "เริ่มการสนทนา",
         lastTime: lastMsg

@@ -1,7 +1,9 @@
-﻿import { NextResponse } from "next/server";
+import { NextResponse } from "next/server";
 import { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { getCurrentUser } from "@/lib/auth";
+
+const verifiedDeal = { status: "COMPLETED" as const, acceptedAt: { not: null }, initiatorConfirmedAt: { not: null }, receiverConfirmedAt: { not: null } };
 
 class ReviewError extends Error {
   constructor(message: string, readonly status: number) { super(message); }
@@ -13,6 +15,97 @@ function positiveId(value: unknown): number | null {
 }
 const duplicateMessage = "คุณได้รีวิวดีลนี้แล้ว (1 ดีล รีวิวได้ 1 ครั้ง)";
 
+export async function GET(request: Request) {
+  try {
+    const { searchParams } = new URL(request.url);
+    const userId = positiveId(searchParams.get("userId"));
+    if (!userId) {
+      return NextResponse.json({ error: "กรุณาระบุรหัสสมาชิกที่ต้องการดูรีวิว" }, { status: 400 });
+    }
+
+    const [targetUser, reviews, dealsCount, totals] = await Promise.all([
+      prisma.user.findUnique({
+        where: { id: userId },
+        select: {
+          id: true,
+          fullName: true,
+          avatarUrl: true,
+          isKycVerified: true,
+          trustScore: true,
+          ratingAvg: true,
+          ratingCount: true,
+          createdAt: true,
+          location: { select: { province: true, region: true } },
+          roles: {
+            where: { status: "ACTIVE" },
+            select: { roleType: true, businessName: true, isVerified: true },
+          },
+        },
+      }),
+      prisma.userReview.findMany({
+        where: { revieweeId: userId, deal: verifiedDeal },
+        orderBy: { createdAt: "desc" },
+        take: 30,
+        include: {
+          reviewer: { select: { id: true, fullName: true } },
+          deal: {
+            select: {
+              id: true,
+              agreedPrice: true,
+              agreedQuantityKg: true,
+              post: { select: { id: true, title: true, postType: true } },
+            },
+          },
+        },
+      }),
+      prisma.deal.count({
+        where: {
+          status: { in: ["ACCEPTED", "COMPLETED"] },
+          OR: [{ initiatorId: userId }, { receiverId: userId }],
+        },
+      }),
+      prisma.userReview.aggregate({ where: { revieweeId: userId, deal: verifiedDeal }, _avg: { rating: true }, _count: { _all: true } }),
+    ]);
+
+    if (!targetUser) {
+      return NextResponse.json({ error: "ไม่พบข้อมูลสมาชิกนี้" }, { status: 404 });
+    }
+
+    return NextResponse.json(
+      {
+        success: true,
+        profile: {
+          id: targetUser.id,
+          fullName: targetUser.fullName,
+          avatarUrl: targetUser.avatarUrl,
+          isKycVerified: targetUser.isKycVerified,
+          trustScore: targetUser.trustScore,
+          ratingAvg: Number(totals._avg.rating ?? 0),
+          ratingCount: totals._count._all,
+          province: targetUser.location?.province || "",
+          region: targetUser.location?.region || "",
+          dealsCount,
+          joinedAt: targetUser.createdAt.toISOString(),
+          roles: targetUser.roles,
+        },
+        reviews: reviews.map((r) => ({
+          id: r.id,
+          rating: r.rating,
+          comment: r.comment || "",
+          reviewerName: r.reviewer.fullName,
+          postTitle: r.deal.post.title,
+          postType: r.deal.post.postType,
+          createdAt: r.createdAt.toISOString(),
+        })),
+      },
+      { headers: { "Cache-Control": "no-store" } }
+    );
+  } catch (error) {
+    console.error("GET Reviews Error:", error);
+    return NextResponse.json({ error: "ไม่สามารถดึงข้อมูลรีวิวคู่ค้าได้" }, { status: 500 });
+  }
+}
+
 export async function POST(request: Request) {
   try {
     const user = await getCurrentUser();
@@ -21,11 +114,12 @@ export async function POST(request: Request) {
     try { body = await request.json(); }
     catch { throw new ReviewError("ข้อมูล JSON ไม่ถูกต้อง", 400); }
     if (!body || typeof body !== "object" || Array.isArray(body)) throw new ReviewError("ข้อมูลรีวิวไม่ถูกต้อง", 400);
+    const dealId = positiveId(body.dealId);
     const roomId = positiveId(body.roomId);
     const postId = positiveId(body.postId);
     const revieweeId = positiveId(body.revieweeId);
     const rating = typeof body.rating === "number" || typeof body.rating === "string" ? Number(body.rating) : NaN;
-    if (!roomId || !postId || !revieweeId || !Number.isInteger(rating) || rating < 1 || rating > 5) {
+    if (!dealId || !roomId || !postId || !revieweeId || !Number.isInteger(rating) || rating < 1 || rating > 5) {
       throw new ReviewError("กรุณาระบุห้อง ประกาศ คู่ค้า และคะแนนเต็มตั้งแต่ 1 ถึง 5 ดาวให้ถูกต้อง", 400);
     }
     if (revieweeId === user.id) throw new ReviewError("ไม่สามารถรีวิวตัวเองได้", 400);
@@ -46,7 +140,7 @@ export async function POST(request: Request) {
           if (room.status !== "DEAL_CLOSED") throw new ReviewError("รีวิวได้เฉพาะห้องที่ปิดดีลสำเร็จแล้ว", 400);
           // Do not manufacture historical deals from asking prices during a review.
           const deal = await tx.deal.findFirst({
-            where: { postId, status: "ACCEPTED", OR: [
+            where: { id: dealId, roomId, postId, ...verifiedDeal, OR: [
               { initiatorId: user.id, receiverId: revieweeId },
               { initiatorId: revieweeId, receiverId: user.id },
             ] },
@@ -56,7 +150,7 @@ export async function POST(request: Request) {
           const existing = await tx.userReview.findUnique({ where: { dealId_reviewerId: { dealId: deal.id, reviewerId: user.id } } });
           if (existing) throw new ReviewError(duplicateMessage, 409);
           const review = await tx.userReview.create({ data: { dealId: deal.id, reviewerId: user.id, revieweeId, rating, comment } });
-          const totals = await tx.userReview.aggregate({ where: { revieweeId }, _avg: { rating: true }, _count: { _all: true } });
+          const totals = await tx.userReview.aggregate({ where: { revieweeId, deal: verifiedDeal }, _avg: { rating: true }, _count: { _all: true } });
           const newAvg = Number((totals._avg.rating ?? 0).toFixed(2));
           const totalCount = totals._count._all;
           await tx.user.update({ where: { id: revieweeId }, data: { ratingAvg: newAvg, ratingCount: totalCount } });

@@ -46,8 +46,8 @@ export async function PATCH(
       });
 
       // 2. Hide the offending post from public marketplace
-      await prisma.marketplacePost.update({
-        where: { id: report.postId },
+      await prisma.marketplacePost.updateMany({
+        where: { id: report.postId, status: { not: "REMOVED_BY_ADMIN" } },
         data: { status: "HIDDEN_BY_ADMIN" },
       });
 

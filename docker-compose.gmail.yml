@@ -1,0 +1,12 @@
+services:
+  web:
+    depends_on: !override
+      - mysql
+    environment:
+      SMTP_HOST: smtp.gmail.com
+      SMTP_PORT: "465"
+      SMTP_USER: ${GMAIL_USER:?Set GMAIL_USER in .env}
+      SMTP_PASS: ${GMAIL_APP_PASSWORD:?Set the Google App Password in .env}
+      MAIL_FROM: Durian Hub <${GMAIL_USER}>
+  mailpit:
+    profiles: [mailpit]

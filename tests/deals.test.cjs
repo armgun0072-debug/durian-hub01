@@ -15,13 +15,13 @@ function harness(options = {}) {
       chatRoom: {
         findUnique: async () => options.noRoom ? null : { id: 1, postId: 2, initiatorId: 10, ownerId: 20, status: 'ACTIVE', ...options.room },
         findMany: async ({ where }) => { assert.equal(where.status, 'ACTIVE'); return [{ id: 9 }]; },
-        update: async ({ where, data }) => { if (options.failLater && where.id === 9) throw new Error('failure'); draft.rooms.push({ id: where.id, ...data }); },
+        update: async ({ where, data }) => { if (options.failLater) throw new Error('failure'); draft.rooms.push({ id: where.id, ...data }); },
       },
       marketplacePost: {
-        findUnique: async () => options.noPost ? null : { id: 2, userId: 20, title: 'Test', ...options.post },
+        findUnique: async () => options.noPost ? null : { id: 2, userId: 20, title: 'Test', status: 'OPEN', ...options.post },
         updateMany: async ({ where }) => { assert.equal(where.status, 'OPEN'); if (options.claimLost) return { count: 0 }; draft.status = 'CLOSED'; return { count: 1 }; },
       },
-      deal: { create: async ({ data }) => { draft.deals.push(data); return { id: 3, ...data }; } },
+      deal: { findFirst: async () => options.pending ? { id: 1 } : null, create: async ({ data }) => { draft.deals.push(data); return { id: 3, ...data }; } },
       chatMessage: { create: async ({ data }) => { draft.messages.push(data); } },
     };
     const result = await run(tx); Object.assign(state, draft); return result;
@@ -30,12 +30,12 @@ function harness(options = {}) {
   return { state, attempts: () => attempts, post: (changes = {}, raw) => route.POST(request({ roomId: 1, postId: 2, receiverId: 20, agreedPrice: 1000, ...changes }, raw)) };
 }
 
-test('deal commits post, agreement, winning room, and archived rooms together', async () => {
+test('deal proposal leaves the post and other negotiations open', async () => {
   const h = harness(); assert.equal((await h.post()).status, 200);
-  assert.equal(h.state.status, 'CLOSED'); assert.equal(h.state.deals.length, 1);
+  assert.equal(h.state.status, 'OPEN'); assert.equal(h.state.deals[0].status, 'PENDING'); assert.equal(h.state.deals.length, 1);
   assert.equal(h.state.deals[0].agreedPricePerKg, null);
-  assert.deepEqual(h.state.rooms.map(r => r.status), ['DEAL_CLOSED', 'ARCHIVED']);
-  assert.equal(h.state.messages.length, 2);
+  assert.deepEqual(h.state.rooms.map(r => r.status), [undefined]);
+  assert.equal(h.state.messages.length, 1);
 });
 for (const [name, options, changes, status] of [
   ['anonymous', { anonymous: true }, {}, 401],
@@ -47,7 +47,8 @@ for (const [name, options, changes, status] of [
   ['missing post', { noPost: true }, {}, 404],
   ['closed room', { room: { status: 'DEAL_CLOSED' } }, {}, 409],
   ['archived room', { room: { status: 'ARCHIVED' } }, {}, 409],
-  ['closed or hidden post / concurrent claim lost', { claimLost: true }, {}, 409],
+  ['closed or hidden post / concurrent claim lost', { post: { status: 'CLOSED' } }, {}, 409],
+  ['proposal already pending', { pending: true }, {}, 409],
   ['room required', {}, { roomId: null }, 400],
   ['self deal', {}, { receiverId: 10 }, 400],
   ['negative price', {}, { agreedPrice: -1 }, 400],

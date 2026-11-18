@@ -34,7 +34,7 @@ export async function POST(request: Request) {
         success: true,
         userId: user.id,
         email: user.email,
-        message: `ระบบได้ส่งรหัส OTP สำหรับตั้งรหัสผ่านใหม่ไปยัง ${user.email} แล้ว (เปิดดูได้ที่ Mailpit http://localhost:8025)`,
+        message: `ระบบได้ส่งรหัส OTP สำหรับตั้งรหัสผ่านใหม่ไปยัง ${user.email} แล้ว กรุณาตรวจสอบกล่องจดหมายหรือโฟลเดอร์สแปม`,
       });
     }
 

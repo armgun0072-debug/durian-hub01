@@ -23,7 +23,13 @@ export async function GET(request: Request) {
       prisma.marketplacePost.findMany({
         where, orderBy: [{ createdAt: "desc" }, { id: "desc" }],
         skip: (page - 1) * pageSize, take: pageSize,
-        include: { variety: true, grade: true, location: true },
+        include: {
+          variety: true,
+          grade: true,
+          location: true,
+          images: { orderBy: { sortOrder: "asc" }, take: 1 },
+          _count: { select: { deals: true } },
+        },
       }),
       prisma.marketplacePost.count({ where }),
     ]);
@@ -46,7 +52,8 @@ export async function GET(request: Request) {
         dryMatterPct: p.dryMatterPct == null ? undefined : Number(p.dryMatterPct),
         availableDate: p.availableDate.toISOString().split("T")[0],
         isPriceOutlier: p.isPriceOutlier, reportCount: p.reportCount,
-        contactNote: "", status: p.status, createdAt: p.createdAt.toISOString(),
+        contactNote: "", status: p.status, imageUrl: p.images[0]?.imageUrl || "",
+        hasDeals: p._count.deals > 0, createdAt: p.createdAt.toISOString(),
       })),
     }, { headers: { "Cache-Control": "private, no-store" } });
   } catch (error) {

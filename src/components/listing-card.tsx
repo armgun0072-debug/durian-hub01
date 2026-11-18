@@ -26,10 +26,6 @@ export function ListingCard({ post, own, language, time, onOpen }: { post: Marke
 
   return (
     <article className="group relative flex h-full flex-col overflow-hidden rounded-[14px] border border-line bg-surface transition-colors duration-150 hover:border-line-strong focus-within:border-brand-line">
-      {showImage && (
-        <img src={post.imageUrl!} alt="" loading="lazy" decoding="async" width={640} height={360} className="aspect-[16/9] w-full object-cover" onError={() => setFailedImage(post.imageUrl!)} />
-      )}
-
       <div className="flex flex-1 flex-col p-4 sm:p-5">
         <div className="flex items-center justify-between gap-3 text-xs">
           <span className={`inline-flex items-center gap-1.5 font-semibold ${category.text}`}>
@@ -40,25 +36,42 @@ export function ListingCard({ post, own, language, time, onOpen }: { post: Marke
           <time dateTime={post.createdAt} title={time.full} className="text-muted-foreground">{time.text}</time>
         </div>
 
-        <h2 className="mt-2.5 line-clamp-2 text-base font-semibold leading-snug text-foreground">
-          <button type="button" onClick={onOpen} className="text-left after:absolute after:inset-0 after:content-[''] focus-visible:outline-none">
-            {post.title}
-          </button>
-        </h2>
+        <div className="mt-2.5 flex items-start justify-between gap-3">
+          <div className="min-w-0 flex-1">
+            <h2 className="line-clamp-2 text-base font-semibold leading-snug text-foreground">
+              <button type="button" onClick={onOpen} className="text-left after:absolute after:inset-0 after:content-[''] focus-visible:outline-none">
+                {post.title}
+              </button>
+            </h2>
 
-        <p className="mt-1.5 flex items-center gap-1.5 text-xs text-muted-foreground">
-          <MapPin className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
-          <span className="truncate">{post.province} · {post.variety} · {post.grade}</span>
-        </p>
+            <p className="mt-1.5 flex items-center gap-1.5 text-xs text-muted-foreground">
+              <MapPin className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
+              <span className="truncate">{post.province} · {post.variety} · {post.grade}</span>
+            </p>
 
-        <div className="mt-4 flex items-end justify-between gap-3">
-          <p className="num text-2xl font-semibold tracking-tight text-foreground">
-            ฿{post.pricePerKg.toLocaleString(locale)}
-            <span className="ml-1 text-xs font-normal text-muted-foreground">/{th ? "กก." : "kg"}</span>
-          </p>
-          <span className="num inline-flex items-center gap-1 pb-1 text-xs text-secondary">
-            <Scale className="h-3.5 w-3.5" aria-hidden="true" />{quantity}
-          </span>
+            <div className="mt-3.5 flex items-end justify-between gap-2 flex-wrap">
+              <p className="num text-2xl font-semibold tracking-tight text-foreground">
+                ฿{post.pricePerKg.toLocaleString(locale)}
+                <span className="ml-1 text-xs font-normal text-muted-foreground">/{th ? "กก." : "kg"}</span>
+              </p>
+              <span className="num inline-flex items-center gap-1 pb-1 text-xs text-secondary">
+                <Scale className="h-3.5 w-3.5" aria-hidden="true" />{quantity}
+              </span>
+            </div>
+          </div>
+
+          {showImage && (
+            <div className="w-24 h-24 shrink-0 rounded-xl border border-line bg-subtle overflow-hidden flex items-center justify-center p-1">
+              <img
+                src={post.imageUrl!}
+                alt={post.title}
+                loading="lazy"
+                decoding="async"
+                className="max-h-full max-w-full object-contain rounded-lg"
+                onError={() => setFailedImage(post.imageUrl!)}
+              />
+            </div>
+          )}
         </div>
 
         <div className="mt-auto flex items-center gap-2 pt-4">

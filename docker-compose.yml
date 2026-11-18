@@ -7,6 +7,8 @@ services:
       context: .
       dockerfile: Dockerfile
     container_name: durian_hub_web
+    volumes:
+      - web_uploads:/app/public/uploads
     restart: always
     ports:
       - "3000:3000"
@@ -47,4 +49,5 @@ services:
       - "8025:8025" # Web UI หน้ากล่องจดหมาย
 
 volumes:
+  web_uploads:
   durian_mysql_data:

@@ -1,6 +1,8 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getCurrentUser } from "@/lib/auth";
+import { marketPricePerKg } from "@/lib/market-stats";
+import { MARKET_GRADES, VARIETY_STRIP_ITEMS } from "@/data/mockData";
 import { PostType } from "@prisma/client";
 
 export async function GET(request: Request) {
@@ -70,11 +72,13 @@ export async function GET(request: Request) {
         reviewCount: p.user.ratingCount,
         title: p.title,
         postType: p.postType,
-        variety: p.variety?.nameTh || "หมอนทอง",
-        grade: p.grade?.nameTh || "เกรด AB",
-        province: p.location?.province || "จันทบุรี",
-        region: p.location?.region || "ภาคตะวันออก",
-        regionTag: p.location?.region || "ภาคตะวันออก",
+        variety: p.variety?.nameTh || "",
+        grade: p.grade?.nameTh || "",
+        gradeCode: p.grade?.gradeCode ?? null,
+        marketPricePerKg: p.isPriceOutlier ? null : marketPricePerKg(p.priceUnit, p.price, p.quantityKg),
+        province: p.location?.province || "",
+        region: p.location?.region || "",
+        regionTag: p.location?.region || "",
         price: Number(p.price),
         pricePerKg: p.pricePerKg ? Number(p.pricePerKg) : Number(p.price),
         priceUnit: p.priceUnit,
@@ -116,9 +120,10 @@ export async function POST(request: Request) {
       priceUnit = "PER_KG",
       quantityKg,
       dryMatterPct,
+      imageUrl,
     } = body;
 
-    if (!title || !price) {
+    if (!title || !Number.isFinite(Number(price)) || Number(price) <= 0) {
       return NextResponse.json({ error: "กรุณาระบุหัวข้อและราคา" }, { status: 400 });
     }
 
@@ -152,15 +157,34 @@ export async function POST(request: Request) {
         where: { OR: [{ nameTh: varietyName }, { nameEn: varietyName }] },
       });
       if (v) varietyId = v.id;
+      else {
+        const choice = VARIETY_STRIP_ITEMS.find((item) => item.id === varietyName && item.id !== "ALL");
+        if (!choice) return NextResponse.json({ error: "ไม่พบสายพันธุ์ที่เลือก" }, { status: 400 });
+        const variety = await prisma.durianVariety.upsert({
+          where: { nameTh: choice.id }, update: {}, create: { nameTh: choice.id, nameEn: choice.nameEn },
+        });
+        varietyId = variety.id;
+      }
     }
 
     // Find grade
     let gradeId: number | undefined;
     if (gradeCode) {
+      const aliases: Record<string, string> = { "AB ส่งออก": "AB_EXPORT", "C รอง": "C_GRADE", "คัดพิเศษ GI": "PREMIUM_GI" };
+      const code = aliases[gradeCode] ?? gradeCode;
       const g = await prisma.durianGrade.findFirst({
-        where: { OR: [{ gradeCode }, { nameTh: gradeCode }] },
+        where: { OR: [{ gradeCode: code }, { nameTh: gradeCode }] },
       });
       if (g) gradeId = g.id;
+      else {
+        const name = MARKET_GRADES.find((entry) => entry.gradeCode === code)?.name
+          ?? (code === "PREMIUM_GI" ? "คัดพิเศษ GI" : null);
+        if (!name) return NextResponse.json({ error: "ไม่พบเกรดที่เลือก" }, { status: 400 });
+        const grade = await prisma.durianGrade.upsert({
+          where: { gradeCode: code }, update: {}, create: { gradeCode: code, nameTh: name },
+        });
+        gradeId = grade.id;
+      }
     }
 
     // Resolve intended region and province
@@ -187,7 +211,7 @@ export async function POST(request: Request) {
         targetRegion = "ภาคกลาง";
       }
     }
-    if (!targetRegion) targetRegion = "ภาคตะวันออก";
+
 
     // Find or create location with province and region
     let locationId = user.locationId;
@@ -230,6 +254,8 @@ export async function POST(request: Request) {
       if (loc) locationId = loc.id;
     }
 
+    if (!locationId) return NextResponse.json({ error: "กรุณาเลือกพื้นที่ของประกาศ" }, { status: 400 });
+
     // Resolve post type properly
     let resolvedPostType: PostType;
     if (postType && ["SELL", "BUY", "CUT_SERVICE"].includes(postType)) {
@@ -242,13 +268,18 @@ export async function POST(request: Request) {
       resolvedPostType = "SELL";
     }
 
+    const safeImageUrl =
+      typeof imageUrl === "string" && /^\/uploads\/posts\/[a-zA-Z0-9._-]+$/.test(imageUrl.trim())
+        ? imageUrl.trim()
+        : null;
+
     const post = await prisma.marketplacePost.create({
       data: {
         userId: user.id,
         postType: resolvedPostType,
         varietyId,
         gradeId,
-        locationId: locationId || 1,
+        locationId,
         title: title.trim(),
         content: content ? content.trim() : "",
         price: Number(price),
@@ -258,7 +289,15 @@ export async function POST(request: Request) {
         dryMatterPct: dryMatterPct ? Number(dryMatterPct) : null,
         availableDate: new Date(),
         status: "OPEN",
+        ...(safeImageUrl
+          ? {
+              images: {
+                create: [{ imageUrl: safeImageUrl, sortOrder: 0 }],
+              },
+            }
+          : {}),
       },
+      include: { images: true },
     });
 
     return NextResponse.json({ success: true, post });

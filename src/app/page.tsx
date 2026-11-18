@@ -1,10 +1,16 @@
 "use client";
+
+import { median, referencePrice } from "@/lib/reference-price";
 import { ReviewSummary } from "@/components/review-summary";
 import { loadMarketplacePosts, reviewLabel } from "@/lib/ui-feedback";
 import { SupportPortal } from "@/components/support-portal";
 import { chatHistory } from "@/lib/chat-history";
 import { AccountSettingsDialog } from "@/components/account-settings-dialog";
 import { MyPostsDialog } from "@/components/my-posts-dialog";
+import { MyDealsDialog } from "@/components/my-deals-dialog";
+import { MarketTrendPanel } from "@/components/market-trend-panel";
+import { PartnerReviewsDialog } from "@/components/partner-reviews-dialog";
+import { NotificationBell } from "@/components/notification-bell";
 
 import { ThemeSwitcher } from "@/components/theme-switcher";
 import { AuthBrandPanel } from "@/components/auth-brand-panel";
@@ -60,11 +66,11 @@ import {
   ChevronUp,
   FileText,
   Flag,
+  ImagePlus,
 } from "lucide-react";
 import {
   REGIONAL_SEASONS_DATA,
   VARIETY_STRIP_ITEMS,
-  INITIAL_POSTS,
   QUICK_REPLY_CHIPS,
   RoleType,
   PostType,
@@ -72,8 +78,8 @@ import {
   ChatRoomItem,
   ChatMessageItem,
   DURIAN_GRADES_CONFIG,
+  MARKET_GRADES,
   DurianGradeKey,
-  buildGradesForVariety,
 } from "@/data/mockData";
 
 const ROLE_CONFIG: Record<
@@ -204,7 +210,7 @@ const I18N_DICT = {
     heroBadge: "แดชบอร์ดทุเรียนรายภูมิภาค & ข้อมูลราคากลาง",
     heroTitle: "ราคาทุเรียนรายพื้นที่",
     heroSub: "เปรียบเทียบราคาเสนอซื้อ–ขาย และสายพันธุ์ทุเรียนตามกลไกตลาดในแต่ละภูมิภาค",
-    avgBuyPriceLabel: "รับซื้อเฉลี่ย",
+    avgBuyPriceLabel: "ราคาอ้างอิงรับซื้อ",
     perKg: "/กก.",
     realPosts: "ประกาศจริง",
     provincesLabel: "พื้นที่จังหวัด:",
@@ -213,9 +219,9 @@ const I18N_DICT = {
     peakSeasonLabel: "ผลผลิตออกชุก:",
     inDepthTitle: "เจาะลึกข้อมูลราคารายพื้นที่",
     harvestPeriodLabel: "ช่วงผลผลิตออก",
-    avgGardenPrice: "ราคาหน้าสวนเฉลี่ย",
-    avgLhongPrice: "ราคารับซื้อหน้าล้งเฉลี่ย",
-    avgCutWage: "ค่าจ้างตัดเฉลี่ย",
+    avgGardenPrice: "ราคาอ้างอิงหน้าสวน",
+    avgLhongPrice: "ราคาอ้างอิงหน้าล้ง",
+    avgCutWage: "ค่าจ้างตัดอ้างอิง",
     liveCalcNotice: "คำนวณสดจากประกาศจริง",
     liveCalcNoticeSub: "อัปเดตราคาซื้อ-ขาย และกราฟแท่งตามข้อมูลจริงในตลาดกลาง",
     gradeFilterTitle: "ตัวกรองเกรดทุเรียน:",
@@ -224,7 +230,7 @@ const I18N_DICT = {
     gradeAShort: "เกรด A",
     gradeBShort: "เกรด B",
     gradeCShort: "เกรด C",
-    gradeDShort: "เกรด D ตกไซซ์",
+    gradeDShort: "เกรด D",
     matrixTableTitle: "ตารางราคารับซื้อล้ง vs ขายหน้าสวน แยกตามเกรด",
     matrixUnit: "หน่วย: บาท/กก.",
     varietyCol: "สายพันธุ์",
@@ -271,7 +277,7 @@ const I18N_DICT = {
     // Chat
     chatHeaderTitle: "ห้องแชทเจรจาซื้อขาย & ทำสัญญาปิดดีล",
     chatHeaderSub: "พูดคุยสดกับคู่ค้าและกดทำสัญญาซื้อขายจริงบันทึกลงระบบ",
-    dealButton: "ตกลงราคา (ปิดดีล)",
+    dealButton: "เสนอเงื่อนไขซื้อขาย",
     typeMessagePlaceholder: "พิมพ์ข้อความแชท...",
     sendBtn: "ส่งข้อความ",
     allChatRooms: "ห้องแชททั้งหมด",
@@ -319,8 +325,6 @@ const I18N_DICT = {
     otpVerifyBtn: "ยืนยันรหัส OTP",
     otpVerifyingBtn: "กำลังตรวจสอบรหัส...",
     otpResendBtn: "ส่งรหัสใหม่อีกครั้ง",
-    otpMailpitNotice: "สำหรับทดสอบระบบในเครื่อง (Local Dev):",
-    otpOpenMailpitBtn: "เปิด Mailpit Web UI (พอร์ต 8025)",
     forgotModalTitle: "รีเซ็ตรหัสผ่านใหม่",
     forgotStep1Sub: "กรอกอีเมลที่ลงทะเบียนไว้เพื่อรับรหัส OTP 6 หลัก",
     forgotStep2Sub: "กรอกรหัส OTP ที่ได้รับทางอีเมล และกำหนดรหัสผ่านใหม่",
@@ -474,8 +478,6 @@ const I18N_DICT = {
     otpVerifyBtn: "Verify OTP Code",
     otpVerifyingBtn: "Verifying...",
     otpResendBtn: "Resend OTP Code",
-    otpMailpitNotice: "For local development testing (Mailpit):",
-    otpOpenMailpitBtn: "Open Mailpit Web UI (Port 8025)",
     forgotModalTitle: "Reset Password",
     forgotStep1Sub: "Enter your registered email to receive a 6-digit OTP code",
     forgotStep2Sub: "Enter the OTP code received via email and create your new password",
@@ -632,6 +634,7 @@ export default function DurianHubApp() {
   // 1. AUTHENTICATION STATE (หน้าแรกต้อง Login / สมัครสมาชิกก่อนเสมอ)
   // ==========================================================================
   const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
+  const [isCheckingSession, setIsCheckingSession] = useState<boolean>(true);
   const [authTab, setAuthTab] = useState<"LOGIN" | "REGISTER">("LOGIN");
   const [isAuthLoading, setIsAuthLoading] = useState<boolean>(false);
   const [authError, setAuthError] = useState<string | null>(null);
@@ -654,6 +657,7 @@ export default function DurianHubApp() {
   // OTP Verification Modal States
   const [showOtpModal, setShowOtpModal] = useState<boolean>(false);
   const [otpUserId, setOtpUserId] = useState<number | null>(null);
+  const [registrationId, setRegistrationId] = useState<string | null>(null);
   const [otpEmail, setOtpEmail] = useState<string>("");
   const [otpPurpose, setOtpPurpose] = useState<"VERIFY_EMAIL" | "RESET_PASSWORD">("VERIFY_EMAIL");
   const [otpCodeInput, setOtpCodeInput] = useState<string>("");
@@ -692,7 +696,7 @@ export default function DurianHubApp() {
     avatarUrl: null,
     phone: "089-456-7890",
     businessName: "สวนสมชาย จันทบุรี (GAP Certified)",
-    province: "จันทบุรี",
+    province: "",
     primaryRole: "SELLER",
     approvedRoles: ["SELLER"],
     activeRole: "SELLER",
@@ -814,6 +818,8 @@ export default function DurianHubApp() {
         }
       } catch (err) {
         console.error("Session check error:", err);
+      } finally {
+        setIsCheckingSession(false);
       }
     }
     checkSession();
@@ -981,35 +987,43 @@ export default function DurianHubApp() {
     if (roleSwitchPending.current) return;
     const roleType = ROLE_CONFIG[userProfile.activeRole]?.allowedPostType || "SELL";
     setNewPostType(roleType);
-    if (roleType === "SELL") setNewPostPrice("172");
-    else if (roleType === "BUY") setNewPostPrice("170");
-    else if (roleType === "CUT_SERVICE") setNewPostPrice("5.5");
+    setNewPostPrice("");
 
-    if (selectedRegionFilter && selectedRegionFilter !== "ALL") {
-      setNewPostRegion(selectedRegionFilter);
-      const regObj = REGIONAL_SEASONS_DATA.find((r) => r.regionName === selectedRegionFilter);
-      if (regObj && regObj.provinces.length > 0) {
-        setNewPostProvince(regObj.provinces[0]);
-      }
-    }
+    const province = userProfile.province?.trim() || "";
+    const region = REGIONAL_SEASONS_DATA.find((entry) => entry.provinces.includes(province));
+    setNewPostRegion(region?.regionName ?? "");
+    setNewPostProvince(region ? province : "");
     setShowCreatePostModal(true);
   };
 
   // Create Post Form State
   const [newPostTitle, setNewPostTitle] = useState("");
   const [newPostVariety, setNewPostVariety] = useState("หมอนทอง");
-  const [newPostGrade, setNewPostGrade] = useState("AB ส่งออก");
-  const [newPostProvince, setNewPostProvince] = useState("จันทบุรี");
-  const [newPostRegion, setNewPostRegion] = useState("ภาคตะวันออก");
-  const [newPostPrice, setNewPostPrice] = useState("172");
+  const [newPostGrade, setNewPostGrade] = useState(MARKET_GRADES[0].gradeCode);
+  const [newPostProvince, setNewPostProvince] = useState("");
+  const [newPostRegion, setNewPostRegion] = useState("");
+  const [newPostPrice, setNewPostPrice] = useState("");
   const [newPostQty, setNewPostQty] = useState("5000");
   const [newPostContent, setNewPostContent] = useState("");
+  const [newPostImageUrl, setNewPostImageUrl] = useState("");
+  const [isUploadingPostImage, setIsUploadingPostImage] = useState(false);
+  const [showMyDealsModal, setShowMyDealsModal] = useState(false);
+  const [lightboxImageUrl, setLightboxImageUrl] = useState<string | null>(null);
+  const [selectedMarketGrade, setSelectedMarketGrade] = useState<string>("ALL");
+  const [marketSortBy, setMarketSortBy] = useState<
+    "NEWEST" | "PRICE_ASC" | "PRICE_DESC" | "QTY_DESC" | "RATING_DESC"
+  >("NEWEST");
+  const [inspectPartner, setInspectPartner] = useState<{ id: number; name?: string } | null>(null);
+  const [isUploadingChatImage, setIsUploadingChatImage] = useState(false);
   const [postFeedback, setPostFeedback] = useState<string | null>(null);
+  const [uiNotice, setUiNotice] = useState<{ type: "error" | "info" | "success"; message: string } | null>(null);
+
+  const showNotice = (type: "error" | "info" | "success", message: string) => {
+    setUiNotice({ type, message });
+  };
 
   // Post Detail & Confirm Modal State (อ้างอิงรูปที่ 3 และ รูปที่ 4)
-  const [selectedPost, setSelectedPost] = useState<MarketplacePostItem>(
-    INITIAL_POSTS[0]
-  );
+  const [selectedPost, setSelectedPost] = useState<MarketplacePostItem | null>(null);
   const [showChatConfirmModal, setShowChatConfirmModal] =
     useState<boolean>(false);
   const [copiedBanner, setCopiedBanner] = useState<boolean>(false);
@@ -1075,6 +1089,16 @@ export default function DurianHubApp() {
         if (data.requireEmailVerification) {
           // อีเมลยังไม่ได้ยืนยัน -> เปิดหน้าต่างกรอก OTP ทันที
           setOtpUserId(data.userId);
+          setRegistrationId(null);
+          if (data.registration) {
+            setRegEmail(data.email);
+            setRegFullName(data.fullName);
+            setRegPhone(data.registration.phone);
+            setRegPrimaryRole(data.registration.role);
+            setRegBusinessName(data.registration.businessName);
+            setRegProvince(data.registration.province ?? "");
+            setRegRegion(data.registration.region ?? "");
+          }
           setOtpEmail(data.email);
           setOtpPurpose("VERIFY_EMAIL");
           setOtpError(data.error);
@@ -1125,8 +1149,8 @@ export default function DurianHubApp() {
         return;
       }
 
-      // สมัครสำเร็จ -> เปิด Modal ให้กรอก OTP 6 หลัก
-      setOtpUserId(data.userId);
+      setRegistrationId(data.registrationId);
+      setOtpUserId(null);
       setOtpEmail(data.email);
       setOtpPurpose("VERIFY_EMAIL");
       setOtpError(null);
@@ -1143,7 +1167,7 @@ export default function DurianHubApp() {
   // 3. Verify OTP Handler
   const handleVerifyOtpSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!otpUserId) return;
+    if (!registrationId && !otpUserId) return;
     setOtpError(null);
     setOtpSuccess(null);
     setIsOtpLoading(true);
@@ -1154,6 +1178,7 @@ export default function DurianHubApp() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           userId: otpUserId,
+          registrationId,
           otpCode: otpCodeInput,
         }),
       });
@@ -1168,6 +1193,8 @@ export default function DurianHubApp() {
       // ยืนยันสำเร็จ -> เข้าระบบอัตโนมัติ
       setUserProfile(data.user);
       setShowOtpModal(false);
+      setRegistrationId(null);
+      setRegPassword("");
       setIsAuthenticated(true);
       setCurrentView("ROLE_HOME");
     } catch {
@@ -1179,7 +1206,7 @@ export default function DurianHubApp() {
 
   // 4. Resend OTP Handler
   const handleResendOtp = async () => {
-    if (!otpUserId) return;
+    if (!registrationId && !otpUserId) return;
     setOtpError(null);
     setOtpSuccess(null);
     setIsOtpLoading(true);
@@ -1190,6 +1217,7 @@ export default function DurianHubApp() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           userId: otpUserId,
+          registrationId,
           purpose: otpPurpose,
         }),
       });
@@ -1325,6 +1353,7 @@ export default function DurianHubApp() {
 
   // 4. Confirm Chat from Modal -> POST /api/chat/rooms
   const handleConfirmStartChat = async () => {
+    if (!selectedPost) return;
     setShowChatConfirmModal(false);
     try {
       const res = await fetch("/api/chat/rooms", {
@@ -1339,10 +1368,18 @@ export default function DurianHubApp() {
         setActiveChatRoomId(data.roomId);
         setCurrentView("CHAT_ROOM");
       } else {
-        alert(data.error || "ไม่สามารถเปิดห้องแชทได้");
+        showNotice(
+          "error",
+          data.error ||
+            (currentLang === "TH" ? "ไม่สามารถเปิดห้องแชทได้ กรุณาลองใหม่อีกครั้ง" : "Unable to open chat room. Please try again.")
+        );
       }
     } catch (err) {
       console.error("Chat start error:", err);
+      showNotice(
+        "error",
+        currentLang === "TH" ? "เกิดข้อผิดพลาดในการเชื่อมต่อเพื่อเปิดห้องแชท" : "Network error while starting chat."
+      );
     }
   };
 
@@ -1424,7 +1461,11 @@ export default function DurianHubApp() {
         return;
       }
 
-      setDealSuccessMsg("🎉 ตกลงราคาซื้อขายและบันทึกสัญญาดีลสำเร็จแล้ว!");
+      setDealSuccessMsg(
+        currentLang === "TH"
+          ? "ส่งข้อเสนอแล้ว รอคู่ค้าตอบรับในเมนูดีล"
+          : "Offer sent. Your partner can respond in My Deals."
+      );
       await fetchPosts();
       await fetchMessages(activeChatRoom.id, true);
       await fetchChatRooms();
@@ -1460,6 +1501,7 @@ export default function DurianHubApp() {
           roomId: activeChatRoom.id,
           postId: activeChatRoom.post?.id,
           revieweeId: activeChatRoom.partnerId,
+          dealId: activeChatRoom.deal?.id,
           rating: reviewRating,
           comment: reviewComment,
         }),
@@ -1501,25 +1543,23 @@ export default function DurianHubApp() {
     // Strict Role-to-PostType Enforcement: โพสต์ได้เฉพาะประเภทของบทบาทปัจจุบันเท่านั้น
     const postType = newPostType;
     if (postType !== ROLE_CONFIG[userProfile.activeRole]?.allowedPostType) {
-      alert(currentLang === "TH" ? "บทบาทเปลี่ยนไป กรุณาปิดแล้วเปิดฟอร์มประกาศใหม่" : "Your role changed. Please reopen the listing form.");
+      showNotice(
+        "info",
+        currentLang === "TH"
+          ? "บทบาทของคุณเปลี่ยนไป กรุณาปิดแล้วเปิดฟอร์มประกาศใหม่"
+          : "Your role changed. Please reopen the listing form."
+      );
       return;
     }
     postSubmitPending.current = true;
     setIsCreatingPost(true);
-
-    // Outlier validation (+/- 30% from reference price)
-    const refItem = VARIETY_STRIP_ITEMS.find((v) => v.id === newPostVariety);
-    const refPrice = refItem ? refItem.avgPrice : 170;
-    const isOutlier =
-      postType !== "CUT_SERVICE" &&
-      (priceNum > refPrice * 1.3 || priceNum < refPrice * 0.7);
 
     try {
       const res = await fetch("/api/posts", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          title: newPostTitle || `${newPostVariety} เกรด ${newPostGrade} (${(qtyNum / 1000).toFixed(1)} ตัน)`,
+          title: newPostTitle || `${newPostVariety} ${MARKET_GRADES.find((g) => g.gradeCode === newPostGrade)?.shortName ?? ""} (${(qtyNum / 1000).toFixed(1)} ตัน)`,
           content: newPostContent || `ประกาศโดย ${userProfile.businessName} พื้นที่ จ.${newPostProvince} (${newPostRegion})`,
           postType,
           varietyName: newPostVariety,
@@ -1530,12 +1570,16 @@ export default function DurianHubApp() {
           pricePerKg: priceNum,
           quantityKg: qtyNum,
           dryMatterPct: 34.0,
+          imageUrl: newPostImageUrl || undefined,
         }),
       });
 
       const data = await res.json();
       if (!res.ok) {
-        alert(data.error || "ไม่สามารถลงประกาศได้");
+        showNotice(
+          "error",
+          data.error || (currentLang === "TH" ? "ไม่สามารถลงประกาศได้ กรุณาตรวจสอบข้อมูล" : "Unable to publish listing.")
+        );
         return;
       }
 
@@ -1544,22 +1588,79 @@ export default function DurianHubApp() {
       setShowCreatePostModal(false);
       setNewPostTitle("");
       setNewPostContent("");
+      setNewPostImageUrl("");
       const catLabel =
         postType === "SELL"
-          ? "โพสต์ขายทุเรียน (Sell Orders)"
+          ? currentLang === "TH" ? "โพสต์ขายทุเรียน (Sell Orders)" : "Sell Orders"
           : postType === "BUY"
-          ? "โพสต์รับซื้อหน้าล้ง (Buy Orders)"
-          : "โพสต์รับตัดทุเรียน (Cut Service)";
+          ? currentLang === "TH" ? "โพสต์รับซื้อหน้าล้ง (Buy Orders)" : "Buy Orders"
+          : currentLang === "TH" ? "โพสต์รับตัดทุเรียน (Cut Service)" : "Cut Service";
       setPostFeedback(
-        isOutlier
-          ? `⚠️ โพสต์ของคุณถูกบันทึกในหมวด "${catLabel}" แล้ว แต่เนื่องจากราคา (${priceNum} บ.) สูงหรือต่ำกว่าราคากลางเกิน ±30% ระบบจึงไม่นำไปคำนวณในกราฟราคากลางเพื่อป้องกันการปั่นราคา`
-          : `✅ ลงประกาศในหมวด "${catLabel}" สำเร็จแล้ว!`
+        currentLang === "TH"
+          ? `ลงประกาศในหมวด "${catLabel}" สำเร็จแล้ว`
+          : `Listing published in "${catLabel}" successfully.`
       );
     } catch (err) {
       console.error("create post error:", err);
+      showNotice(
+        "error",
+        currentLang === "TH" ? "เชื่อมต่อเซิร์ฟเวอร์ไม่ได้ขณะลงประกาศ กรุณาลองใหม่" : "Network error while creating listing."
+      );
     } finally {
       postSubmitPending.current = false;
       setIsCreatingPost(false);
+    }
+  };
+
+  const handlePostImageUpload = async (file: File) => {
+    setIsUploadingPostImage(true);
+    try {
+      const fd = new FormData();
+      fd.append("file", file);
+      fd.append("scope", "posts");
+      const res = await fetch("/api/uploads", { method: "POST", body: fd });
+      const data = await res.json();
+      if (res.ok && data.url) {
+        setNewPostImageUrl(data.url);
+      } else {
+        showNotice("error", data.error || (currentLang === "TH" ? "อัปโหลดรูปไม่สำเร็จ" : "Image upload failed"));
+      }
+    } catch {
+      showNotice("error", currentLang === "TH" ? "เชื่อมต่อไม่สำเร็จขณะอัปโหลดรูป" : "Network error uploading image");
+    } finally {
+      setIsUploadingPostImage(false);
+    }
+  };
+
+  const handleChatImageUpload = async (file: File) => {
+    if (!activeChatRoomId) return;
+    setIsUploadingChatImage(true);
+    try {
+      const fd = new FormData();
+      fd.append("file", file);
+      fd.append("scope", "chat");
+      const upRes = await fetch("/api/uploads", { method: "POST", body: fd });
+      const upData = await upRes.json();
+      if (!upRes.ok || !upData.url) {
+        showNotice("error", upData.error || (currentLang === "TH" ? "อัปโหลดรูปไม่สำเร็จ" : "Image upload failed"));
+        return;
+      }
+      const msgRes = await fetch(`/api/chat/rooms/${activeChatRoomId}/messages`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ content: upData.url, messageType: "IMAGE" }),
+      });
+      if (msgRes.ok) {
+        await fetchMessages(activeChatRoomId, true);
+        await fetchChatRooms();
+      } else {
+        const msgErr = await msgRes.json().catch(() => null);
+        showNotice("error", msgErr?.error || (currentLang === "TH" ? "ส่งรูปภาพไม่สำเร็จ" : "Failed to send image"));
+      }
+    } catch {
+      showNotice("error", currentLang === "TH" ? "เชื่อมต่อไม่สำเร็จขณะส่งรูปภาพ" : "Network error sending image");
+    } finally {
+      setIsUploadingChatImage(false);
     }
   };
 
@@ -1596,10 +1697,16 @@ export default function DurianHubApp() {
           businessName: data.businessName,
         }));
       } else {
-        alert(data.error || "ไม่สามารถสลับบทบาทได้");
+        showNotice(
+          "error",
+          data.error || (currentLang === "TH" ? "ไม่สามารถสลับบทบาทได้" : "Unable to switch role.")
+        );
       }
     } catch {
-      alert("เกิดข้อผิดพลาดในการสลับบทบาท");
+      showNotice(
+        "error",
+        currentLang === "TH" ? "เกิดข้อผิดพลาดในการสลับบทบาท กรุณาลองใหม่" : "Network error while switching role."
+      );
     } finally {
       roleSwitchPending.current = false;
       setIsSwitchingRole(false);
@@ -1665,6 +1772,7 @@ export default function DurianHubApp() {
 
   const handleSubmitPostReport = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!selectedPost) return;
     setReportError(null);
     setReportSuccess(null);
     setIsSubmittingReport(true);
@@ -1697,9 +1805,9 @@ export default function DurianHubApp() {
     }
   };
 
-  // Filtered Posts for Marketplace 3 Columns
+  // Filtered & Sorted Posts for Marketplace 3 Columns
   const filteredMarketplacePosts = useMemo(() => {
-    return posts.filter((p) => {
+    const filtered = posts.filter((p) => {
       if (
         selectedVarietyStrip !== "ALL" &&
         p.variety !== selectedVarietyStrip
@@ -1713,6 +1821,13 @@ export default function DurianHubApp() {
       ) {
         return false;
       }
+      if (selectedMarketGrade !== "ALL") {
+        const gUpper = (p.grade || "").toUpperCase();
+        if (selectedMarketGrade === "A" && !gUpper.includes("A")) return false;
+        if (selectedMarketGrade === "B" && (!gUpper.includes("B") || gUpper.includes("AB"))) return false;
+        if (selectedMarketGrade === "C" && !gUpper.includes("C")) return false;
+        if (selectedMarketGrade === "D" && !gUpper.includes("D") && !gUpper.includes("ตกไซซ์")) return false;
+      }
       if (
         searchQuery.trim() !== "" &&
         !p.title.toLowerCase().includes(searchQuery.toLowerCase()) &&
@@ -1723,7 +1838,15 @@ export default function DurianHubApp() {
       }
       return true;
     });
-  }, [posts, selectedVarietyStrip, selectedRegionFilter, searchQuery]);
+
+    return [...filtered].sort((a, b) => {
+      if (marketSortBy === "PRICE_ASC") return a.pricePerKg - b.pricePerKg;
+      if (marketSortBy === "PRICE_DESC") return b.pricePerKg - a.pricePerKg;
+      if (marketSortBy === "QTY_DESC") return b.quantityKg - a.quantityKg;
+      if (marketSortBy === "RATING_DESC") return (b.rating || 0) - (a.rating || 0);
+      return (b.createdAt || "").localeCompare(a.createdAt || "");
+    });
+  }, [posts, selectedVarietyStrip, selectedRegionFilter, selectedMarketGrade, marketSortBy, searchQuery]);
 
   const sellOrders = filteredMarketplacePosts.filter(
     (p) => p.postType === "SELL"
@@ -1738,130 +1861,50 @@ export default function DurianHubApp() {
   // Dynamic Regional Dashboard Data calculated from live posts in DB
   const computedRegionalSeasonsData = useMemo(() => {
     return REGIONAL_SEASONS_DATA.map((reg) => {
-      // Find all posts in this region (by regionTag, region, or province matching)
-      const regionPosts = posts.filter((p) => {
-        const pReg = p.regionTag || (p as any).region || "";
-        return (
-          pReg === reg.regionName ||
-          reg.provinces.some((prov) => p.province && p.province.includes(prov))
-        );
-      });
-
-      const sellPosts = regionPosts.filter((p) => p.postType === "SELL");
-      const buyPosts = regionPosts.filter((p) => p.postType === "BUY");
-      const cutPosts = regionPosts.filter((p) => p.postType === "CUT_SERVICE");
-
-      // Dynamic average sell price
-      let dynamicAvgSell = reg.avgSellPrice;
-      if (sellPosts.length > 0) {
-        const total = sellPosts.reduce(
-          (acc, cur) => acc + (cur.pricePerKg || 0),
-          0
-        );
-        dynamicAvgSell = Math.round((total / sellPosts.length) * 10) / 10;
-      }
-
-      // Dynamic average buy price
-      let dynamicAvgBuy = reg.avgBuyPrice;
-      if (buyPosts.length > 0) {
-        const total = buyPosts.reduce(
-          (acc, cur) => acc + (cur.pricePerKg || 0),
-          0
-        );
-        dynamicAvgBuy = Math.round((total / buyPosts.length) * 10) / 10;
-      }
-
-      // Dynamic average cut wage
-      let dynamicAvgCut = reg.avgCutWage;
-      if (cutPosts.length > 0) {
-        const total = cutPosts.reduce(
-          (acc, cur) => acc + (cur.pricePerKg || 0),
-          0
-        );
-        dynamicAvgCut = Math.round((total / cutPosts.length) * 10) / 10;
-      }
-
-      // Dynamic price by variety breakdown
-      const dynamicPriceByVariety = reg.priceByVariety.map((pv) => {
-        const vSellPosts = sellPosts.filter(
-          (p) => p.variety && p.variety.includes(pv.variety)
-        );
-        const vBuyPosts = buyPosts.filter(
-          (p) => p.variety && p.variety.includes(pv.variety)
-        );
-
-        let vSellPrice = pv.sellPrice;
-        if (vSellPosts.length > 0) {
-          const total = vSellPosts.reduce(
-            (acc, cur) => acc + (cur.pricePerKg || 0),
-            0
-          );
-          vSellPrice = Math.round(total / vSellPosts.length);
+      const regionPosts = posts.filter((post) =>
+        post.marketPricePerKg != null && (post.province && REGIONAL_SEASONS_DATA.some((r) => r.provinces.includes(post.province))
+          ? reg.provinces.includes(post.province) : post.regionTag === reg.regionName)
+      );
+      const average = (items: MarketplacePostItem[]) => {
+        const groups = new Map<string, { userId: number; price: number }[]>();
+        for (const item of items) {
+          if (!item.gradeCode || !item.variety || !item.userId || item.marketPricePerKg == null ||
+              Date.now() - new Date(item.createdAt).getTime() > 7 * 86400000) continue;
+          const key = JSON.stringify([item.province, item.variety, item.gradeCode]);
+          const samples = groups.get(key) ?? [];
+          samples.push({ userId: item.userId, price: item.marketPricePerKg });
+          groups.set(key, samples);
         }
-
-        let vBuyPrice = pv.buyPrice;
-        if (vBuyPosts.length > 0) {
-          const total = vBuyPosts.reduce(
-            (acc, cur) => acc + (cur.pricePerKg || 0),
-            0
-          );
-          vBuyPrice = Math.round(total / vBuyPosts.length);
-        }
-
-        const vRefPrice = Math.round((vSellPrice + vBuyPrice) / 2);
-        const dynamicGrades = buildGradesForVariety(vBuyPrice, vSellPrice, vRefPrice);
-
-        // If there are real posts specifying grade code, compute grade-specific averages
-        (["GRADE_A", "GRADE_B", "GRADE_C", "GRADE_D"] as DurianGradeKey[]).forEach((gKey) => {
-          const cfg = DURIAN_GRADES_CONFIG[gKey];
-          const gradeMatch = (gradeStr?: string) => {
-            if (!gradeStr) return false;
-            const upper = gradeStr.toUpperCase();
-            if (gKey === "GRADE_A" && (upper.includes("A") || upper.includes("ส่งออก"))) return true;
-            if (gKey === "GRADE_B" && upper.includes("B")) return true;
-            if (gKey === "GRADE_C" && (upper.includes("C") || upper.includes("ในประเทศ"))) return true;
-            if (gKey === "GRADE_D" && (upper.includes("D") || upper.includes("ตกไซซ์") || upper.includes("ลาย"))) return true;
-            return false;
-          };
-
-          const gSell = vSellPosts.filter((p) => gradeMatch(p.grade));
-          if (gSell.length > 0) {
-            const tot = gSell.reduce((acc, c) => acc + (c.pricePerKg || 0), 0);
-            dynamicGrades[gKey].sellPrice = Math.round(tot / gSell.length);
-          }
-
-          const gBuy = vBuyPosts.filter((p) => gradeMatch(p.grade));
-          if (gBuy.length > 0) {
-            const tot = gBuy.reduce((acc, c) => acc + (c.pricePerKg || 0), 0);
-            dynamicGrades[gKey].buyPrice = Math.round(tot / gBuy.length);
-          }
-          dynamicGrades[gKey].refPrice = Math.round((dynamicGrades[gKey].sellPrice + dynamicGrades[gKey].buyPrice) / 2);
+        return median([...groups.values()].flatMap(samples => {
+          const price = referencePrice(samples).estimate;
+          return price === null ? [] : [price];
+        }));
+      };
+      const sell = regionPosts.filter((post) => post.postType === "SELL");
+      const buy = regionPosts.filter((post) => post.postType === "BUY");
+      const cut = regionPosts.filter((post) => post.postType === "CUT_SERVICE");
+      const varieties = Array.from(new Set([...reg.varieties, ...regionPosts.map((post) => post.variety).filter(Boolean)]));
+      const priceByVariety = varieties.map((variety) => {
+        const sellers = sell.filter((post) => post.variety === variety);
+        const buyers = buy.filter((post) => post.variety === variety);
+        const gradePrices = (key: DurianGradeKey) => ({
+          sellPrice: average(sellers.filter((post) => post.gradeCode === DURIAN_GRADES_CONFIG[key].gradeCode)),
+          buyPrice: average(buyers.filter((post) => post.gradeCode === DURIAN_GRADES_CONFIG[key].gradeCode)),
         });
-
         return {
-          ...pv,
-          sellPrice: vSellPrice,
-          buyPrice: vBuyPrice,
-          refPrice: vRefPrice,
-          sellSampleCount: vSellPosts.length,
-          buySampleCount: vBuyPosts.length,
-          grades: dynamicGrades,
+          variety, sellPrice: average(sellers), buyPrice: average(buyers),
+          sellSampleCount: new Set(sellers.map(p => p.userId)).size, buySampleCount: new Set(buyers.map(p => p.userId)).size,
+          grades: {
+            GRADE_A: gradePrices("GRADE_A"), GRADE_B: gradePrices("GRADE_B"),
+            GRADE_C: gradePrices("GRADE_C"), GRADE_D: gradePrices("GRADE_D"),
+          },
         };
       });
-
       return {
-        ...reg,
-        avgSellPrice: dynamicAvgSell,
-        avgBuyPrice: dynamicAvgBuy,
-        avgCutWage: dynamicAvgCut,
-        activeLotsCount:
-          regionPosts.length,
-        sellSampleCount: sellPosts.length,
-        buySampleCount: buyPosts.length,
-        cutSampleCount: cutPosts.length,
-        hasLivePosts: regionPosts.length > 0,
-        livePostsCount: regionPosts.length,
-        priceByVariety: dynamicPriceByVariety,
+        ...reg, varieties, priceByVariety,
+        avgSellPrice: average(sell), avgBuyPrice: average(buy), avgCutWage: average(cut),
+        sellSampleCount: new Set(sell.map(p => p.userId)).size, buySampleCount: new Set(buy.map(p => p.userId)).size, cutSampleCount: new Set(cut.map(p => p.userId)).size,
+        hasLivePosts: regionPosts.length > 0, livePostsCount: regionPosts.length,
       };
     });
   }, [posts]);
@@ -1883,9 +1926,18 @@ export default function DurianHubApp() {
         ) || null
       : null;
 
+  const noPrice = currentLang === "TH" ? "ข้อมูลยังไม่พอ" : "Not enough data";
+  const priceText = (value: number | null) => value === null ? noPrice : `฿${value.toLocaleString(currentLang === "TH" ? "th-TH" : "en-US")}`;
   const currentDashboardSellPrice = activeDashboardVarietyData
     ? activeDashboardVarietyData.sellPrice
     : selectedRegionalData.avgSellPrice;
+
+  const visibleVarietyPrices = selectedRegionalData.priceByVariety.filter(
+    (entry) => validDashboardVariety === "ALL" || entry.variety === validDashboardVariety
+  );
+  const summaryVarietyLabel = activeDashboardVarietyData
+    ? translateVarietyName(activeDashboardVarietyData.variety, currentLang)
+    : currentLang === "TH" ? "ราคาอ้างอิงทั้งภาค" : "Regional reference";
 
   const currentDashboardBuyPrice = activeDashboardVarietyData
     ? activeDashboardVarietyData.buyPrice
@@ -1905,6 +1957,20 @@ export default function DurianHubApp() {
   // ==========================================================================
   // VIEW 0: AUTHENTICATION GATE (หน้าแรกบังคับให้ Login หรือ สมัครสมาชิกก่อน)
   // ==========================================================================
+  if (isCheckingSession) {
+    return (
+      <div className="min-h-screen bg-canvas text-foreground flex flex-col items-center justify-center gap-3 p-6">
+        <div className="w-10 h-10 rounded-xl bg-emerald-700 text-white flex items-center justify-center font-semibold text-base shadow-sm">
+          D
+        </div>
+        <div className="flex items-center gap-2 text-sm text-secondary">
+          <RefreshCw className="w-4 h-4 animate-spin text-brand-ink" />
+          <span>{currentLang === "TH" ? "กำลังตรวจสอบสถานะการเข้าสู่ระบบ…" : "Checking session…"}</span>
+        </div>
+      </div>
+    );
+  }
+
   if (!isAuthenticated) {
     return (
       <div className="min-h-screen bg-canvas flex flex-col items-center justify-center gap-5 p-4 sm:p-8">
@@ -2381,6 +2447,24 @@ export default function DurianHubApp() {
                 >
                   {t.otpResendBtn}
                 </button>
+                <button
+                  type="button"
+                  disabled={isOtpLoading}
+                  className="block mx-auto mt-3 text-sm font-semibold text-brand-ink underline"
+                  onClick={() => {
+                    if (!registrationId) {
+                      setRegEmail(otpEmail);
+                      setRegPassword(loginPassword);
+                    }
+                    setAuthTab("REGISTER");
+                    setAuthError(null);
+                    setAuthSuccessMsg(null);
+                    setShowOtpModal(false);
+                    requestAnimationFrame(() => document.getElementById("user-field-4")?.focus());
+                  }}
+                >
+                  {currentLang === "TH" ? "แก้อีเมลหรือเบอร์โทร" : "Edit email or phone"}
+                </button>
               </div>
             </div>
           </DialogFrame>
@@ -2574,9 +2658,19 @@ export default function DurianHubApp() {
             </nav>
           </div>
 
-          {/* Right: theme, language, account (role switching lives in the account menu) */}
+          {/* Right: theme, notifications, language, account (role switching lives in the account menu) */}
           <div className="flex items-center gap-2">
             <div className="hidden md:block"><ThemeSwitcher language={currentLang} /></div>
+            <NotificationBell
+              userId={userProfile.id ?? 0}
+              lang={currentLang}
+              unreadChatCount={totalUnreadCount}
+              onOpenChat={() => {
+                setActiveChatRoomId(0);
+                setCurrentView("CHAT_ROOM");
+              }}
+              onOpenDeals={() => setShowMyDealsModal(true)}
+            />
 
             {/* User Profile Trigger & Menu (Clean Light Emerald Theme แมตช์กับเว็บ 100%) */}
             <div id="user-profile-menu-container" className="relative flex items-center gap-2">
@@ -2706,6 +2800,18 @@ export default function DurianHubApp() {
                       <span>{t.myPostsMenu}</span>
                     </button>
 
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setIsProfileDropdownOpen(false);
+                        setShowMyDealsModal(true);
+                      }}
+                      className="w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-secondary hover:text-brand-ink hover:bg-brand-soft/80 transition text-left cursor-pointer"
+                    >
+                      <Handshake className="w-4 h-4 text-brand-ink" />
+                      <span>{currentLang === "TH" ? "ประวัติสัญญาดีล & ยอดซื้อขาย" : "My Deals & Summary"}</span>
+                    </button>
+
                     <button type="button" onClick={() => { setIsProfileDropdownOpen(false); setSupportRoomId(0); }} className="w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-secondary hover:text-brand-ink hover:bg-brand-soft/80 transition text-left cursor-pointer">
                       <MessageSquare className="w-4 h-4 text-brand-ink" />
                       <span>{currentLang === "TH" ? "ศูนย์ช่วยเหลือ / ติดต่อแอดมิน" : "Help Center / Contact admin"}</span>
@@ -2825,6 +2931,38 @@ export default function DurianHubApp() {
 
       {/* Main Content Container */}
       <main id="main-content" className="app-main">
+        {uiNotice && (
+          <div
+            role={uiNotice.type === "error" ? "alert" : "status"}
+            className={`mb-5 p-4 rounded-xl border shadow-sm flex items-center justify-between gap-3 text-sm ${
+              uiNotice.type === "error"
+                ? "bg-danger-soft/90 border-danger-line text-danger-ink"
+                : uiNotice.type === "success"
+                ? "bg-brand-soft/90 border-brand-line text-brand-ink"
+                : "bg-info-soft/90 border-info-line text-info-ink"
+            }`}
+          >
+            <div className="flex items-center gap-2.5 min-w-0">
+              {uiNotice.type === "error" ? (
+                <AlertTriangle className="w-4 h-4 shrink-0" />
+              ) : uiNotice.type === "success" ? (
+                <CheckCircle2 className="w-4 h-4 shrink-0" />
+              ) : (
+                <Info className="w-4 h-4 shrink-0" />
+              )}
+              <span>{uiNotice.message}</span>
+            </div>
+            <button
+              type="button"
+              onClick={() => setUiNotice(null)}
+              aria-label={currentLang === "TH" ? "ปิดการแจ้งเตือน" : "Dismiss notice"}
+              className="p-1 rounded-lg hover:bg-surface/60 transition shrink-0 cursor-pointer"
+            >
+              <X className="w-4 h-4" />
+            </button>
+          </div>
+        )}
+
         {postFeedback && (
           <div className="mb-5 p-4 rounded-xl bg-surface border border-brand-line shadow-sm flex items-center justify-between gap-3 text-sm text-foreground">
             <span>{postFeedback}</span>
@@ -3082,8 +3220,8 @@ export default function DurianHubApp() {
                   </strong>
                   <p className="mt-1.5 text-xs sm:text-sm text-warning-ink/90">
                     {currentLang === "TH"
-                      ? `ใช้ราคาเสนอจากประกาศที่ยังเปิด${marketplaceDays ? `ใน ${marketplaceDays} วันล่าสุด` : "ทั้งหมด"} ไม่ใช่ราคาซื้อขายสำเร็จ; พื้นที่ สายพันธุ์ หรือเกรดที่ไม่มีประกาศใช้ตัวเลขตัวอย่างเพื่อแสดงรูปแบบ ห้ามใช้เป็นราคายืนยัน`
-                      : `Asking prices from ${marketplaceDays ? `the last ${marketplaceDays} days` : "all open listings"}, not completed trades. Areas, varieties and grades without listings use illustrative figures, not verified prices.`}
+                      ? `ใช้ราคามัธยฐานจากประกาศที่ยังเปิดใน 7 วันล่าสุด ต้องมีอย่างน้อย 3 ผู้ลงประกาศในกลุ่มเดียวกัน`
+                      : `Asking prices from ${marketplaceDays ? `the last ${marketplaceDays} days` : "all open listings"}, not completed trades. Areas, varieties and grades without listings show “No data”.`}
                   </p>
                   <div className="mt-2.5 pt-2 border-t border-warning-line/40 flex flex-wrap items-center justify-between gap-2 text-xs text-warning-ink/80">
                     <span>
@@ -3108,10 +3246,7 @@ export default function DurianHubApp() {
               <div className="flex items-center justify-between px-1">
                 <span className="text-xs font-semibold text-secondary flex items-center gap-1.5">
                   <MapPin className="w-4 h-4 text-brand-ink" />
-                  {currentLang === "TH" ? "เลือกภูมิภาคเพื่อดูวิเคราะห์ราคากลาง" : "Select Region for In-depth Analytics"}
-                </span>
-                <span className="text-xs text-muted-foreground">
-                  {currentLang === "TH" ? "คลิกเลือกเพื่อเปลี่ยนแดชบอร์ดด้านล่าง" : "Click to switch active dashboard"}
+                  {currentLang === "TH" ? "เลือกภูมิภาค" : "Select region"}
                 </span>
               </div>
 
@@ -3119,87 +3254,37 @@ export default function DurianHubApp() {
                 {computedRegionalSeasonsData.map((reg) => {
                   const isSelected = reg.id === selectedRegionalData.id;
                   return (
-                    <div
+                    <button
                       key={reg.id}
+                      type="button"
+                      aria-pressed={isSelected}
                       onClick={() => {
                         setSelectedRegionId(reg.id);
                         setSelectedDashboardVariety("ALL");
                         setShowAllProvinces(false);
                       }}
-                      className={`p-3 rounded-xl border transition cursor-pointer flex flex-col justify-between gap-2 ${
-                        isSelected
-                          ? "bg-brand-soft/70 border-brand-line text-foreground shadow-2xs ring-1 ring-brand-line/50"
-                          : "bg-surface border-line hover:border-line-strong hover:bg-hover/50 text-secondary"
-                      }`}
+                      className={`min-h-11 rounded-xl border px-3 py-2 text-sm font-semibold transition ${isSelected
+                        ? "border-brand-line bg-brand-soft text-brand-ink"
+                        : "border-line bg-surface text-secondary hover:border-line-strong"}`}
                     >
-                      <div className="flex items-center justify-between gap-1">
-                        <span className={`text-xs font-semibold ${isSelected ? "text-brand-ink" : "text-foreground"}`}>
-                          {translateRegionName(reg.regionName, currentLang)}
-                        </span>
-                        {reg.hasLivePosts && (
-                          <span className="text-[10px] font-semibold text-brand-ink bg-brand-soft px-1.5 py-0.2 rounded shrink-0">
-                            ⚡ {reg.livePostsCount}
-                          </span>
-                        )}
-                      </div>
-
-                      <div className="space-y-0.5">
-                        <div className="text-[11px] text-muted-foreground truncate">
-                          {reg.provinces.length} {currentLang === "TH" ? "จังหวัด" : "prov."} · {reg.varieties.length} {currentLang === "TH" ? "พันธุ์" : "vars."}
-                        </div>
-                        <div className="text-xs font-semibold text-foreground num flex items-baseline gap-0.5">
-                          <span className="text-brand-ink">฿{reg.avgBuyPrice}</span>
-                          <span className="text-[10px] font-normal text-muted-foreground">{t.perKg}</span>
-                        </div>
-                      </div>
-                    </div>
+                      {translateRegionName(reg.regionName, currentLang)}
+                    </button>
                   );
                 })}
               </div>
             </div>
 
             {/* ส่วนที่ 2: แดชบอร์ดเจาะลึกและตารางราคากลางแบบเต็มความกว้าง (Full-Width Main Analytics Dashboard) */}
-            <div className="bg-surface rounded-2xl p-6 sm:p-8 border border-line/80 shadow-sm space-y-6">
+            <div className="bg-surface rounded-2xl p-4 sm:p-8 border border-line/80 shadow-sm space-y-6">
               {/* แถวบน: ข้อมูลทั่วไปของภูมิภาค + การ์ดราคา 3 ใบขนาดใหญ่ */}
               <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 pb-6 border-b border-line">
                 {/* ฝั่งซ้าย: ชื่อภูมิภาค + ไฮไลท์ + รายชื่อจังหวัดแบบย่อ (Progressive Disclosure) + ตัวกรองสายพันธุ์ */}
-                <div className="lg:col-span-7 flex flex-col justify-between gap-4">
+                <div className="lg:col-span-6 flex flex-col gap-4">
                   <div className="space-y-2">
                     <h3 className="text-2xl sm:text-3xl font-semibold text-foreground tracking-tight">
                       {translateRegionName(selectedRegionalData.regionName, currentLang)}
                     </h3>
 
-                    <p className="text-sm text-secondary leading-relaxed max-w-2xl">
-                      {selectedRegionalData.highlightNote}
-                    </p>
-                  </div>
-
-                  {/* รายชื่อจังหวัดในภูมิภาคนั้น (Progressive Disclosure: แสดง 5 จังหวัดแรก + กดขยายดูทั้งหมดได้ ไม่แย่งซีนปุ่มสายพันธุ์) */}
-                  <div className="text-xs text-secondary leading-relaxed">
-                    <strong className="text-foreground font-semibold mr-1.5">
-                      {t.provincesLabel}
-                    </strong>
-                    <span>
-                      {(showAllProvinces
-                        ? selectedRegionalData.provinces
-                        : selectedRegionalData.provinces.slice(0, 5)
-                      )
-                        .map((prov) => translateProvinceName(prov, currentLang))
-                        .join(" · ")}
-                    </span>
-                    {selectedRegionalData.provinces.length > 5 && (
-                      <button
-                        type="button"
-                        onClick={() => setShowAllProvinces(!showAllProvinces)}
-                        className="ml-2 inline-flex items-center px-2 py-0.5 rounded-md text-xs font-semibold text-brand-ink bg-brand-soft/70 hover:bg-brand-soft transition cursor-pointer"
-                      >
-                        {showAllProvinces
-                          ? (currentLang === "TH" ? "ย่อเก็บ" : "Show less")
-                          : (currentLang === "TH"
-                              ? `+ อีก ${selectedRegionalData.provinces.length - 5} จังหวัด`
-                              : `+ ${selectedRegionalData.provinces.length - 5} more`)}
-                      </button>
-                    )}
                   </div>
 
                   {/* สายพันธุ์หลัก - Interactive Variety Filter Chips */}
@@ -3207,14 +3292,15 @@ export default function DurianHubApp() {
                     <strong className="text-foreground shrink-0 mr-1">{t.varietiesLabel}</strong>
                     <button
                       type="button"
+                      aria-pressed={validDashboardVariety === "ALL"}
                       onClick={() => setSelectedDashboardVariety("ALL")}
-                      className={`px-3 py-1.5 rounded-lg text-xs font-semibold border transition cursor-pointer flex items-center gap-1 ${
+                      className={`min-h-11 px-3 py-1.5 rounded-lg text-xs font-semibold border transition cursor-pointer flex items-center gap-1 ${
                         validDashboardVariety === "ALL"
                           ? "bg-brand-soft text-brand-ink border-brand-line shadow-xs font-semibold"
                           : "bg-surface text-secondary border-line hover:border-line-strong hover:text-foreground"
                       }`}
                     >
-                      <span>🌐 {currentLang === "TH" ? "ทุกสายพันธุ์ (ภาพรวม)" : "All Varieties"}</span>
+                      <span>{currentLang === "TH" ? "ทุกสายพันธุ์ (ภาพรวม)" : "All Varieties"}</span>
                     </button>
                     {selectedRegionalData.varieties.map((v) => {
                       const isVarSelected = validDashboardVariety === v;
@@ -3222,83 +3308,92 @@ export default function DurianHubApp() {
                         <button
                           key={v}
                           type="button"
+                          aria-pressed={isVarSelected}
                           onClick={() => setSelectedDashboardVariety(isVarSelected ? "ALL" : v)}
-                          className={`px-3 py-1.5 rounded-lg text-xs font-semibold border transition cursor-pointer flex items-center gap-1 ${
+                          className={`min-h-11 px-3 py-1.5 rounded-lg text-xs font-semibold border transition cursor-pointer flex items-center gap-1 ${
                             isVarSelected
                               ? "bg-brand-soft text-brand-ink border-brand-line shadow-xs font-semibold ring-1 ring-brand-line/50"
                               : "bg-surface text-secondary border-line hover:border-line-strong hover:text-foreground"
                           }`}
                         >
-                          <span>🍈 {translateVarietyName(v, currentLang)}</span>
+                          <span>{translateVarietyName(v, currentLang)}</span>
                         </button>
                       );
                     })}
                   </div>
+                  <div>
+                    <button type="button" aria-expanded={showAllProvinces} aria-controls="market-provinces"
+                      onClick={() => setShowAllProvinces(!showAllProvinces)}
+                      className="inline-flex min-h-11 items-center gap-2 text-sm font-medium text-brand-ink">
+                      {currentLang === "TH" ? `จังหวัดในภาคนี้ (${selectedRegionalData.provinces.length})` : `Provinces in this region (${selectedRegionalData.provinces.length})`}
+                      <ChevronDown aria-hidden="true" className={`size-4 transition-transform ${showAllProvinces ? "rotate-180" : ""}`} />
+                    </button>
+                    <div id="market-provinces" hidden={!showAllProvinces} className="space-y-2 text-sm leading-relaxed text-secondary">
+                      <p>{selectedRegionalData.provinces.map((prov) => translateProvinceName(prov, currentLang)).join(" · ")}</p>
+                      <p>{selectedRegionalData.highlightNote}</p>
+                    </div>
+                  </div>
                 </div>
 
                 {/* ฝั่งขวา: การ์ด KPI ราคา 3 ใบขนาดใหญ่ + ลิงก์ไปตลาดกลาง */}
-                <div className="lg:col-span-5 flex flex-col justify-between gap-3">
-                  <div className="grid grid-cols-3 gap-2.5">
+                <div className="lg:col-span-6 flex flex-col gap-3">
+                  <div className="grid grid-cols-2 gap-2.5">
                     <div className="p-3.5 rounded-xl bg-surface border border-line flex flex-col justify-between">
-                      <div className="text-[11px] text-muted-foreground font-medium truncate">
+                      <div className="text-sm text-secondary font-medium">
                         {t.avgGardenPrice}
-                        <span className="block text-[10px] text-muted-foreground/80 truncate">
-                          {validDashboardVariety === "ALL"
-                            ? (currentLang === "TH" ? "ทุกพันธุ์" : "All")
-                            : translateVarietyName(validDashboardVariety, currentLang)}
+                        <span className="block text-xs text-muted-foreground">
+                          {summaryVarietyLabel}
                         </span>
                       </div>
                       <div className="mt-2">
-                        <div className="text-xl font-bold text-foreground num tracking-tight">
-                          ฿{currentDashboardSellPrice}
-                          <span className="text-[10px] font-normal text-muted-foreground ml-0.5">{t.perKg}</span>
+                        <div className="text-2xl font-bold text-foreground num tracking-tight">
+                          {priceText(currentDashboardSellPrice)}
+                          {currentDashboardSellPrice !== null && <span className="ml-1 text-xs font-normal text-muted-foreground">{t.perKg}</span>}
                         </div>
-                        <div className="text-[10px] text-muted-foreground mt-0.5 truncate">
+                        <div className="text-xs text-muted-foreground mt-1">
                           {currentDashboardSellSampleCount
-                            ? (currentLang === "TH" ? `${currentDashboardSellSampleCount} ประกาศ` : `${currentDashboardSellSampleCount} posts`)
-                            : (currentLang === "TH" ? "ราคาอ้างอิง" : "Benchmark")}
+                            ? (currentLang === "TH" ? `${currentDashboardSellSampleCount} ผู้ลงประกาศ` : `${currentDashboardSellSampleCount} contributors`)
+                            : (currentLang === "TH" ? "0 ประกาศ" : "0 listings")}
                         </div>
                       </div>
                     </div>
 
-                    <div className="p-3.5 rounded-xl bg-surface border border-brand-line/60 bg-brand-soft/20 flex flex-col justify-between">
-                      <div className="text-[11px] text-brand-ink font-semibold truncate">
+                    <div className="p-3.5 rounded-xl border border-brand-line/60 bg-brand-soft/20 flex flex-col justify-between">
+                      <div className="text-sm text-brand-ink font-semibold">
                         {t.avgLhongPrice}
-                        <span className="block text-[10px] text-brand-ink/80 truncate">
-                          {validDashboardVariety === "ALL"
-                            ? (currentLang === "TH" ? "ทุกพันธุ์" : "All")
-                            : translateVarietyName(validDashboardVariety, currentLang)}
+                        <span className="block text-xs text-brand-ink">
+                          {summaryVarietyLabel}
                         </span>
                       </div>
                       <div className="mt-2">
-                        <div className="text-xl font-bold text-brand-ink num tracking-tight">
-                          ฿{currentDashboardBuyPrice}
-                          <span className="text-[10px] font-normal text-muted-foreground ml-0.5">{t.perKg}</span>
+                        <div className="text-2xl font-bold text-brand-ink num tracking-tight">
+                          {priceText(currentDashboardBuyPrice)}
+                          {currentDashboardBuyPrice !== null && <span className="ml-1 text-xs font-normal text-muted-foreground">{t.perKg}</span>}
                         </div>
-                        <div className="text-[10px] text-muted-foreground mt-0.5 truncate">
+                        <div className="text-xs text-muted-foreground mt-1">
                           {currentDashboardBuySampleCount
-                            ? (currentLang === "TH" ? `${currentDashboardBuySampleCount} ประกาศ` : `${currentDashboardBuySampleCount} posts`)
-                            : (currentLang === "TH" ? "ราคาอ้างอิง" : "Benchmark")}
+                            ? (currentLang === "TH" ? `${currentDashboardBuySampleCount} ผู้ลงประกาศ` : `${currentDashboardBuySampleCount} contributors`)
+                            : (currentLang === "TH" ? "0 ประกาศ" : "0 listings")}
                         </div>
                       </div>
                     </div>
 
-                    <div className="p-3.5 rounded-xl bg-surface border border-line flex flex-col justify-between">
-                      <div className="text-[11px] text-muted-foreground font-medium truncate">
+                    <div className="col-span-2 flex items-center justify-between gap-2 border-t border-line px-1 pt-3">
+                      <div className="text-sm text-secondary font-medium">
                         {t.avgCutWage}
                         <span className="block text-[10px] text-muted-foreground/80 truncate">
                           {currentLang === "TH" ? "เหมาพื้นที่" : "Flat"}
                         </span>
                       </div>
-                      <div className="mt-2">
-                        <div className="text-xl font-bold text-foreground num tracking-tight">
-                          ฿{selectedRegionalData.avgCutWage}
-                          <span className="text-[10px] font-normal text-muted-foreground ml-0.5">{t.perKg}</span>
+                      <div className="text-right">
+                        <div className="text-base font-semibold text-foreground num tracking-tight">
+                          {priceText(selectedRegionalData.avgCutWage)}
+                          {selectedRegionalData.avgCutWage !== null && <span className="ml-1 text-xs font-normal text-muted-foreground">{t.perKg}</span>}
                         </div>
-                        <div className="text-[10px] text-muted-foreground mt-0.5 truncate">
+                        <div className="text-xs text-muted-foreground mt-1">
                           {selectedRegionalData.cutSampleCount
-                            ? (currentLang === "TH" ? `${selectedRegionalData.cutSampleCount} ประกาศ` : `${selectedRegionalData.cutSampleCount} posts`)
-                            : (currentLang === "TH" ? "ราคาอ้างอิง" : "Benchmark")}
+                            ? (currentLang === "TH" ? `${selectedRegionalData.cutSampleCount} ผู้ลงประกาศ` : `${selectedRegionalData.cutSampleCount} contributors`)
+                            : (currentLang === "TH" ? "0 ประกาศ" : "0 listings")}
                         </div>
                       </div>
                     </div>
@@ -3348,8 +3443,9 @@ export default function DurianHubApp() {
 
                   <div className="flex flex-wrap gap-1.5">
                     <button
+                      aria-pressed={selectedGradeFilter === "ALL"}
                       onClick={() => setSelectedGradeFilter("ALL")}
-                      className={`text-xs font-semibold px-3.5 py-2 rounded-lg border transition cursor-pointer ${
+                      className={`min-h-11 text-xs font-semibold px-3.5 py-2 rounded-lg border transition cursor-pointer ${
                         selectedGradeFilter === "ALL"
                           ? "bg-emerald-700 text-white border-line shadow-xs"
                           : "bg-surface text-secondary border-line hover:border-line-strong"
@@ -3358,7 +3454,7 @@ export default function DurianHubApp() {
                       {t.allGradesTab}
                     </button>
 
-                    {(["GRADE_A", "GRADE_B", "GRADE_C", "GRADE_D"] as DurianGradeKey[]).map((gKey) => {
+                    {MARKET_GRADES.map(({ key: gKey }) => {
                       const isSel = selectedGradeFilter === gKey;
                       const label =
                         gKey === "GRADE_A"
@@ -3372,8 +3468,9 @@ export default function DurianHubApp() {
                       return (
                         <button
                           key={gKey}
+                          aria-pressed={isSel}
                           onClick={() => setSelectedGradeFilter(gKey)}
-                          className={`text-xs font-semibold px-3.5 py-2 rounded-lg border transition cursor-pointer flex items-center gap-1.5 ${
+                          className={`min-h-11 text-xs font-semibold px-3.5 py-2 rounded-lg border transition cursor-pointer flex items-center gap-1.5 ${
                             isSel
                               ? "bg-emerald-700 text-white border-brand-line shadow-xs"
                               : "bg-surface text-secondary border-line hover:border-line-strong"
@@ -3387,7 +3484,11 @@ export default function DurianHubApp() {
                 </div>
 
                 {/* Matrix View or Single Grade Focus View */}
-                {selectedGradeFilter === "ALL" ? (
+                {visibleVarietyPrices.length === 0 ? (
+                  <p role="status" className="rounded-xl bg-subtle p-4 text-sm text-secondary">
+                    {currentLang === "TH" ? "ยังไม่มีราคาแยกเกรดสำหรับพันธุ์นี้ในภูมิภาคที่เลือก" : "No grade prices are available for this variety in the selected region."}
+                  </p>
+                ) : selectedGradeFilter === "ALL" ? (
                   /* VIEW A: MATRIX TABLE แบบกว้างเต็มตา */
                   <div className="space-y-3 pt-2">
                     <div className="flex items-center justify-between text-xs font-semibold text-secondary">
@@ -3395,7 +3496,32 @@ export default function DurianHubApp() {
                       <span className="text-xs text-muted-foreground font-normal">{t.matrixUnit}</span>
                     </div>
 
-                    <div className="overflow-x-auto rounded-xl border border-line shadow-2xs">
+                    <div className="space-y-4 md:hidden">
+                      {visibleVarietyPrices.map((pv) => (
+                        <table key={pv.variety} className="w-full border-collapse text-right text-sm tabular-nums">
+                          <caption className="pb-2 text-left font-semibold text-foreground">
+                            {translateVarietyName(pv.variety, currentLang)}
+                          </caption>
+                          <thead className="bg-subtle text-xs text-secondary">
+                            <tr>
+                              <th scope="col" className="p-2 text-left">{currentLang === "TH" ? "เกรด" : "Grade"}</th>
+                              <th scope="col" className="p-2">{currentLang === "TH" ? "สวนเสนอขาย" : "Farm sell"}</th>
+                              <th scope="col" className="p-2">{currentLang === "TH" ? "ล้งรับซื้อ" : "Lhong buy"}</th>
+                            </tr>
+                          </thead>
+                          <tbody className="divide-y divide-line">
+                            {MARKET_GRADES.map(({ key: grade }) => (
+                              <tr key={grade}>
+                                <th scope="row" className="p-2 text-left font-medium">{grade.slice(-1)}</th>
+                                <td className="p-2">{priceText(pv.grades[grade].sellPrice)}</td>
+                                <td className="p-2 font-semibold text-brand-ink">{priceText(pv.grades[grade].buyPrice)}</td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      ))}
+                    </div>
+                    <div className="hidden md:block overflow-x-auto rounded-xl border border-line shadow-2xs">
                       <table className="w-full text-left text-xs border-collapse bg-surface">
                         <thead>
                           <tr className="bg-subtle/90 text-secondary border-b border-line text-xs">
@@ -3415,7 +3541,7 @@ export default function DurianHubApp() {
                           </tr>
                         </thead>
                         <tbody className="divide-y divide-line text-xs">
-                          {selectedRegionalData.priceByVariety.map((pv, idx) => {
+                          {visibleVarietyPrices.map((pv, idx) => {
                             const isVarSelected = validDashboardVariety === pv.variety;
                             return (
                               <tr
@@ -3437,15 +3563,15 @@ export default function DurianHubApp() {
                                     )}
                                   </div>
                                 </td>
-                                {(["GRADE_A", "GRADE_B", "GRADE_C", "GRADE_D"] as DurianGradeKey[]).map((gKey) => {
+                                {MARKET_GRADES.map(({ key: gKey }) => {
                                   const p = pv.grades[gKey];
                                   return (
                                     <td key={gKey} className="py-2.5 px-3 text-center whitespace-nowrap">
                                       <div className="font-semibold text-brand-ink num text-xs">
-                                        ฿{p.buyPrice}
+                                        {priceText(p.buyPrice)}
                                       </div>
                                       <div className="text-[11px] text-muted-foreground num mt-0.5">
-                                        {currentLang === "TH" ? "สวน" : "Farm"} ฿{p.sellPrice}
+                                        {currentLang === "TH" ? "สวน" : "Farm"} {priceText(p.sellPrice)}
                                       </div>
                                     </td>
                                   );
@@ -3457,7 +3583,7 @@ export default function DurianHubApp() {
                       </table>
                     </div>
                     <div className="flex flex-wrap items-center justify-between text-xs text-muted-foreground pt-1 gap-2">
-                      <div className="flex items-center gap-4">
+                      <div className="hidden md:flex items-center gap-4">
                         <span className="flex items-center gap-1.5 text-brand-ink font-semibold">
                           ● {currentLang === "TH" ? "ราคารับซื้อหน้าล้ง (บน)" : "Lhong Buy (Top)"}
                         </span>
@@ -3466,7 +3592,7 @@ export default function DurianHubApp() {
                         </span>
                       </div>
                       <span className="text-xs text-muted-foreground">
-                        {currentLang === "TH" ? "*ราคาเฉลี่ยคำนวณตามสถานะตลาดจริงและข้อมูลสถิติของแต่ละพื้นที่" : "*Prices calculated from live market listings and regional statistics"}
+                        {currentLang === "TH" ? "ราคามัธยฐานของเกรดนี้ต่อกิโลกรัม ใช้ข้อมูลอย่างน้อย 3 ผู้ลงประกาศต่อพื้นที่" : "Median price in baht per kilogram, with at least 3 contributors per area and grade."}
                       </span>
                     </div>
                   </div>
@@ -3486,12 +3612,12 @@ export default function DurianHubApp() {
                     </div>
 
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      {selectedRegionalData.priceByVariety.map((pv, i) => {
+                      {visibleVarietyPrices.map((pv, i) => {
                         const isVarSelected = validDashboardVariety === pv.variety;
                         const p = pv.grades[selectedGradeFilter];
-                        const maxBar = 500;
-                        const buyW = Math.min(100, Math.max(15, Math.round((p.buyPrice / maxBar) * 100)));
-                        const sellW = Math.min(100, Math.max(15, Math.round((p.sellPrice / maxBar) * 100)));
+                        const maxBar = Math.max(1, p.buyPrice ?? 0, p.sellPrice ?? 0);
+                        const buyW = ((p.buyPrice ?? 0) / maxBar) * 100;
+                        const sellW = ((p.sellPrice ?? 0) / maxBar) * 100;
 
                         return (
                           <div
@@ -3512,9 +3638,7 @@ export default function DurianHubApp() {
                                   </span>
                                 )}
                               </div>
-                              <span className="text-xs text-muted-foreground font-medium">
-                                {currentLang === "TH" ? `อ้างอิงกลาง ฿${p.refPrice}/กก.` : `Benchmark ฿${p.refPrice}/kg`}
-                              </span>
+
                             </div>
 
                             <div className="space-y-2">
@@ -3529,7 +3653,7 @@ export default function DurianHubApp() {
                                   />
                                 </div>
                                 <span className="w-16 text-right font-semibold text-brand-ink">
-                                  ฿{p.sellPrice}
+                                  {priceText(p.sellPrice)}
                                 </span>
                               </div>
 
@@ -3544,7 +3668,7 @@ export default function DurianHubApp() {
                                   />
                                 </div>
                                 <span className="w-16 text-right font-semibold text-info-ink">
-                                  ฿{p.buyPrice}
+                                  {priceText(p.buyPrice)}
                                 </span>
                               </div>
                             </div>
@@ -3585,6 +3709,7 @@ export default function DurianHubApp() {
                 </div>
               </div>
             </div>
+
           </div>
         )}
 
@@ -3710,13 +3835,41 @@ export default function DurianHubApp() {
                   ))}
                 </select>
 
+                <select
+                  aria-label={currentLang === "TH" ? "เกรดทุเรียน" : "Durian Grade"}
+                  value={selectedMarketGrade}
+                  onChange={(e) => setSelectedMarketGrade(e.target.value)}
+                  className="text-xs font-medium border border-line rounded-lg px-2.5 py-1.5 bg-surface text-secondary focus:outline-none"
+                >
+                  <option value="ALL">{currentLang === "TH" ? "ทุกเกรด" : "All grades"}</option>
+                  <option value="A">{currentLang === "TH" ? "เกรด A / AB (ส่งออก)" : "Grade A / AB"}</option>
+                  <option value="B">{currentLang === "TH" ? "เกรด B (รองส่งออก)" : "Grade B"}</option>
+                  <option value="C">{currentLang === "TH" ? "เกรด C (ในประเทศ)" : "Grade C"}</option>
+                  <option value="D">{currentLang === "TH" ? "เกรด D (ตกไซซ์)" : "Grade D"}</option>
+                </select>
+
+                <select
+                  aria-label={currentLang === "TH" ? "เรียงลำดับประกาศ" : "Sort listings"}
+                  value={marketSortBy}
+                  onChange={(e) => setMarketSortBy(e.target.value as typeof marketSortBy)}
+                  className="text-xs font-medium border border-line rounded-lg px-2.5 py-1.5 bg-surface text-secondary focus:outline-none"
+                >
+                  <option value="NEWEST">{currentLang === "TH" ? "เรียง: ล่าสุด" : "Sort: Newest"}</option>
+                  <option value="PRICE_ASC">{currentLang === "TH" ? "ราคา: ต่ำ → สูง" : "Price: Low → High"}</option>
+                  <option value="PRICE_DESC">{currentLang === "TH" ? "ราคา: สูง → ต่ำ" : "Price: High → Low"}</option>
+                  <option value="QTY_DESC">{currentLang === "TH" ? "ปริมาณ: มาก → น้อย" : "Volume: High → Low"}</option>
+                  <option value="RATING_DESC">{currentLang === "TH" ? "คะแนนรีวิวสูงสุด" : "Highest Rated"}</option>
+                </select>
+
                 {(selectedVarietyStrip !== "ALL" ||
                   selectedRegionFilter !== "ALL" ||
+                  selectedMarketGrade !== "ALL" ||
                   searchQuery !== "") && (
                   <button
                     onClick={() => {
                       setSelectedVarietyStrip("ALL");
                       setSelectedRegionFilter("ALL");
+                      setSelectedMarketGrade("ALL");
                       setSearchQuery("");
                     }}
                     className="text-xs text-muted-foreground hover:text-foreground px-2 py-1 cursor-pointer"
@@ -3833,7 +3986,7 @@ export default function DurianHubApp() {
         {/* ===================================================================
             VIEW 4: POST DETAIL VIEW (อ้างอิงรูปที่ 3: รูปซ้าย + การ์ดราคาและปุ่มทักแชทขวา)
            =================================================================== */}
-        {currentView === "POST_DETAIL" && (
+        {currentView === "POST_DETAIL" && selectedPost && (
           <div className="max-w-5xl mx-auto space-y-6">
             {/* Back Button */}
             <button
@@ -3844,46 +3997,68 @@ export default function DurianHubApp() {
             </button>
 
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
-              {/* Left 6 Columns: Visual Product Showcase + ITEM DETAIL Box (ตามรูปที่ 3) */}
-              <div className="lg:col-span-6 space-y-5 flex flex-col items-center">
-                <div className="w-full aspect-square max-w-md rounded-2xl bg-emerald-700   to-white border border-line/80 shadow-sm flex flex-col items-center justify-center p-8 relative overflow-hidden">
-                  <div className="w-44 h-44 rounded-full bg-warning-soft/40 blur-2xl absolute" />
-                  <div className="relative z-10 text-center space-y-3">
-                    <div className="text-7xl">
-                      {selectedPost.postType === "SELL"
-                        ? "👑"
-                        : selectedPost.postType === "BUY"
-                        ? "🏢"
-                        : "✂️"}
+              {/* Left 6 Columns: Uploaded Listing Photo (or Clean Spec Card) + ITEM DETAIL Box */}
+              <div className="lg:col-span-6 space-y-5 flex flex-col">
+                {selectedPost.imageUrl ? (
+                  <div className="w-full rounded-2xl border border-line bg-subtle overflow-hidden shadow-sm">
+                    <button
+                      type="button"
+                      onClick={() => setLightboxImageUrl(selectedPost.imageUrl!)}
+                      className="group relative w-full flex items-center justify-center p-3 sm:p-4 cursor-zoom-in focus-visible:outline-none"
+                      aria-label={currentLang === "TH" ? "คลิกเพื่อดูรูปภาพขนาดเต็ม" : "Click to view full-size image"}
+                    >
+                      <img
+                        src={selectedPost.imageUrl}
+                        alt={selectedPost.title}
+                        className="max-h-[420px] w-full object-contain rounded-xl"
+                      />
+                      <span className="absolute bottom-3 right-3 px-3 py-1.5 rounded-full bg-surface/90 border border-line text-xs font-semibold text-foreground shadow-sm inline-flex items-center gap-1.5 group-hover:bg-brand-soft group-hover:text-brand-ink transition">
+                        <Search className="w-3.5 h-3.5" />
+                        <span>{currentLang === "TH" ? "ดูรูปเต็ม" : "View full size"}</span>
+                      </span>
+                    </button>
+                  </div>
+                ) : (
+                  <div className="w-full rounded-2xl bg-surface border border-line p-6 sm:p-8 flex flex-col items-center justify-center text-center space-y-3">
+                    <div className="w-14 h-14 rounded-2xl bg-brand-soft text-brand-ink flex items-center justify-center">
+                      {selectedPost.postType === "SELL" ? (
+                        <Sprout className="w-7 h-7" />
+                      ) : selectedPost.postType === "BUY" ? (
+                        <Store className="w-7 h-7" />
+                      ) : (
+                        <Scissors className="w-7 h-7" />
+                      )}
                     </div>
-                    <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-surface/90 border border-line text-xs font-semibold text-foreground shadow-sm">
+                    <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-muted border border-line text-xs font-semibold text-foreground">
                       {currentLang === "TH"
-                        ? `พันธุ์${selectedPost.variety} • เกรด ${selectedPost.grade}`
-                        : `${translateVarietyName(selectedPost.variety, currentLang)} • Grade ${selectedPost.grade}`}
+                        ? `พันธุ์${selectedPost.variety} • ${selectedPost.grade?.startsWith("เกรด") ? selectedPost.grade : `เกรด ${selectedPost.grade}`}`
+                        : `${translateVarietyName(selectedPost.variety, currentLang)} • ${selectedPost.grade}`}
                     </div>
-                    <p className="text-xs text-muted-foreground max-w-xs">
+                    <p className="text-xs text-muted-foreground">
                       {currentLang === "TH"
-                        ? `พื้นที่: อ.${selectedPost.district} จ.${selectedPost.province} (${selectedPost.regionTag})`
-                        : `Area: ${selectedPost.district}, ${translateProvinceName(selectedPost.province, currentLang)} (${translateRegionName(selectedPost.regionTag, currentLang)})`}
+                        ? `พื้นที่: ${selectedPost.district ? `อ.${selectedPost.district} ` : ""}จ.${selectedPost.province} (${selectedPost.regionTag})`
+                        : `Area: ${selectedPost.district ? `${selectedPost.district}, ` : ""}${translateProvinceName(selectedPost.province, currentLang)} (${translateRegionName(selectedPost.regionTag, currentLang)})`}
                     </p>
                   </div>
-                </div>
+                )}
 
-                {/* ITEM DETAIL Box ด้านล่างรูป (เหมือนในรูปที่ 3) */}
-                <div className="w-full max-w-md bg-surface rounded-xl p-5 border border-line shadow-sm">
+                {/* ITEM DETAIL Box ด้านล่างรูป */}
+                <div className="w-full bg-surface rounded-xl p-5 border border-line shadow-sm">
                   <div className="flex items-center gap-1.5 text-xs font-semibold text-warning-ink uppercase tracking-wider mb-1.5">
                     <Info className="w-4 h-4" /> {currentLang === "TH" ? "DURIAN LOT DETAIL (รายละเอียดผลผลิต)" : "DURIAN LOT DETAIL (Lot Specifications)"}
                   </div>
                   <p className="text-sm text-secondary leading-relaxed">
                     {selectedPost.content}
                   </p>
-                  <div className="mt-3 pt-3 border-t border-line text-xs text-muted-foreground">
-                    {selectedPost.itemDetailSummary}
-                  </div>
+                  {selectedPost.itemDetailSummary && (
+                    <div className="mt-3 pt-3 border-t border-line text-xs text-muted-foreground">
+                      {selectedPost.itemDetailSummary}
+                    </div>
+                  )}
                 </div>
               </div>
 
-              {/* Right 6 Columns: White Summary Card (ตามรูปที่ 3 ทุกองค์ประกอบ) */}
+              {/* Right 6 Columns: White Summary Card */}
               <div className="lg:col-span-6 bg-surface rounded-2xl p-6 sm:p-8 border border-line/90 shadow-md space-y-5">
                 {/* Top Tags & Date */}
                 <div className="flex flex-wrap items-center justify-between gap-2">
@@ -3904,7 +4079,9 @@ export default function DurianHubApp() {
                         : (currentLang === "TH" ? "รับตัด" : "CUT")}
                     </span>
                     <span className="text-xs font-semibold px-2.5 py-1 rounded-md bg-amber-400 text-slate-950">
-                      {currentLang === "TH" ? `เกรด ${selectedPost.grade}` : `Grade ${selectedPost.grade}`}
+                      {currentLang === "TH"
+                        ? (selectedPost.grade?.startsWith("เกรด") ? selectedPost.grade : `เกรด ${selectedPost.grade}`)
+                        : `Grade ${selectedPost.grade}`}
                     </span>
                     <span className="text-xs font-semibold px-2.5 py-1 rounded-md bg-sky-700 text-white">
                       {translateRegionName(selectedPost.regionTag, currentLang)}
@@ -3967,11 +4144,26 @@ export default function DurianHubApp() {
                     </span>
                     <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-brand-soft text-brand-ink border border-brand-line font-semibold">
                       <ShieldCheck className="w-3.5 h-3.5 text-brand-ink" />
-                      {currentLang === "TH" ? `ความประพฤติ ${selectedPost.trustScore}/100` : `Trust ${selectedPost.trustScore}/100`}
+                      {currentLang === "TH" ? `ความประพฤติ ${selectedPost.trustScore ?? 100}/100` : `Trust ${selectedPost.trustScore ?? 100}/100`}
                     </span>
                     <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-muted text-secondary font-semibold">
                       <Store className="w-3.5 h-3.5" /> {currentLang === "TH" ? `จ.${selectedPost.province}` : translateProvinceName(selectedPost.province, currentLang)}
                     </span>
+                    {selectedPost.userId && (
+                      <button
+                        type="button"
+                        onClick={() =>
+                          setInspectPartner({
+                            id: selectedPost.userId!,
+                            name: selectedPost.authorName,
+                          })
+                        }
+                        className="ml-auto inline-flex items-center gap-1 px-3 py-1 rounded-full bg-surface hover:bg-hover text-foreground border border-line font-semibold cursor-pointer transition"
+                      >
+                        <Star className="w-3.5 h-3.5 text-warning-ink" />
+                        <span>{currentLang === "TH" ? "ดูโปรไฟล์ & รีวิว" : "Profile & Reviews"}</span>
+                      </button>
+                    )}
                   </div>
                 </div>
 
@@ -4085,8 +4277,8 @@ export default function DurianHubApp() {
                       <Flag className="w-3.5 h-3.5 text-danger-ink" />
                       <span>
                         {currentLang === "TH"
-                          ? "🚩 แจ้งปัญหาประกาศนี้ / รายงานต่อผู้ดูแลระบบ"
-                          : "🚩 Report this listing to Admin"}
+                          ? "แจ้งปัญหาประกาศนี้ / รายงานต่อผู้ดูแลระบบ"
+                          : "Report this listing to Admin"}
                       </span>
                     </button>
                   </div>
@@ -4135,8 +4327,15 @@ export default function DurianHubApp() {
                 </div>
 
                 {/* Filter Tabs: กำลังเจรจา | ปิดดีลแล้ว | ประวัติแชต */}
-                <div className="px-3 py-2 bg-muted/80 border-b border-line flex items-center gap-1 shrink-0">
+                <div
+                  role="tablist"
+                  aria-label={currentLang === "TH" ? "ตัวกรองห้องสนทนา" : "Chat room filters"}
+                  className="px-3 py-2 bg-muted/80 border-b border-line flex items-center gap-1 shrink-0"
+                >
                   <button
+                    type="button"
+                    role="tab"
+                    aria-selected={chatFilterTab === "ACTIVE"}
                     onClick={() => setChatFilterTab("ACTIVE")}
                     className={`flex-1 py-1.5 px-2 rounded-lg text-xs font-semibold transition flex items-center justify-center gap-1.5 cursor-pointer ${
                       chatFilterTab === "ACTIVE"
@@ -4144,9 +4343,10 @@ export default function DurianHubApp() {
                         : "text-secondary hover:text-foreground hover:bg-surface/60"
                     }`}
                   >
-                    <span>💬 {currentLang === "TH" ? "กำลังเจรจา" : "Active"}</span>
+                    <MessageSquare className="w-3.5 h-3.5 shrink-0" />
+                    <span>{currentLang === "TH" ? "กำลังเจรจา" : "Active"}</span>
                     <span
-                      className={`px-1.5 py-0.2 rounded-md text-xs font-semibold ${
+                      className={`px-1.5 py-0.2 rounded-md text-xs font-semibold num ${
                         chatFilterTab === "ACTIVE"
                           ? "bg-brand-soft text-brand-ink"
                           : "bg-hover text-secondary"
@@ -4157,6 +4357,9 @@ export default function DurianHubApp() {
                   </button>
 
                   <button
+                    type="button"
+                    role="tab"
+                    aria-selected={chatFilterTab === "CLOSED"}
                     onClick={() => setChatFilterTab("CLOSED")}
                     className={`flex-1 py-1.5 px-2 rounded-lg text-xs font-semibold transition flex items-center justify-center gap-1.5 cursor-pointer ${
                       chatFilterTab === "CLOSED"
@@ -4164,10 +4367,11 @@ export default function DurianHubApp() {
                         : "text-secondary hover:text-foreground hover:bg-surface/60"
                     }`}
                   >
-                    <span>🤝 {currentLang === "TH" ? "ปิดดีลแล้ว" : "Closed"}</span>
+                    <Handshake className="w-3.5 h-3.5 shrink-0" />
+                    <span>{currentLang === "TH" ? "ปิดดีลแล้ว" : "Closed"}</span>
                     {closedRoomsCount > 0 && (
                       <span
-                        className={`px-1.5 py-0.2 rounded-md text-xs font-semibold ${
+                        className={`px-1.5 py-0.2 rounded-md text-xs font-semibold num ${
                           chatFilterTab === "CLOSED"
                             ? "bg-brand-soft text-brand-ink"
                             : "bg-hover text-secondary"
@@ -4179,8 +4383,15 @@ export default function DurianHubApp() {
                   </button>
 
                   <button
+                    type="button"
+                    role="tab"
+                    aria-selected={chatFilterTab === "HISTORY"}
                     onClick={() => setChatFilterTab("HISTORY")}
-                    className={`py-1.5 px-2.5 rounded-lg text-xs font-semibold ${chatFilterTab === "HISTORY" ? "bg-surface text-foreground" : "text-muted-foreground"}`}
+                    className={`py-1.5 px-2.5 rounded-lg text-xs font-semibold transition cursor-pointer ${
+                      chatFilterTab === "HISTORY"
+                        ? "bg-surface text-foreground shadow-xs border border-line/80"
+                        : "text-muted-foreground hover:text-foreground hover:bg-surface/60"
+                    }`}
                   >
                     {currentLang === "TH" ? "ประวัติแชต" : "History"}
                   </button>
@@ -4188,10 +4399,12 @@ export default function DurianHubApp() {
 
                 <div className="divide-y divide-line overflow-y-auto flex-1">
                   {filteredChatRooms.length === 0 ? (
-                    <div className="p-8 text-center text-muted-foreground space-y-2">
-                      <div className="text-2xl">
-                        {chatFilterTab === "ACTIVE" ? "💬" : "🤝"}
-                      </div>
+                    <div className="p-8 text-center text-muted-foreground space-y-2 flex flex-col items-center">
+                      {chatFilterTab === "ACTIVE" ? (
+                        <MessageSquare className="w-6 h-6 text-muted-foreground/70" />
+                      ) : (
+                        <Handshake className="w-6 h-6 text-muted-foreground/70" />
+                      )}
                       <p className="text-xs">
                         {chatFilterTab === "ACTIVE"
                           ? (currentLang === "TH"
@@ -4217,7 +4430,7 @@ export default function DurianHubApp() {
                           }}
                           className={`w-full p-4 text-left flex items-start gap-3 transition cursor-pointer ${
                             isSelected
-                              ? "bg-brand-soft/90 border-l-4 border-l-emerald-600"
+                              ? "bg-brand-soft/90 ring-1 ring-inset ring-brand-line/50"
                               : "hover:bg-surface"
                           }`}
                         >
@@ -4246,21 +4459,24 @@ export default function DurianHubApp() {
                             </div>
 
                             <div className="flex items-center gap-1.5 mt-0.5">
+                              <Package className="w-3.5 h-3.5 text-warning-ink shrink-0" />
                               <span className="text-xs font-semibold text-warning-ink truncate">
-                                📦 {room.post.title}
+                                {room.post.title}
                               </span>
                             </div>
 
                             {/* Status Badges on Room Item */}
                             <div className="mt-1 flex items-center gap-1.5 flex-wrap">
                               {isDealClosed && (
-                                <span className="inline-flex items-center gap-0.5 text-xs font-semibold px-1.5 py-0.5 rounded-md bg-brand-soft text-brand-ink border border-brand-line">
-                                  ✅ {currentLang === "TH" ? "ปิดดีลสำเร็จ" : "Deal Closed"}
+                                <span className="inline-flex items-center gap-1 text-xs font-semibold px-1.5 py-0.5 rounded-md bg-brand-soft text-brand-ink border border-brand-line">
+                                  <CheckCircle2 className="w-3 h-3 shrink-0" />
+                                  <span>{currentLang === "TH" ? "ปิดดีลสำเร็จ" : "Deal Closed"}</span>
                                 </span>
                               )}
                               {isArchived && (
-                                <span className="inline-flex items-center gap-0.5 text-xs font-semibold px-1.5 py-0.5 rounded-md bg-hover text-secondary border border-line-strong">
-                                  🔒 {currentLang === "TH" ? "ปิดการขายแล้ว" : "Sold to other"}
+                                <span className="inline-flex items-center gap-1 text-xs font-semibold px-1.5 py-0.5 rounded-md bg-hover text-secondary border border-line-strong">
+                                  <Lock className="w-3 h-3 shrink-0" />
+                                  <span>{currentLang === "TH" ? "ปิดการขายแล้ว" : "Sold to other"}</span>
                                 </span>
                               )}
                             </div>
@@ -4299,15 +4515,17 @@ export default function DurianHubApp() {
                           <span className="inline-flex items-center gap-0.5 text-xs font-semibold px-2 py-0.5 rounded-full bg-warning-soft text-warning-ink border border-warning-line">
                             <ReviewSummary average={activeChatRoom.partnerRating} count={activeChatRoom.partnerRatingCount} language={currentLang} />
                           </span>
-                          <span className="inline-flex items-center gap-0.5 text-xs font-semibold px-2 py-0.5 rounded-full bg-brand-soft text-brand-ink border border-brand-line">
-                            🛡️ {activeChatRoom.partnerTrustScore ?? 100}/100
+                          <span className="inline-flex items-center gap-1 text-xs font-semibold px-2 py-0.5 rounded-full bg-brand-soft text-brand-ink border border-brand-line">
+                            <ShieldCheck className="w-3.5 h-3.5 shrink-0" />
+                            <span>{activeChatRoom.partnerTrustScore ?? 100}/100</span>
                           </span>
                           <span className="text-xs font-normal text-muted-foreground">
                             ({activeChatRoom.lastActive})
                           </span>
                         </div>
-                        <div className="text-xs font-semibold text-warning-ink">
-                          📦 {activeChatRoom.post.title}
+                        <div className="text-xs font-semibold text-warning-ink flex items-center gap-1.5 mt-0.5">
+                          <Package className="w-3.5 h-3.5 shrink-0" />
+                          <span>{activeChatRoom.post.title}</span>
                         </div>
                       </div>
                     </div>
@@ -4326,11 +4544,11 @@ export default function DurianHubApp() {
                       ) : (
                         <button
                           onClick={() => {
-                            const pricePerKg = activeChatRoom.post?.pricePerKg || 170;
-                            const qty = activeChatRoom.post?.quantityKg || 5000;
-                            setDealAgreedPricePerKg(String(pricePerKg));
-                            setDealAgreedQty(String(qty));
-                            setDealAgreedPrice(String(pricePerKg * qty));
+                            const pricePerKg = activeChatRoom.post?.pricePerKg;
+                            const qty = activeChatRoom.post?.quantityKg;
+                            setDealAgreedPricePerKg(pricePerKg ? String(pricePerKg) : "");
+                            setDealAgreedQty(qty ? String(qty) : "");
+                            setDealAgreedPrice(pricePerKg && qty ? String(pricePerKg * qty) : "");
                             setDealSuccessMsg(null);
                             setDealErrorMsg(null);
                             setShowCloseDealModal(true);
@@ -4362,7 +4580,7 @@ export default function DurianHubApp() {
                           <Star className="w-3.5 h-3.5 fill-amber-400 text-warning-ink" />
                           <span>{currentLang === "TH" ? "รีวิวคู่ค้าแล้ว" : "Reviewed"}</span>
                         </div>
-                      ) : activeChatRoom.status === "DEAL_CLOSED" ? (
+                      ) : activeChatRoom.canReview ? (
                         <button
                           onClick={() => {
                             setReviewRating(5);
@@ -4371,19 +4589,20 @@ export default function DurianHubApp() {
                             setReviewSuccessMsg(null);
                             setShowReviewModal(true);
                           }}
-                          className="px-3.5 py-1.5 rounded-full bg-sky-700 hover:bg-sky-700 text-white font-semibold text-xs transition flex items-center gap-1.5 shadow-sm cursor-pointer animate-pulse"
+                          className="px-3.5 py-1.5 rounded-full bg-sky-700 hover:bg-sky-800 text-white font-semibold text-xs transition flex items-center gap-1.5 shadow-sm cursor-pointer"
                         >
-                          <Star className="w-3.5 h-3.5 fill-amber-300 text-warning-ink" />
+                          <Star className="w-3.5 h-3.5 fill-amber-300 text-amber-300" />
                           <span>{currentLang === "TH" ? "ให้คะแนนดาวคู่ค้า (1-5★)" : "Rate Partner (1-5★)"}</span>
                         </button>
                       ) : (
                         <button
                           type="button"
                           onClick={() =>
-                            alert(
+                            showNotice(
+                              "info",
                               currentLang === "TH"
-                                ? "💡 ระบบให้คะแนนดาวคู่ค้า (1–5 ดาว) จะเปิดให้ใช้งานหลังจากกด 'ตกลงราคา (ปิดดีล)' สำเร็จแล้ว เพื่อป้องกันการให้คะแนนเท็จครับ"
-                                : "💡 Partner star ratings (1–5 stars) unlock after closing the deal."
+                                ? "ให้คะแนนได้เมื่อคู่ค้าทั้งสองฝ่ายยืนยันการส่งมอบ"
+                                : "Both parties must confirm delivery before reviewing."
                             )
                           }
                           className="px-3.5 py-1.5 rounded-full bg-muted hover:bg-hover text-muted-foreground font-semibold text-xs transition flex items-center gap-1 cursor-pointer"
@@ -4396,14 +4615,20 @@ export default function DurianHubApp() {
                     </div>
                   </div>
 
+                  <div className="px-4 py-2 border-b border-line">
+                    <button type="button" className="text-sm text-brand-ink underline" onClick={() => setShowMyDealsModal(true)}>
+                      {currentLang === "TH" ? "ดูและตอบข้อเสนอในดีลของฉัน" : "View and respond in My Deals"}
+                    </button>
+                  </div>
+
                   {/* Status Notice Banner in Chat */}
                   {activeChatRoom.status === "DEAL_CLOSED" && (
                     <div className="px-4 py-2.5 bg-brand-soft border-b border-brand-line flex items-center gap-2 text-xs text-brand-ink shrink-0">
                       <CheckCircle2 className="w-4 h-4 text-brand-ink shrink-0" />
                       <span>
                         {currentLang === "TH"
-                          ? "🎉 ปิดดีลสำเร็จแล้ว สนทนากับคู่ค้าได้ภายใน 7 วันหลังปิดดีล จากนั้นอ่านประวัติได้เท่านั้น และยังติดต่อศูนย์ช่วยเหลือได้"
-                          : "🎉 Deal closed. Partner chat is available for 7 days, then becomes read-only. Support remains available."}
+                          ? "ปิดดีลสำเร็จแล้ว สนทนากับคู่ค้าได้ภายใน 7 วันหลังปิดดีล จากนั้นอ่านประวัติได้เท่านั้น และยังติดต่อศูนย์ช่วยเหลือได้"
+                          : "Deal closed. Partner chat is available for 7 days, then becomes read-only. Support remains available."}
                       </span>
                     </div>
                   )}
@@ -4489,7 +4714,17 @@ export default function DurianHubApp() {
                                 : "bg-surface border border-line text-foreground rounded-bl-none"
                             }`}
                           >
-                            <div>{msg.text}</div>
+                            {(msg.isImage || msg.messageType === "IMAGE") ? (
+                              <a href={msg.text} target="_blank" rel="noopener noreferrer" className="block">
+                                <img
+                                  src={msg.text}
+                                  alt={currentLang === "TH" ? "รูปภาพประกอบการสนทนา" : "Chat attachment"}
+                                  className="max-w-[220px] sm:max-w-[260px] max-h-60 rounded-lg object-cover border border-white/20"
+                                />
+                              </a>
+                            ) : (
+                              <div>{msg.text}</div>
+                            )}
                             {msg.sender === "ME" ? (
                               <div className="text-xs mt-1 text-right text-white flex items-center justify-end gap-1">
                                 {msg.status === "SENDING" ? (
@@ -4555,6 +4790,26 @@ export default function DurianHubApp() {
                       }}
                       className="flex items-center gap-2"
                     >
+                      <label
+                        title={currentLang === "TH" ? "ส่งรูปภาพ" : "Send image"}
+                        className={`w-10 h-10 rounded-full bg-muted hover:bg-hover border border-line text-secondary flex items-center justify-center shrink-0 transition cursor-pointer ${
+                          isUploadingChatImage ? "opacity-50 pointer-events-none" : ""
+                        }`}
+                      >
+                        <ImagePlus className="w-4 h-4" />
+                        <input
+                          type="file"
+                          accept="image/jpeg,image/png,image/webp"
+                          className="sr-only"
+                          aria-label={currentLang === "TH" ? "แนบรูปภาพในแชต" : "Attach image in chat"}
+                          disabled={isUploadingChatImage}
+                          onChange={(e) => {
+                            const f = e.target.files?.[0];
+                            if (f) void handleChatImageUpload(f);
+                            e.target.value = "";
+                          }}
+                        />
+                      </label>
                       <input
                         aria-label={currentLang === "TH" ? "ข้อความถึงคู่ค้า" : "Message to your partner"}
                         type="text"
@@ -4672,7 +4927,7 @@ export default function DurianHubApp() {
       {/* =====================================================================
           MODAL 1: SECURE CHANNEL LINK CONFIRMATION (อ้างอิงตามรูปที่ 4 ทุกจุด)
          ===================================================================== */}
-      {showChatConfirmModal && (
+      {showChatConfirmModal && selectedPost && (
         <DialogFrame label="เริ่มสนทนา" onClose={() => setShowChatConfirmModal(false)} className="fixed inset-0 z-50 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4">
           <div className="bg-surface rounded-2xl max-w-md w-full border border-line shadow-panel overflow-hidden animate-in fade-in zoom-in-95 duration-150">
             {/* Top Header */}
@@ -4707,8 +4962,9 @@ export default function DurianHubApp() {
                   <div className="text-sm font-semibold text-warning-ink">
                     {selectedPost.pricePerKg} THB {t.perKg}
                   </div>
-                  <div className="text-xs text-muted-foreground truncate">
-                    👤 {selectedPost.authorName} ({selectedPost.businessName})
+                  <div className="text-xs text-muted-foreground truncate flex items-center gap-1">
+                    <User className="w-3.5 h-3.5 shrink-0" />
+                    <span className="truncate">{selectedPost.authorName} ({selectedPost.businessName})</span>
                   </div>
                 </div>
               </div>
@@ -4846,9 +5102,9 @@ export default function DurianHubApp() {
                   onChange={(e) => setNewPostTitle(e.target.value)}
                   placeholder={
                     newPostType === "SELL"
-                      ? (currentLang === "TH" ? "เช่น หมอนทองเกรดส่งออก AB แป้ง 34% พร้อมตัด 5 ตัน" : "e.g. Export Monthong Grade AB, 34% dry matter, 5 tons")
+                      ? (currentLang === "TH" ? "เช่น หมอนทองเกรด A ส่งออก แป้ง 34% พร้อมตัด 5 ตัน" : "e.g. Export Monthong Grade A, 34% dry matter, 5 tons")
                       : newPostType === "BUY"
-                      ? (currentLang === "TH" ? "เช่น รับซื้อหมอนทองเกรด AB ให้ราคาสูง จ่ายสดหน้าล้ง" : "e.g. Buying Grade AB Monthong, high price, cash on delivery")
+                      ? (currentLang === "TH" ? "เช่น รับซื้อหมอนทองเกรด A ให้ราคาสูง จ่ายสดหน้าล้ง" : "e.g. Buying Grade A Monthong, high price, cash on delivery")
                       : (currentLang === "TH" ? "เช่น ทีมตัดช่างเอก ระยอง-จันทบุรี คิวว่างพร้อมตัด" : "e.g. Master Eak Harvesting Team, Rayong-Chanthaburi available")
                   }
                   className="w-full border border-line rounded-lg px-3.5 py-2 text-sm"
@@ -4883,9 +5139,11 @@ export default function DurianHubApp() {
                     onChange={(e) => setNewPostGrade(e.target.value)}
                     className="w-full border border-line rounded-lg px-3 py-2 text-sm bg-surface"
                   >
-                    <option value="AB ส่งออก">{currentLang === "TH" ? "AB ส่งออก" : "AB Export"}</option>
-                    <option value="C รอง">{currentLang === "TH" ? "เกรด C รอง" : "Grade C Domestic"}</option>
-                    <option value="คัดพิเศษ GI">{currentLang === "TH" ? "คัดพิเศษ GI" : "Premium GI"}</option>
+                    {MARKET_GRADES.map((grade) => (
+                      <option key={grade.key} value={grade.gradeCode}>
+                        {currentLang === "TH" ? grade.name : `Grade ${grade.code} ${{ GRADE_A: t.exportLabel, GRADE_B: t.subExportLabel, GRADE_C: t.domesticLabel, GRADE_D: t.underSizeLabel }[grade.key]}`}
+                      </option>
+                    ))}
                   </select>
                 </div>
               </div>
@@ -4895,20 +5153,16 @@ export default function DurianHubApp() {
                   <label htmlFor="user-field-18" className="block text-xs font-semibold text-secondary mb-1">
                     {currentLang === "TH" ? "ภูมิภาค" : "Region"}
                   </label>
-                  <select id="user-field-18"
+                  <select id="user-field-18" required
                     value={newPostRegion}
                     onChange={(e) => {
                       const regName = e.target.value;
                       setNewPostRegion(regName);
-                      const regObj = REGIONAL_SEASONS_DATA.find(
-                        (r) => r.regionName === regName
-                      );
-                      if (regObj && regObj.provinces.length > 0) {
-                        setNewPostProvince(regObj.provinces[0]);
-                      }
+                      setNewPostProvince("");
                     }}
                     className="w-full border border-line rounded-lg px-3 py-2 text-sm bg-surface"
                   >
+                    <option disabled value="">{currentLang === "TH" ? "เลือกภูมิภาค" : "Select region"}</option>
                     {REGIONAL_SEASONS_DATA.map((r) => (
                       <option key={r.id} value={r.regionName}>
                         {translateRegionName(r.regionName, currentLang)}
@@ -4920,15 +5174,16 @@ export default function DurianHubApp() {
                   <label htmlFor="user-field-19" className="block text-xs font-semibold text-secondary mb-1">
                     {currentLang === "TH" ? "จังหวัด" : "Province"}
                   </label>
-                  <select id="user-field-19"
+                  <select id="user-field-19" required disabled={!newPostRegion}
                     value={newPostProvince}
                     onChange={(e) => setNewPostProvince(e.target.value)}
                     className="w-full border border-line rounded-lg px-3.5 py-2 text-sm bg-surface"
                   >
+                    <option disabled value="">{currentLang === "TH" ? "เลือกจังหวัด" : "Select province"}</option>
                     {(
                       REGIONAL_SEASONS_DATA.find(
                         (r) => r.regionName === newPostRegion
-                      )?.provinces || ["จันทบุรี", "ระยอง", "ตราด"]
+                      )?.provinces || []
                     ).map((prov) => (
                       <option key={prov} value={prov}>
                         {currentLang === "TH" ? `จ.${prov}` : translateProvinceName(prov, currentLang)}
@@ -4990,6 +5245,49 @@ export default function DurianHubApp() {
                 />
               </div>
 
+              <div>
+                <label className="block text-xs font-semibold text-secondary mb-1">
+                  {currentLang === "TH" ? "รูปภาพประกอบประกาศ (ไม่บังคับ)" : "Listing Photo (Optional)"}
+                </label>
+                <div className="flex flex-wrap items-center gap-3">
+                  <label className="inline-flex items-center gap-2 px-3.5 py-2 rounded-lg border border-line bg-muted hover:bg-hover text-xs font-semibold text-foreground cursor-pointer transition">
+                    <ImagePlus className="w-4 h-4 text-brand-ink" />
+                    <span>
+                      {isUploadingPostImage
+                        ? currentLang === "TH" ? "กำลังอัปโหลด…" : "Uploading…"
+                        : currentLang === "TH" ? "เลือกรูปภาพ (JPG, PNG, WebP)" : "Choose photo (JPG, PNG, WebP)"}
+                    </span>
+                    <input
+                      type="file"
+                      accept="image/jpeg,image/png,image/webp"
+                      className="sr-only"
+                      disabled={isUploadingPostImage}
+                      onChange={(e) => {
+                        const f = e.target.files?.[0];
+                        if (f) void handlePostImageUpload(f);
+                        e.target.value = "";
+                      }}
+                    />
+                  </label>
+                  {newPostImageUrl && (
+                    <div className="flex items-center gap-2">
+                      <img
+                        src={newPostImageUrl}
+                        alt={currentLang === "TH" ? "ตัวอย่างรูปประกาศ" : "Listing preview"}
+                        className="w-12 h-12 rounded-lg object-cover border border-line"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setNewPostImageUrl("")}
+                        className="text-xs text-danger-ink hover:underline cursor-pointer"
+                      >
+                        {currentLang === "TH" ? "ลบรูป" : "Remove"}
+                      </button>
+                    </div>
+                  )}
+                </div>
+              </div>
+
               <div className="pt-2 flex items-center justify-end gap-2.5">
                 <button
                   type="button"
@@ -5022,7 +5320,7 @@ export default function DurianHubApp() {
                 <Handshake className="w-5 h-5 text-brand-ink" />
                 <h3 className="font-semibold text-base text-foreground">
                   {currentLang === "TH"
-                    ? "ตกลงราคาซื้อขาย & บันทึกสัญญา (ปิดดีล)"
+                    ? "เสนอเงื่อนไขซื้อขายให้คู่ค้า"
                     : "Confirm Trade Agreement (Close Deal)"}
                 </h3>
               </div>
@@ -5040,8 +5338,16 @@ export default function DurianHubApp() {
                 <div className="font-semibold text-brand-ink">
                   {currentLang === "TH" ? "คู่สัญญาในการซื้อขาย:" : "Contract Trading Partner:"}
                 </div>
-                <div className="text-brand-ink mt-0.5">
-                  👤 {activeChatRoom.partnerName} • 📦 {activeChatRoom.post?.title}
+                <div className="text-brand-ink mt-1 flex flex-wrap items-center gap-x-2 gap-y-1">
+                  <span className="inline-flex items-center gap-1">
+                    <User className="w-3.5 h-3.5 shrink-0" />
+                    <span>{activeChatRoom.partnerName}</span>
+                  </span>
+                  <span>•</span>
+                  <span className="inline-flex items-center gap-1">
+                    <Package className="w-3.5 h-3.5 shrink-0" />
+                    <span>{activeChatRoom.post?.title}</span>
+                  </span>
                 </div>
               </div>
 
@@ -5156,7 +5462,7 @@ export default function DurianHubApp() {
                       {currentLang === "TH" ? "กำลังบันทึกดีล..." : "Recording Deal..."}
                     </>
                   ) : (
-                    currentLang === "TH" ? "ยืนยันตกลงราคาปิดดีล" : "Confirm & Close Deal"
+                    currentLang === "TH" ? "ส่งข้อเสนอให้คู่ค้า" : "Send Offer"
                   )}
                 </button>
               </div>
@@ -5199,11 +5505,18 @@ export default function DurianHubApp() {
                   <div className="font-semibold text-foreground truncate">
                     {activeChatRoom.partnerName}
                   </div>
-                  <div className="text-xs text-muted-foreground truncate">
-                    📦 ดีล: {activeChatRoom.post?.title}
+                  <div className="text-xs text-muted-foreground truncate flex items-center gap-1">
+                    <Package className="w-3.5 h-3.5 shrink-0" />
+                    <span className="truncate">
+                      {currentLang === "TH" ? "ดีล:" : "Deal:"} {activeChatRoom.post?.title}
+                    </span>
                   </div>
                   <div className="text-xs font-semibold text-warning-ink mt-0.5">
-                    ★ ค่าเฉลี่ยปัจจุบัน: {(activeChatRoom.partnerRating ?? 5.0).toFixed(1)} ({activeChatRoom.partnerRatingCount ?? 0} รีวิว)
+                    <ReviewSummary
+                      average={activeChatRoom.partnerRating}
+                      count={activeChatRoom.partnerRatingCount}
+                      language={currentLang}
+                    />
                   </div>
                 </div>
               </div>
@@ -5379,7 +5692,42 @@ export default function DurianHubApp() {
         <MyPostsDialog key={userProfile.id} userId={userProfile.id} lang={currentLang}
           onClose={() => setShowMyPostsModal(false)}
           onView={post => { setShowMyPostsModal(false); handleOpenPostDetail(post); }}
-          onCreate={() => { setShowMyPostsModal(false); handleOpenCreatePostModal(); }} />
+          onCreate={() => { setShowMyPostsModal(false); handleOpenCreatePostModal(); }}
+          onMutated={() => void fetchPosts()} />
+      )}
+      {showMyDealsModal && (
+        <MyDealsDialog lang={currentLang} onClose={() => setShowMyDealsModal(false)} />
+      )}
+      {inspectPartner && (
+        <PartnerReviewsDialog
+          userId={inspectPartner.id}
+          fallbackName={inspectPartner.name}
+          lang={currentLang}
+          onClose={() => setInspectPartner(null)}
+        />
+      )}
+      {lightboxImageUrl && (
+        <DialogFrame
+          label={currentLang === "TH" ? "ดูรูปภาพขนาดเต็ม" : "Full-size image preview"}
+          onClose={() => setLightboxImageUrl(null)}
+          className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4"
+        >
+          <div className="relative max-w-4xl w-full flex flex-col items-center">
+            <button
+              type="button"
+              onClick={() => setLightboxImageUrl(null)}
+              aria-label={currentLang === "TH" ? "ปิดรูปภาพ" : "Close image"}
+              className="self-end mb-3 w-10 h-10 rounded-full bg-surface text-foreground border border-line flex items-center justify-center shadow-md hover:bg-hover cursor-pointer"
+            >
+              <X className="w-5 h-5" />
+            </button>
+            <img
+              src={lightboxImageUrl}
+              alt={selectedPost?.title || (currentLang === "TH" ? "รูปภาพขนาดเต็ม" : "Full size preview")}
+              className="max-h-[82vh] max-w-full object-contain rounded-xl border border-line bg-canvas shadow-2xl"
+            />
+          </div>
+        </DialogFrame>
       )}
       {/* ================================================================== */}
       {/* MODAL 3: คู่มือการใช้งาน (USER GUIDE - CLEAN LIGHT THEME) */}
@@ -5799,7 +6147,7 @@ export default function DurianHubApp() {
       {/* ================================================================== */}
       {/* MODAL 5: แจ้งปัญหา / รายงานประกาศต่อ ADMIN (POST REPORT MODAL) */}
       {/* ================================================================== */}
-      {showReportModal && (
+      {showReportModal && selectedPost && (
         <DialogFrame label="รายงานประกาศ" onClose={() => setShowReportModal(false)} className="fixed inset-0 z-50 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4">
           <div className="bg-surface text-foreground rounded-2xl max-w-md w-full p-6 sm:p-7 shadow-panel border border-line relative animate-in fade-in zoom-in-95 duration-150">
             {/* Header */}

@@ -72,8 +72,7 @@ export async function sendOtpEmail({
             </div>
           </div>
           <div class="footer">
-            อีเมลฉบับนี้ถูกส่งจากระบบอัตโนมัติของ Durian Hub Thailand<br/>
-            ตรวจสอบและดูอีเมลจำลองได้ที่ Mailpit (localhost:8025)
+            อีเมลฉบับนี้ถูกส่งจากระบบอัตโนมัติของ Durian Hub Thailand
           </div>
         </div>
       </body>

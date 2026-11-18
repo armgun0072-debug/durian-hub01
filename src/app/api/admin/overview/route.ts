@@ -75,6 +75,7 @@ export async function GET() {
 
     // 3. Fetch Marketplace Posts for Moderation
     const posts = await prisma.marketplacePost.findMany({
+      where: { status: { not: "REMOVED_BY_ADMIN" } },
       include: {
         user: {
           select: {

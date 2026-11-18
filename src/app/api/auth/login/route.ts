@@ -88,6 +88,11 @@ export async function POST(request: Request) {
           userId: user.id,
           email: user.email,
           fullName: user.fullName,
+          registration: user.activeRole !== "ADMIN" && !user.roles.some(r => r.roleType === "ADMIN") ? {
+            phone: user.phone, role: user.activeRole,
+            businessName: user.roles.find(r => r.isPrimaryRole)?.businessName ?? "",
+            province: user.location?.province, region: user.location?.region,
+          } : null,
           error: "บัญชีของคุณยังไม่ได้ยืนยันอีเมล กรุณากรอกรหัส OTP ที่ระบบส่งให้",
         },
         { status: 403 }
@@ -149,7 +154,7 @@ export async function POST(request: Request) {
         email: user.email,
         phone: user.phone,
         businessName: activeRoleObj?.businessName || user.fullName,
-        province: user.location?.province || "จันทบุรี",
+        province: user.location?.province || "",
         primaryRole: user.activeRole,
         approvedRoles: approvedRoleTypes,
         activeRole: activeRoleToSet,

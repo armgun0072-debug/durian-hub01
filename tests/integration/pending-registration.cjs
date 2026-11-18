@@ -1,0 +1,71 @@
+const assert = require('node:assert/strict');
+const {PrismaClient} = require('@prisma/client');
+const bcrypt = require('bcryptjs');
+const db = new PrismaClient();
+async function api(path, body, cookie='') {
+  const res = await fetch('http://127.0.0.1:3000/api/auth/'+path,{method:'POST',headers:{'Content-Type':'application/json',cookie},body:JSON.stringify(body)});
+  return {status:res.status,data:await res.json(),cookie:res.headers.get('set-cookie')?.split(';')[0]};
+}
+async function otp(email) {
+  const inbox=await (await fetch('http://mailpit:8025/api/v1/search?query='+encodeURIComponent('to:'+email))).json();
+  return inbox.messages[0].Subject.match(/\d{6}$/)[0];
+}
+async function run() {
+  assert.equal(new URL(process.env.DATABASE_URL).pathname,'/registration_test');
+  assert.equal(process.env.SMTP_HOST,'mailpit');
+  const tag=Date.now();
+  const form={email:'typo'+tag+'@example.invalid',phone:String(tag),fullName:'Test',password:'regTest123',businessName:'Test farm',primaryRole:'SELLER'};
+  const first=await api('register',form);
+  assert.equal(first.status,200);
+  assert.equal(await db.user.count({where:{email:form.email}}),0,'unverified signup must not create a user');
+  const oldCode=await otp(form.email);
+  const other=await api('register',form);
+  assert.equal(other.status,200,'another browser can start with the same contacts');
+  assert.notEqual(other.data.registrationId,first.data.registrationId);
+  const fixPhone={...form,email:'phone'+tag+'@example.invalid',phone:'typo'+tag};
+  const phoneStart=await api('register',fixPhone);
+  const phoneCode=await otp(fixPhone.email);
+  const phoneEdit=await api('register',{...fixPhone,phone:'correct'+tag},phoneStart.cookie);
+  const phoneDone=await api('verify-email',{registrationId:phoneEdit.data.registrationId,otpCode:phoneCode},phoneEdit.cookie);
+  assert.equal(phoneDone.data.user.phone,'correct'+tag);
+  assert.equal(await db.user.count({where:{phone:fixPhone.phone}}),0);
+  const originalEmail=form.email;
+  form.email='fixed'+tag+'@example.invalid';
+  const edit=await api('register',form,first.cookie);
+  assert.equal(edit.status,200);
+  const code=await otp(form.email);
+  const verify=(reg,cookie,otpCode)=>api('verify-email',{registrationId:reg,otpCode},cookie);
+  assert.notEqual((await verify(first.data.registrationId,first.cookie,oldCode)).status,200);
+  assert.notEqual((await verify(edit.data.registrationId,other.cookie,code)).status,200);
+  const verified=await verify(edit.data.registrationId,edit.cookie,code);
+  assert.equal(verified.status,200,JSON.stringify(verified.data.error));
+  assert.equal(verified.data.user.email,form.email);
+  assert.notEqual((await verify(edit.data.registrationId,edit.cookie,code)).status,200);
+  assert.notEqual((await verify(other.data.registrationId,other.cookie,await otp(originalEmail))).status,200);
+  assert.equal(await db.user.count({where:{phone:form.phone}}),1);
+  const raceForm={...form,phone:'race'+tag,email:'race-a'+tag+'@example.invalid'};
+  const a=await api('register',raceForm);
+  const b=await api('register',{...raceForm,email:'race-b'+tag+'@example.invalid'});
+  const winners=await Promise.all([a,b].map(async row=>verify(row.data.registrationId,row.cookie,await otp(row.data.email))));
+  assert.deepEqual(winners.map(result=>result.status).sort(),[200,409]);
+  const retry=await api('register',{...form,email:'retry'+tag+'@example.invalid',phone:'retry'+tag});
+  const request={registrationId:retry.data.registrationId};
+  assert.equal((await api('resend-otp',request,retry.cookie)).status,429);
+  await db.pendingRegistration.update({where:{revision:request.registrationId},data:{sentAt:new Date(Date.now()-11*60000)}});
+  assert.notEqual((await verify(request.registrationId,retry.cookie,await otp(retry.data.email))).status,200);
+  assert.equal((await api('resend-otp',request,retry.cookie)).status,200);
+  const retryCode=await otp(retry.data.email);
+  for(let i=0;i<5;i++) assert.notEqual((await verify(request.registrationId,retry.cookie,'000000')).status,200);
+  assert.notEqual((await verify(request.registrationId,retry.cookie,retryCode)).status,200);
+  const legacy=await db.user.create({data:{email:'old'+tag+'@example.invalid',phone:'old'+tag,fullName:'Legacy',passwordHash:await bcrypt.hash(form.password,8),roles:{create:{roleType:'SELLER',isPrimaryRole:true}}}});
+  const correction={...form,email:'legacy'+tag+'@example.invalid',phone:legacy.phone};
+  assert.notEqual((await api('register',{...correction,password:'wrongPass'})).status,200);
+  const repair=await api('register',correction);
+  assert.equal(repair.status,200);
+  assert.equal((await verify(repair.data.registrationId,repair.cookie,await otp(correction.email))).data.user.id,legacy.id);
+  const admin=await db.user.create({data:{email:'admin'+tag+'@example.invalid',phone:'admin'+tag,fullName:'Admin',passwordHash:await bcrypt.hash(form.password,8),activeRole:'ADMIN',roles:{create:{roleType:'ADMIN'}}}});
+  assert.notEqual((await api('register',{...form,email:admin.email,phone:admin.phone})).status,200);
+  assert.equal((await db.user.findUniqueOrThrow({where:{id:admin.id}})).emailVerifiedAt,null);
+  console.log('PASS pending, independent browsers, correction, stale OTP, ownership, unique final account, replay, legacy and admin');
+}
+run().catch(e=>{console.error(e);process.exitCode=1}).finally(()=>db.$disconnect());

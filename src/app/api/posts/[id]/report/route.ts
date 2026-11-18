@@ -1,4 +1,4 @@
-﻿import { NextResponse } from "next/server";
+import { NextResponse } from "next/server";
 import { getCurrentUser } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { ReportReason } from "@prisma/client";
@@ -22,7 +22,7 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
     const detail: string | null = body.detail?.trim() || null;
     const report = await prisma.$transaction(async (tx) => {
       const post = await tx.marketplacePost.findUnique({ where: { id: postId } });
-      if (!post || post.status === "HIDDEN_BY_ADMIN") throw new ReportError("ไม่พบประกาศนี้ในระบบ", 404);
+      if (!post || ["HIDDEN_BY_ADMIN", "REMOVED_BY_ADMIN"].includes(post.status)) throw new ReportError("ไม่พบประกาศนี้ในระบบ", 404);
       if (post.userId === user.id) throw new ReportError("ไม่สามารถรายงานประกาศของตัวเองได้", 400);
       // The count includes every report, regardless of its moderation status.
       // Lock the parent before inserting the child to avoid FK lock-upgrade deadlocks.

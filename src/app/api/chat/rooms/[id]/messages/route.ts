@@ -58,12 +58,14 @@ export async function GET(
       senderName: m.sender.fullName,
       text: m.content,
       time: new Date(m.createdAt).toLocaleTimeString("th-TH", { hour: "2-digit", minute: "2-digit" }),
+      messageType: m.messageType,
       isProductCard: m.messageType === "PRODUCT_CARD",
+      isImage: m.messageType === "IMAGE",
       isRead: m.isRead,
       createdAt: m.createdAt.toISOString(),
     }));
 
-    return NextResponse.json({ success: true, messages: formattedMessages });
+    return NextResponse.json({ success: true, messages: formattedMessages }, { headers: { "Cache-Control": "private, no-store" } });
   } catch (error) {
     console.error("GET Messages Error:", error);
     return NextResponse.json({ error: "ไม่สามารถดึงข้อความได้" }, { status: 500 });
@@ -97,8 +99,20 @@ export async function POST(
     }
     const { content, messageType = "TEXT" } = body;
 
-    if (typeof content !== "string" || !content.trim() || content.length > 5000 || !["TEXT", "QUICK_REPLY"].includes(messageType)) {
+    if (
+      typeof content !== "string" ||
+      !content.trim() ||
+      content.length > 5000 ||
+      !["TEXT", "QUICK_REPLY", "IMAGE"].includes(messageType)
+    ) {
       return NextResponse.json({ error: "กรุณาระบุข้อความ" }, { status: 400 });
+    }
+
+    if (
+      messageType === "IMAGE" &&
+      !new RegExp("^/uploads/chat/chat_" + user.id + "_[a-f0-9-]{36}\\.(jpg|png|webp)$").test(content.trim())
+    ) {
+      return NextResponse.json({ error: "ลิงก์รูปภาพไม่ถูกต้อง" }, { status: 400 });
     }
 
     const newMessage = await prisma.$transaction(async tx => {
