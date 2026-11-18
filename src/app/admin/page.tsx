@@ -708,30 +708,30 @@ export default function AdminPortalPage() {
         {overviewError && <div role="alert" className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-danger-line bg-danger-soft p-4 text-sm text-danger-ink"><span>โหลดข้อมูลล่าสุดไม่สำเร็จ กำลังแสดงข้อมูลที่โหลดไว้ก่อนหน้า</span><button className="ui-button ui-button-secondary" disabled={isLoadingData} onClick={() => void refreshData()}>ลองใหม่</button></div>}
         {notice && <div role={notice.kind === "error" ? "alert" : "status"} className={`flex items-start justify-between gap-3 rounded-xl border p-4 text-sm ${notice.kind === "error" ? "border-danger-line bg-danger-soft text-danger-ink" : "border-brand-line bg-brand-soft text-brand-ink"}`}><span>{notice.text}</span><button type="button" className="min-h-11 shrink-0 px-3" aria-label="ปิดข้อความแจ้งผล" onClick={() => setNotice(null)}>ปิด</button></div>}
         {mutationPending && <p role="status" className="text-sm text-secondary">กำลังบันทึกการดำเนินการ…</p>}
-        <PageHeading eyebrow="ADMIN WORKSPACE" title="ภาพรวมการดูแลระบบ" description="ตรวจสอบรายการที่รอดำเนินการ และจัดการข้อมูลตลาดกลาง" />
+        <PageHeading title="ภาพรวมการดูแลระบบ" description="ตรวจสอบรายการที่รอดำเนินการ และจัดการข้อมูลตลาดกลาง" />
         {/* KPI / Summary Cards */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-3.5">
           {/* Card 1: Pending Role Requests */}
           <div
             aria-pressed={activeTab === "ROLE_REQUESTS"} onClick={() => setActiveTab("ROLE_REQUESTS")}
-            className={`cursor-pointer p-5 rounded-xl border transition-all ${
+            className={`cursor-pointer p-4 rounded-xl border transition-all ${
               activeTab === "ROLE_REQUESTS"
-                ? "bg-brand-soft/40 border-brand-line/40 shadow-panel "
-                : "bg-surface/60 border-line hover:border-line-strong"
+                ? "bg-brand-soft/70 border-brand-line shadow-2xs"
+                : "bg-surface border-line hover:border-line-strong hover:bg-hover/50"
             }`}
           >
             <div className="flex items-center justify-between">
               <span className="text-xs font-medium text-muted-foreground">คำขอเพิ่มบทบาทรอตรวจ</span>
-              <FileCheck className="w-5 h-5 text-brand-ink" />
+              <FileCheck className="w-4 h-4 text-brand-ink" />
             </div>
-            <div className="mt-3 flex items-baseline gap-2">
-              <span className="text-2xl sm:text-3xl font-semibold text-foreground">
+            <div className="mt-2.5 flex items-baseline gap-1.5">
+              <span className="text-2xl font-bold text-foreground num tracking-tight">
                 {summary.pendingRoleRequestsCount}
               </span>
               <span className="text-xs text-muted-foreground">รายการ</span>
             </div>
             {summary.pendingRoleRequestsCount > 0 && (
-              <span className="mt-2 inline-flex items-center gap-1 text-xs font-medium text-warning-ink">
+              <span className="mt-1.5 inline-flex items-center gap-1 text-[11px] font-semibold text-warning-ink">
                 <Clock className="w-3 h-3" /> รอการอนุมัติ
               </span>
             )}
@@ -740,28 +740,28 @@ export default function AdminPortalPage() {
           {/* Card 2: User Reports */}
           <div
             aria-pressed={activeTab === "REPORTS"} onClick={() => setActiveTab("REPORTS")}
-            className={`cursor-pointer p-5 rounded-xl border transition-all ${
+            className={`cursor-pointer p-4 rounded-xl border transition-all ${
               activeTab === "REPORTS"
-                ? "bg-danger-soft/40 border-danger-line/40 shadow-panel "
-                : "bg-surface/60 border-line hover:border-line-strong"
+                ? "bg-danger-soft/70 border-danger-line shadow-2xs"
+                : "bg-surface border-line hover:border-line-strong hover:bg-hover/50"
             }`}
           >
             <div className="flex items-center justify-between">
               <span className="text-xs font-medium text-muted-foreground">รายงานปัญหาจากผู้ใช้</span>
-              <AlertTriangle className="w-5 h-5 text-danger-ink" />
+              <AlertTriangle className="w-4 h-4 text-danger-ink" />
             </div>
-            <div className="mt-3 flex items-baseline gap-2">
-              <span className="text-2xl sm:text-3xl font-semibold text-foreground">
+            <div className="mt-2.5 flex items-baseline gap-1.5">
+              <span className="text-2xl font-bold text-foreground num tracking-tight">
                 {summary.pendingReportsCount}
               </span>
               <span className="text-xs text-muted-foreground">เรื่องรอตรวจ</span>
             </div>
             {summary.pendingReportsCount > 0 ? (
-              <span className="mt-2 inline-flex items-center gap-1 text-xs font-medium text-danger-ink animate-pulse">
+              <span className="mt-1.5 inline-flex items-center gap-1 text-[11px] font-semibold text-danger-ink animate-pulse">
                 <ShieldAlert className="w-3 h-3" /> มีข้อร้องเรียนใหม่
               </span>
             ) : (
-              <span className="mt-2 inline-flex items-center gap-1 text-xs font-medium text-brand-ink">
+              <span className="mt-1.5 inline-flex items-center gap-1 text-[11px] font-semibold text-brand-ink">
                 <CheckCircle2 className="w-3 h-3" /> จัดการครบแล้ว
               </span>
             )}
@@ -770,50 +770,50 @@ export default function AdminPortalPage() {
           {/* Card 3: Marketplace Posts */}
           <div
             aria-pressed={activeTab === "POSTS"} onClick={() => setActiveTab("POSTS")}
-            className={`cursor-pointer p-5 rounded-xl border transition-all ${
+            className={`cursor-pointer p-4 rounded-xl border transition-all ${
               activeTab === "POSTS"
-                ? "bg-info-soft/40 border-info-line/40 shadow-panel "
-                : "bg-surface/60 border-line hover:border-line-strong"
+                ? "bg-info-soft/70 border-info-line shadow-2xs"
+                : "bg-surface border-line hover:border-line-strong hover:bg-hover/50"
             }`}
           >
             <div className="flex items-center justify-between">
               <span className="text-xs font-medium text-muted-foreground">ประกาศในตลาดกลาง</span>
-              <Package className="w-5 h-5 text-info-ink" />
+              <Package className="w-4 h-4 text-info-ink" />
             </div>
-            <div className="mt-3 flex items-baseline gap-2">
-              <span className="text-2xl sm:text-3xl font-semibold text-foreground">
+            <div className="mt-2.5 flex items-baseline gap-1.5">
+              <span className="text-2xl font-bold text-foreground num tracking-tight">
                 {summary.totalPostsCount}
               </span>
               <span className="text-xs text-muted-foreground">โพสต์</span>
             </div>
-            <div className="mt-2 flex items-center gap-2 text-xs text-muted-foreground">
-              <span className="text-warning-ink">ราคาโดด: {summary.outlierPostsCount}</span>
+            <div className="mt-1.5 flex items-center gap-2 text-[11px] text-muted-foreground">
+              <span className="text-warning-ink num">ราคาโดด: {summary.outlierPostsCount}</span>
               <span>•</span>
-              <span className="text-danger-ink">ซ่อน: {summary.hiddenPostsCount}</span>
+              <span className="text-danger-ink num">ซ่อน: {summary.hiddenPostsCount}</span>
             </div>
           </div>
 
           {/* Card 4: Total Users */}
           <div
             aria-pressed={activeTab === "USERS"} onClick={() => setActiveTab("USERS")}
-            className={`cursor-pointer p-5 rounded-xl border transition-all ${
+            className={`cursor-pointer p-4 rounded-xl border transition-all ${
               activeTab === "USERS"
-                ? "bg-accent-soft/40 border-accent-line/40 shadow-panel "
-                : "bg-surface/60 border-line hover:border-line-strong"
+                ? "bg-accent-soft/70 border-accent-line shadow-2xs"
+                : "bg-surface border-line hover:border-line-strong hover:bg-hover/50"
             }`}
           >
             <div className="flex items-center justify-between">
               <span className="text-xs font-medium text-muted-foreground">สมาชิกทั้งหมดในระบบ</span>
-              <Users className="w-5 h-5 text-accent-ink" />
+              <Users className="w-4 h-4 text-accent-ink" />
             </div>
-            <div className="mt-3 flex items-baseline gap-2">
-              <span className="text-2xl sm:text-3xl font-semibold text-foreground">
+            <div className="mt-2.5 flex items-baseline gap-1.5">
+              <span className="text-2xl font-bold text-foreground num tracking-tight">
                 {summary.totalUsersCount}
               </span>
               <span className="text-xs text-muted-foreground">คน</span>
             </div>
-            <span className="mt-2 inline-flex items-center gap-1 text-xs font-medium text-muted-foreground">
-              ระงับชั่วคราว: <strong className="text-danger-ink">{summary.suspendedUsersCount}</strong>
+            <span className="mt-1.5 inline-flex items-center gap-1 text-[11px] font-medium text-muted-foreground">
+              ระงับชั่วคราว: <strong className="text-danger-ink num">{summary.suspendedUsersCount}</strong>
             </span>
           </div>
         </div>

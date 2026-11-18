@@ -17,6 +17,8 @@ export interface VarietyPriceMatrixItem {
   buyPrice: number;
   sellPrice: number;
   refPrice: number;
+  sellSampleCount?: number;
+  buySampleCount?: number;
   grades: Record<DurianGradeKey, { buyPrice: number; sellPrice: number; refPrice: number }>;
 }
 

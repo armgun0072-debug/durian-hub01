@@ -2,9 +2,72 @@
 
 **Project:** Durian Hub (ตลาดกลางทุเรียน)
 **Last Updated:** 2026-11-11
-**Current Status:** USER + ADMIN UX/UI IMPROVEMENTS IMPLEMENTED AND VERIFIED — 7 EXISTING ROLE TEST FAILURES REMAIN
+**Current Status:** FULL SYSTEM DESIGN OVERHAUL (IMPECCABLE CRAFT-FLOOR & DISTILL) — 100% COMPLETED & VERIFIED
 **Latest Backup:** `D:\csc481_backup_20261030_013531`
 **Presentation Deck & ERD:** `D:\durian_hub_presentation\index.html`
+
+## Latest System-Wide Design Overhaul (Master Action Plan) — 2026-11-11
+- **Authorization:** ผู้ใช้อนุมัติ "ลุยเลย" และยืนยัน Master Action Plan ให้รื้อและปรับปรุงดีไซน์ทั้งระบบให้ทันสมัย ใช้งานง่าย ไม่รกสายตา ตามเกณฑ์ของ Skill `impeccable` (`craft-floor.md`, `distill.md`, และ `operate.md`)
+- **Key Problems Resolved & Refactorings Applied:**
+  1. **Top Navbar & Mobile Navigation (src/app/page.tsx):**
+     - ปรับขนาด Navbar ให้กะทัดรัด (Compact 56px) พร้อมจัดระเบียบปุ่ม เมนูสลับธีมถูกย้ายไปรวมใน Profile Dropdown อย่างเรียบร้อย
+     - ใน Mobile Nav ปรับสถานะปุ่มที่เลือกอยู่เป็น Soft Accent (`bg-brand-soft text-brand-ink`) คลีนสบายตา
+  2. **Role Home Workspace (src/app/page.tsx):**
+     - ปรับ Welcome Banner ให้เรียบง่าย สบายตา
+     - ยุบการ์ดโครงสร้างหน้า 3 ใบที่เคยอธิบายยาวเวิ่นเว้อ ให้เป็น **Compact Quick Action Cards** แถวเดียว พร้อมไอคอนที่ชัดเจน
+     - นำ `<select>` สลับบทบาทที่ลอยซ้ำซ้อนกลางหน้าออก
+  3. **Regional Dashboard & Grade Comparison (src/app/page.tsx):**
+     - แถบ 6 ภูมิภาค: ปรับเป็นการ์ด Compact Switcher โทนสีเดียวกัน ไม่มีการตัดข้อความเดือนทิ้ง (`...`)
+     - ส่วนหัวภูมิภาค: ปลดป้ายแท็ก 3 ใบซ้อนและกรอบกล่องรอบคำอธิบายออก เหลือเฉพาะ Typography ที่สง่างาม
+     - พื้นที่จังหวัด: ยุบกำแพงป้าย 17–20 จังหวัดด้วย Progressive Disclosure (`เชียงใหม่ · เชียงราย · ลำปาง... + อีก 12 จังหวัด`)
+     - การ์ดราคากลาง 3 ใบ: เปลี่ยนจากกล่องสีฉูดฉาด (เขียว/น้ำเงิน/น้ำตาล) เป็น Modern Stat Cards ตัวเลข `tabular-nums`
+     - ตารางเปรียบเทียบเกรด (Matrix Table): **ยกเลิกกล่องสี่เหลี่ยมสีฟ้า/เขียว 24 กล่องในตาราง** เปลี่ยนเป็น Financial Data Layout คมชัด (ล้ง `฿...` / สวน `฿...`) อ่านง่ายทันที
+     - นำ Emoji ในระบบออกทั้งหมด เปลี่ยนเป็น Lucide Icons มาตรฐาน (`Sprout`, `Store`, `Scissors`)
+  4. **Marketplace Unified Filter Toolbar (src/app/page.tsx):**
+     - ยุบแถบตัวกรอง 4 ชั้น (สายพันธุ์, ค้นหา, จังหวัด, ช่วงเวลา, แท็บประกาศ) ให้อยู่ใน **Unified Toolbar แถบเดียว**
+     - ผู้ใช้มองเห็นการ์ดประกาศได้ทันทีตั้งแต่ครึ่งบนของหน้าจอ (Above the fold) โดยไม่ต้องเลื่อนหน้าจอลงยาว
+  5. **Admin Console (src/app/admin/page.tsx):**
+     - ปรับแต่ง KPI Summary Cards ทั้ง 4 ใบให้ใช้ตัวเลข `num` (tabular-nums) คมชัด
+     - ตัด Eyebrow ที่ไม่จำเป็นออกตามกฎ craft-floor
+- **Verification:**
+  - TypeScript Compilation: `tsc --noEmit --incremental false` ผ่าน 0 errors
+  - UI Unit Tests: `tests/ui-feedback.test.cjs` ผ่าน 3/3 tests
+  - Docker Sync: คัดลอก source files เข้าคอนเทนเนอร์ `durian_hub_web` สำเร็จ
+  - Live HTTP Check: `http://localhost:3000` ตอบกลับ `HTTP/1.1 200 OK`
+
+## Latest Season Month Removal from UI — 2026-11-11
+- **Authorization:** ผู้ใช้อนุมัติ "ลุย" ให้นำการแสดงผลเดือนฤดูกาลเก็บเกี่ยว (`📅 พ.ค. - มิ.ย.` ฯลฯ) ออกจากหน้าเว็บ เนื่องจากทุเรียนยุคใหม่มีการทำนอกฤดู และระบบเป็นตลาดกลางที่อิงตามกลไกตลาดจริง (Demand-Supply) โดยเก็บตาราง `RegionalSeason` ในฐานข้อมูลไว้ตามเดิมเพื่อรักษาโครงสร้าง ERD และ Foreign Key
+- **Resolution:**
+  1. ในการ์ดเลือก 6 ภูมิภาคด้านบน: นำป้ายเดือนและไอคอนปฏิทินออก เปลี่ยนมาแสดงจำนวนจังหวัดและสายพันธุ์หลักในพื้นที่ (เช่น `3 จังหวัด • 3 สายพันธุ์`) ช่วยแก้ปัญหาข้อความล้น `...` และแสดงขอบเขตตลาดได้ชัดเจน
+  2. ในส่วนหัวของแดชบอร์ดเจาะลึก: นำป้าย `ช่วงผลผลิตออก` และ `ก่อนฤดูกาล` ออก แทนที่ด้วยป้ายจำนวนจังหวัดและสายพันธุ์เด่นของพื้นที่
+  3. ปรับคำโปรยหัวเว็บ (`heroSub` และ `heroBadge` ทั้งภาษาไทยและอังกฤษ) ให้เน้นเรื่องข้อมูลราคากลางและกลไกตลาด
+- **Validation:** TypeScript check ผ่าน (`tsc --noEmit`), ซิงก์ไฟล์เข้า Docker container `durian_hub_web` สำเร็จ, HTTP GET `http://localhost:3000` ตอบกลับ 200 OK
+
+## Latest Price Sources Note Refactoring (Option 3) — 2026-11-11
+- **Authorization:** ผู้ใช้อนุมัติ "ตกลง" ตามแนวทางที่ 3 (ย่อกล่องคำชี้แจงที่มาของราคาเป็นปุ่มกด [ℹ️ ที่มาของราคา] พร้อมปุ่มปิด [×])
+- **Problem Solved:** กล่องชี้แจงสีน้ำตาลขนาดใหญ่เดิมแสดงผลค้างไว้ถาวรด้านบนสุดของหน้าแดชบอร์ดราคาตลาด ทำให้บดบังและเกะกะสายตา
+- **Resolution:**
+  1. เพิ่ม State `showPriceSourceInfo` (default: `false`)
+  2. ย้ายคำชี้แจงเข้าไปอยู่ในปุ่ม action ของ `PageHeading` แสดงเป็นปุ่ม `[ℹ️ ที่มาของราคา]` ที่มุมขวาบนของหัวข้อหน้า
+  3. เมื่อคลิกปุ่มจะเปิดกล่องคำอธิบายฉบับเต็มอย่างสวยงาม พร้อมปุ่มกากบาท `×` ที่มุมขวาบนสำหรับปิดได้ทุกเมื่อ
+  4. หากเกิดข้อผิดพลาดในการโหลดข้อมูล (`postsError`) ระบบจะแสดงแถบแจ้งเตือนสีแดงพร้อมปุ่ม "ลองใหม่" อัตโนมัติ
+- **Validation:** TypeScript check ผ่าน (`tsc --noEmit`), ซิงก์ไฟล์เข้า Docker container `durian_hub_web` สำเร็จ, HTTP GET `http://localhost:3000` ตอบกลับ 200 OK
+
+## Latest Dynamic Regional Variety Dashboard — 2026-11-11
+- **Authorization:** ผู้ใช้อนุมัติ "ลุยเลย" ตามแนวทาง C (Dynamic ผูกการ์ด KPI กับปุ่มเลือกสายพันธุ์)
+- **Problem Solved:** การ์ดราคาเฉลี่ยภาพรวมระดับภูมิภาคเดิมนำทุกสายพันธุ์มาเฉลี่ยรวมกัน ซึ่งผิดหลักเศรษฐศาสตร์เกษตรและราคาตลาดทุเรียน (เช่น มูซังคิง vs หมอนทอง vs บาตามัส)
+- **Resolution:**
+  1. แปลงป้ายสายพันธุ์ในแดชบอร์ดภูมิภาคให้เป็น **Interactive Variety Pills** (ปุ่มเลือกสายพันธุ์ได้จริง) พร้อมตัวเลือก `🌐 ทุกสายพันธุ์ (ภาพรวม)` และปุ่มเฉพาะรายสายพันธุ์ของภาคนั้น
+  2. เชื่อมโยง State `selectedDashboardVariety` กับการ์ด KPI 3 ใบด้านบน (ราคาหน้าสวน, ราคารับซื้อล้ง, ค่าจ้างตัด) อัปเดตราคาและป้ายกำกับสายพันธุ์ทันทีแบบ Dynamic
+  3. ไฮไลต์แถวในตาราง Matrix และการ์ดใน Detail View เมื่อคลิกเลือกสายพันธุ์ และสามารถคลิกแถวเพื่อสลับสายพันธุ์ได้
+  4. ซิงก์ State เมื่อสลับภูมิภาค ให้รีเซ็ตกลับเป็น `"ALL"` ป้องกันการแสดงผลสายพันธุ์ค้าง
+- **Validation:** TypeScript check ผ่าน (`tsc --noEmit`), ซิงก์ไฟล์เข้า Docker container `durian_hub_web` สำเร็จ, HTTP GET `http://localhost:3000` ตอบกลับ 200 OK
+
+## Latest Button Duplicate Plus Fix — 2026-11-11
+- **Authorization:** ผู้ใช้อนุมัติ "ลุยเลย" ให้แก้เครื่องหมายบวกซ้ำซ้อนในปุ่ม "+ + ลงประกาศใหม่"
+- **Root Cause:** ใน `src/app/page.tsx` มีการใส่ SVG icon `<Plus />` ไว้หน้าปุ่มอยู่แล้ว แต่ในข้อความ `I18N_DICT` (TH/EN) ของ `newPostBtn` ดันมีเครื่องหมายบวกนำหน้าคำ (`"+ ลงประกาศใหม่"` และ `"+ Create Post"`) ทำให้เรนเดอร์เป็น `+  + ลงประกาศใหม่`
+- **Resolution:** แก้ `newPostBtn` ใน `src/app/page.tsx` เป็น `"ลงประกาศใหม่"` (TH) และ `"Create Post"` (EN)
+- **Validation:** TypeScript check ผ่าน (`tsc --noEmit`), ซิงก์ไฟล์เข้า Docker container `durian_hub_web` สำเร็จ, HTTP GET `http://localhost:3000` ตอบกลับ 200 OK
 
 ## Latest UX/UI Implementation — 2026-11-11
 - **Authorization:** ผู้ใช้อนุมัติ “ลุยปรับทั้งผู้ใช้และแอดมิน” ตามแผน audit

@@ -191,7 +191,7 @@ const I18N_DICT = {
     logoutMenu: "ออกจากระบบ",
     welcome: "สวัสดีครับ,",
     verifiedBadge: "ยืนยันตัวตนแล้ว",
-    newPostBtn: "+ ลงประกาศใหม่",
+    newPostBtn: "ลงประกาศใหม่",
     goToMarketBtn: "ไปที่ตลาดกลาง",
     recentPostsTitle: "ประกาศล่าสุด",
     seeAllInMarket: "ดูทั้งหมดในตลาดกลาง →",
@@ -201,9 +201,9 @@ const I18N_DICT = {
     createFirstPost: "+ เริ่มสร้างประกาศแรกของคุณ",
 
     // Regional Dashboard
-    heroBadge: "แดชบอร์ดทุเรียนรายภูมิภาค & ฤดูกาลผลผลิต",
+    heroBadge: "แดชบอร์ดทุเรียนรายภูมิภาค & ข้อมูลราคากลาง",
     heroTitle: "ราคาทุเรียนรายพื้นที่",
-    heroSub: "เปรียบเทียบราคาเสนอซื้อ–ขาย สายพันธุ์ และช่วงเก็บเกี่ยวในแต่ละภูมิภาค",
+    heroSub: "เปรียบเทียบราคาเสนอซื้อ–ขาย และสายพันธุ์ทุเรียนตามกลไกตลาดในแต่ละภูมิภาค",
     avgBuyPriceLabel: "รับซื้อเฉลี่ย",
     perKg: "/กก.",
     realPosts: "ประกาศจริง",
@@ -346,7 +346,7 @@ const I18N_DICT = {
     logoutMenu: "Logout",
     welcome: "Welcome,",
     verifiedBadge: "Verified Identity",
-    newPostBtn: "+ Create Post",
+    newPostBtn: "Create Post",
     goToMarketBtn: "Go to Marketplace",
     recentPostsTitle: "Recent listings",
     seeAllInMarket: "View All in Marketplace →",
@@ -356,9 +356,9 @@ const I18N_DICT = {
     createFirstPost: "+ Create Your First Listing",
 
     // Regional Dashboard
-    heroBadge: "Regional Durian Seasons & Production Planning",
+    heroBadge: "Regional Durian Dashboard & Market Pricing",
     heroTitle: "Regional durian prices",
-    heroSub: "Compare asking prices, varieties and harvest seasons across Thailand.",
+    heroSub: "Compare asking prices and varieties across Thailand by real market dynamics.",
     avgBuyPriceLabel: "Avg Buy Price",
     perKg: "/kg",
     realPosts: "Live Posts",
@@ -962,6 +962,8 @@ export default function DurianHubApp() {
   const [selectedRegionId, setSelectedRegionId] = useState<string>("EAST");
   const [selectedGradeFilter, setSelectedGradeFilter] = useState<"ALL" | DurianGradeKey>("ALL");
   const [selectedDashboardVariety, setSelectedDashboardVariety] = useState<string>("ALL");
+  const [showPriceSourceInfo, setShowPriceSourceInfo] = useState<boolean>(false);
+  const [showAllProvinces, setShowAllProvinces] = useState<boolean>(false);
 
   // Marketplace State (อ้างอิงรูปที่ 2)
   const [posts, setPosts] = useState<MarketplacePostItem[]>([]);
@@ -1841,6 +1843,8 @@ export default function DurianHubApp() {
           sellPrice: vSellPrice,
           buyPrice: vBuyPrice,
           refPrice: vRefPrice,
+          sellSampleCount: vSellPosts.length,
+          buySampleCount: vBuyPosts.length,
           grades: dynamicGrades,
         };
       });
@@ -1865,6 +1869,35 @@ export default function DurianHubApp() {
   const selectedRegionalData =
     computedRegionalSeasonsData.find((r) => r.id === selectedRegionId) ||
     computedRegionalSeasonsData[0];
+
+  const validDashboardVariety =
+    selectedDashboardVariety !== "ALL" &&
+    selectedRegionalData.varieties.includes(selectedDashboardVariety)
+      ? selectedDashboardVariety
+      : "ALL";
+
+  const activeDashboardVarietyData =
+    validDashboardVariety !== "ALL"
+      ? selectedRegionalData.priceByVariety.find(
+          (pv) => pv.variety === validDashboardVariety
+        ) || null
+      : null;
+
+  const currentDashboardSellPrice = activeDashboardVarietyData
+    ? activeDashboardVarietyData.sellPrice
+    : selectedRegionalData.avgSellPrice;
+
+  const currentDashboardBuyPrice = activeDashboardVarietyData
+    ? activeDashboardVarietyData.buyPrice
+    : selectedRegionalData.avgBuyPrice;
+
+  const currentDashboardSellSampleCount = activeDashboardVarietyData
+    ? activeDashboardVarietyData.sellSampleCount ?? 0
+    : selectedRegionalData.sellSampleCount;
+
+  const currentDashboardBuySampleCount = activeDashboardVarietyData
+    ? activeDashboardVarietyData.buySampleCount ?? 0
+    : selectedRegionalData.buySampleCount;
 
   const activeChatRoom =
     chatRooms.find((r) => r.id === activeChatRoomId) || null;
@@ -2497,79 +2530,43 @@ export default function DurianHubApp() {
       {/* Top Clean Modern Navbar */}
       <a className="skip-link" href="#main-content">{currentLang === "TH" ? "ข้ามไปยังเนื้อหา" : "Skip to content"}</a>
       <header className="app-header">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 min-h-20 flex items-center justify-between gap-2 sm:gap-4">
-          {/* Brand Logo */}
-          <div className="flex items-center gap-6">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between gap-2 sm:gap-4">
+          {/* Brand + primary navigation */}
+          <div className="flex items-center gap-6 min-w-0">
             <button
               onClick={() => setCurrentView("ROLE_HOME")}
-              className="flex items-center gap-2.5 text-left"
+              className="flex items-center gap-2 text-left shrink-0"
+              aria-label="Durian Hub"
             >
-              <div className="w-9 h-9 rounded-lg bg-emerald-700 text-white flex items-center justify-center font-semibold text-lg shadow-sm">
+              <span className="w-8 h-8 rounded-lg bg-emerald-700 text-white flex items-center justify-center font-semibold text-sm">
                 D
-              </div>
-              <div className="hidden min-[360px]:block">
-                <div className="font-semibold text-foreground text-base leading-none">
-                  DURIAN <span className="hidden sm:inline">HUB</span>
-                </div>
-                <div className="hidden text-xs text-muted-foreground mt-0.5 sm:block">
-                  THAILAND MARKETPLACE
-                </div>
-              </div>
+              </span>
+              <span className="hidden min-[360px]:inline font-semibold text-foreground text-[15px] tracking-tight">
+                Durian Hub
+              </span>
             </button>
 
-            {/* Primary Navigation Links */}
-            <nav aria-label={currentLang === "TH" ? "เมนูหลัก" : "Main navigation"} className="hidden xl:flex items-center gap-1">
-              <button
-                onClick={() => setCurrentView("ROLE_HOME")}
-                aria-current={currentView === "ROLE_HOME" ? "page" : undefined}
-                className={`px-3.5 py-2 rounded-lg text-sm font-medium transition ${
-                  currentView === "ROLE_HOME"
-                    ? "bg-brand-soft text-brand-ink font-semibold"
-                    : "text-secondary hover:text-foreground hover:bg-muted"
-                }`}
-              >
+            <nav aria-label={currentLang === "TH" ? "เมนูหลัก" : "Main navigation"} className="hidden xl:flex items-center gap-0.5">
+              <button onClick={() => setCurrentView("ROLE_HOME")} aria-current={currentView === "ROLE_HOME" ? "page" : undefined} className="nav-link">
                 {t.navRoleHome}
               </button>
-
-              <button
-                onClick={() => setCurrentView("REGIONAL_DASHBOARD")}
-                aria-current={currentView === "REGIONAL_DASHBOARD" ? "page" : undefined}
-                className={`px-3.5 py-2 rounded-lg text-sm font-medium transition ${
-                  currentView === "REGIONAL_DASHBOARD"
-                    ? "bg-brand-soft text-brand-ink font-semibold"
-                    : "text-secondary hover:text-foreground hover:bg-muted"
-                }`}
-              >
+              <button onClick={() => setCurrentView("REGIONAL_DASHBOARD")} aria-current={currentView === "REGIONAL_DASHBOARD" ? "page" : undefined} className="nav-link">
                 {t.navDashboard}
               </button>
-
-              <button
-                onClick={() => setCurrentView("MARKETPLACE")}
-                aria-current={currentView === "MARKETPLACE" ? "page" : undefined}
-                className={`px-3.5 py-2 rounded-lg text-sm font-medium transition ${
-                  currentView === "MARKETPLACE" || currentView === "POST_DETAIL"
-                    ? "bg-brand-soft text-brand-ink font-semibold"
-                    : "text-secondary hover:text-foreground hover:bg-muted"
-                }`}
-              >
+              <button onClick={() => setCurrentView("MARKETPLACE")} aria-current={currentView === "MARKETPLACE" || currentView === "POST_DETAIL" ? "page" : undefined} className="nav-link">
                 {t.navMarket}
               </button>
-
               <button
                 onClick={() => {
                   setActiveChatRoomId(0);
                   setCurrentView("CHAT_ROOM");
                 }}
-                className={`px-3.5 py-2 rounded-lg text-sm font-medium transition flex items-center gap-1.5 cursor-pointer ${
-                  currentView === "CHAT_ROOM"
-                    ? "bg-brand-soft text-brand-ink font-semibold"
-                    : "text-secondary hover:text-foreground hover:bg-muted"
-                }`}
+                aria-current={currentView === "CHAT_ROOM" ? "page" : undefined}
+                className="nav-link"
               >
-                <MessageSquare className="w-4 h-4" />
                 <span>{t.navChat}</span>
                 {totalUnreadCount > 0 && (
-                  <span className="px-2 py-0.5 rounded-full bg-rose-500 text-white text-xs font-semibold leading-none shadow-sm animate-pulse">
+                  <span className="num min-w-5 h-5 px-1.5 inline-flex items-center justify-center rounded-full bg-rose-600 text-white text-[11px] font-semibold leading-none">
                     {totalUnreadCount}
                   </span>
                 )}
@@ -2577,26 +2574,9 @@ export default function DurianHubApp() {
             </nav>
           </div>
 
-          {/* Right User Role Status & Switcher */}
+          {/* Right: theme, language, account (role switching lives in the account menu) */}
           <div className="flex items-center gap-2">
-
-            <ThemeSwitcher language={currentLang} />
-            <div className="hidden 2xl:flex items-center gap-2 bg-muted px-3 py-1.5 rounded-lg border border-line/80">
-              <span className="text-xs text-muted-foreground">{t.roleLabel}</span>
-              <select
-                value={userProfile.activeRole}
-                aria-label={currentLang === "TH" ? "สลับบทบาทบนแถบเมนู" : "Switch role in navigation"}
-                disabled={isSwitchingRole || showProfileModal || showCreatePostModal || isCreatingPost}
-                onChange={(e) => handleSwitchActiveRole(e.target.value as RoleType)}
-                className="text-xs font-semibold text-brand-ink bg-transparent focus:outline-none cursor-pointer"
-              >
-                {userProfile.approvedRoles.map((r) => (
-                  <option key={r} value={r}>
-                    {ROLE_CONFIG[r].shortTitle}
-                  </option>
-                ))}
-              </select>
-            </div>
+            <div className="hidden md:block"><ThemeSwitcher language={currentLang} /></div>
 
             {/* User Profile Trigger & Menu (Clean Light Emerald Theme แมตช์กับเว็บ 100%) */}
             <div id="user-profile-menu-container" className="relative flex items-center gap-2">
@@ -2632,12 +2612,12 @@ export default function DurianHubApp() {
               <button
                 type="button"
                 onClick={() => setIsProfileDropdownOpen(!isProfileDropdownOpen)}
-                className="flex items-center gap-1.5 p-1 rounded-xl bg-surface border border-line hover:border-brand-line hover:shadow-sm transition group cursor-pointer"
+                className="flex items-center gap-2 p-1 pr-2 rounded-lg border border-line bg-surface hover:border-line-strong transition-colors cursor-pointer"
                 title={t.profileMenu}
                 aria-label={t.profileMenu}
                 aria-expanded={isProfileDropdownOpen}
               >
-                <div className="w-8 h-8 rounded-lg overflow-hidden bg-brand-soft flex items-center justify-center shrink-0 border border-brand-line/80">
+                <div className="w-7 h-7 rounded-md overflow-hidden bg-brand-soft flex items-center justify-center shrink-0">
                   {userProfile.avatarUrl ? (
                     <img
                       src={userProfile.avatarUrl}
@@ -2650,7 +2630,10 @@ export default function DurianHubApp() {
                     </div>
                   )}
                 </div>
-                <div className="text-muted-foreground group-hover:text-brand-ink pr-1 transition">
+                <span className="hidden lg:inline text-xs font-medium text-secondary max-w-28 truncate">
+                  {ROLE_CONFIG[userProfile.activeRole].shortTitle}
+                </span>
+                <div className="text-muted-foreground transition">
                   {isProfileDropdownOpen ? (
                     <ChevronUp className="w-3.5 h-3.5" />
                   ) : (
@@ -2693,6 +2676,10 @@ export default function DurianHubApp() {
                     {currentLang === "TH" ? "ภาษา" : "Language"}
                     <select aria-label="Language / ภาษา" value={currentLang} onChange={(event) => setCurrentLang(event.target.value as "TH" | "EN")} className="rounded-lg border border-line bg-surface px-3 text-foreground"><option value="TH">ไทย</option><option value="EN">English</option></select>
                   </label>
+                  <div className="mb-3 flex items-center justify-between gap-3 border-b border-line px-2 pb-3 text-sm text-secondary md:hidden">
+                    <span>{currentLang === "TH" ? "ธีม" : "Theme"}</span>
+                    <ThemeSwitcher language={currentLang} />
+                  </div>
                   <div className="space-y-0.5 text-xs font-semibold">
                     <button
                       type="button"
@@ -2784,33 +2771,33 @@ export default function DurianHubApp() {
         </div>
 
         {/* Mobile Navigation Bar */}
-        <div role="navigation" aria-label={currentLang === "TH" ? "เมนูหลัก" : "Main navigation"} className="mobile-main-nav xl:hidden grid grid-cols-4 border-t border-line px-4 py-2 gap-1 bg-surface">
+        <div role="navigation" aria-label={currentLang === "TH" ? "เมนูหลัก" : "Main navigation"} className="mobile-main-nav xl:hidden grid grid-cols-4 border-t border-line px-3 py-1.5 gap-1 bg-surface">
           <button
             onClick={() => setCurrentView("ROLE_HOME")}
-            className={`text-xs px-3 py-1.5 rounded-lg whitespace-nowrap font-semibold cursor-pointer ${
+            className={`text-xs px-2.5 py-2 rounded-lg whitespace-nowrap font-semibold cursor-pointer transition ${
               currentView === "ROLE_HOME"
-                ? "bg-emerald-700 text-white"
-                : "bg-muted text-secondary"
+                ? "bg-brand-soft text-brand-ink"
+                : "text-secondary hover:text-foreground hover:bg-hover/60"
             }`}
           >
             {t.navRoleHome}
           </button>
           <button
             onClick={() => setCurrentView("REGIONAL_DASHBOARD")}
-            className={`text-xs px-3 py-1.5 rounded-lg whitespace-nowrap font-semibold cursor-pointer ${
+            className={`text-xs px-2.5 py-2 rounded-lg whitespace-nowrap font-semibold cursor-pointer transition ${
               currentView === "REGIONAL_DASHBOARD"
-                ? "bg-emerald-700 text-white"
-                : "bg-muted text-secondary"
+                ? "bg-brand-soft text-brand-ink"
+                : "text-secondary hover:text-foreground hover:bg-hover/60"
             }`}
           >
             {t.navDashboard}
           </button>
           <button
             onClick={() => setCurrentView("MARKETPLACE")}
-            className={`text-xs px-3 py-1.5 rounded-lg whitespace-nowrap font-semibold cursor-pointer ${
+            className={`text-xs px-2.5 py-2 rounded-lg whitespace-nowrap font-semibold cursor-pointer transition ${
               currentView === "MARKETPLACE"
-                ? "bg-emerald-700 text-white"
-                : "bg-muted text-secondary"
+                ? "bg-brand-soft text-brand-ink"
+                : "text-secondary hover:text-foreground hover:bg-hover/60"
             }`}
           >
             {t.navMarket}
@@ -2820,15 +2807,15 @@ export default function DurianHubApp() {
               setActiveChatRoomId(0);
               setCurrentView("CHAT_ROOM");
             }}
-            className={`text-xs px-3 py-1.5 rounded-lg whitespace-nowrap font-semibold cursor-pointer flex items-center gap-1.5 ${
+            className={`text-xs px-2.5 py-2 rounded-lg whitespace-nowrap font-semibold cursor-pointer flex items-center justify-center gap-1.5 transition ${
               currentView === "CHAT_ROOM"
-                ? "bg-emerald-700 text-white"
-                : "bg-muted text-secondary"
+                ? "bg-brand-soft text-brand-ink"
+                : "text-secondary hover:text-foreground hover:bg-hover/60"
             }`}
           >
             <span>{t.navChat}</span>
             {totalUnreadCount > 0 && (
-              <span className="px-1.5 py-0.5 rounded-full bg-rose-500 text-white text-xs font-semibold leading-none animate-pulse">
+              <span className="px-1.5 py-0.5 rounded-full bg-rose-500 text-white text-[10px] font-semibold leading-none">
                 {totalUnreadCount}
               </span>
             )}
@@ -2902,67 +2889,82 @@ export default function DurianHubApp() {
 
             <div className="flex flex-wrap items-center justify-between gap-3 text-sm 2xl:hidden"><label className="flex items-center gap-3 text-secondary">{currentLang === "TH" ? "กำลังใช้งานในบทบาท" : "Active role"}<select aria-label={currentLang === "TH" ? "สลับบทบาท" : "Switch role"} value={userProfile.activeRole} disabled={isSwitchingRole || showProfileModal || showCreatePostModal || isCreatingPost} onChange={(event) => handleSwitchActiveRole(event.target.value as RoleType)} className="rounded-lg border border-line bg-surface px-3 text-foreground">{userProfile.approvedRoles.map(role => <option key={role} value={role}>{ROLE_CONFIG[role].shortTitle}</option>)}</select></label></div>
             {/* 3 Quick Action Cards Tailored to User's Role */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
-              <div role="button" tabIndex={0} onKeyDown={(event) => { if (event.key === "Enter" || event.key === " ") { event.preventDefault(); setCurrentView("REGIONAL_DASHBOARD"); } }}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-3.5">
+              <div
+                role="button"
+                tabIndex={0}
+                onKeyDown={(event) => { if (event.key === "Enter" || event.key === " ") { event.preventDefault(); setCurrentView("REGIONAL_DASHBOARD"); } }}
                 onClick={() => setCurrentView("REGIONAL_DASHBOARD")}
-                className="bg-surface p-6 rounded-2xl border border-line/80 shadow-sm hover:border-brand-line transition cursor-pointer group"
+                className="bg-surface p-4.5 rounded-xl border border-line hover:border-brand-line transition cursor-pointer group flex items-start gap-3.5 shadow-2xs"
               >
-                <div className="w-11 h-11 rounded-xl bg-brand-soft text-brand-ink flex items-center justify-center mb-4 group-hover:bg-emerald-700 group-hover:text-white transition">
+                <div className="w-10 h-10 rounded-lg bg-brand-soft text-brand-ink flex items-center justify-center shrink-0 group-hover:bg-brand-ink group-hover:text-white transition">
                   <MapPin className="w-5 h-5" />
                 </div>
-                <h3 className="font-semibold text-base text-foreground">
-                  {currentLang === "TH" ? "ราคาทุเรียนรายพื้นที่" : "Regional prices"}
-                </h3>
-                <p className="text-xs text-muted-foreground mt-1.5 leading-relaxed">
-                  {currentLang === "TH"
-                    ? "ดูแผนที่ทุเรียนไทยทั้ง 6 ภูมิภาค ช่วงเดือนผลผลิตออก สายพันธุ์เด่น และกราฟเปรียบเทียบราคากลางแต่ละจังหวัด"
-                    : "View Thailand 6 regions map, harvest windows, main varieties, and benchmark price charts"}
-                </p>
-                <div className="mt-4 text-xs font-semibold text-brand-ink flex items-center gap-1">
-                  {currentLang === "TH" ? "เปิดดูแดชบอร์ดรายพื้นที่" : "Open Regional Dashboard"} <ChevronRight className="w-4 h-4" />
-                </div>
-              </div>
-
-              <div role="button" tabIndex={0} onKeyDown={(event) => { if (event.key === "Enter" || event.key === " ") { event.preventDefault(); setCurrentView("MARKETPLACE"); } }}
-                onClick={() => setCurrentView("MARKETPLACE")}
-                className="bg-surface p-6 rounded-2xl border border-line/80 shadow-sm hover:border-brand-line transition cursor-pointer group"
-              >
-                <div className="w-11 h-11 rounded-xl bg-info-soft text-info-ink flex items-center justify-center mb-4 group-hover:bg-sky-700 group-hover:text-white transition">
-                  <Layers className="w-5 h-5" />
-                </div>
-                <h3 className="font-semibold text-base text-foreground">
-                  {currentLang === "TH" ? "ค้นหาประกาศในตลาดกลาง" : "Explore the marketplace"}
-                </h3>
-                <p className="text-xs text-muted-foreground mt-1.5 leading-relaxed">
-                  {currentLang === "TH"
-                    ? "แยกกระดานประกาศขาย (ชาวสวน), ประกาศรับซื้อ (ล้ง), และรับจ้างตัดทุเรียน พร้อมกดดูรายละเอียดและทักแชท"
-                    : "Dedicated boards for Sell Orders (Farms), Buy Orders (Lhong), and Cut Services"}
-                </p>
-                <div className="mt-4 text-xs font-semibold text-info-ink flex items-center gap-1">
-                  {currentLang === "TH" ? "เข้าสู่ตลาดกลาง" : "Enter Marketplace"} <ChevronRight className="w-4 h-4" />
+                <div className="min-w-0 flex-1">
+                  <div className="flex items-center justify-between">
+                    <h3 className="font-semibold text-sm text-foreground group-hover:text-brand-ink transition">
+                      {currentLang === "TH" ? "ราคาทุเรียนรายพื้นที่" : "Regional prices"}
+                    </h3>
+                    <ChevronRight className="w-4 h-4 text-muted-foreground group-hover:text-brand-ink transition" />
+                  </div>
+                  <p className="text-xs text-muted-foreground mt-1 line-clamp-1">
+                    {currentLang === "TH"
+                      ? "แผนที่ราคา 6 ภูมิภาค สายพันธุ์หลัก และราคากลาง"
+                      : "Thailand 6 regions map and benchmark price charts"}
+                  </p>
                 </div>
               </div>
 
               <div
+                role="button"
+                tabIndex={0}
+                onKeyDown={(event) => { if (event.key === "Enter" || event.key === " ") { event.preventDefault(); setCurrentView("MARKETPLACE"); } }}
+                onClick={() => setCurrentView("MARKETPLACE")}
+                className="bg-surface p-4.5 rounded-xl border border-line hover:border-brand-line transition cursor-pointer group flex items-start gap-3.5 shadow-2xs"
+              >
+                <div className="w-10 h-10 rounded-lg bg-brand-soft text-brand-ink flex items-center justify-center shrink-0 group-hover:bg-brand-ink group-hover:text-white transition">
+                  <Layers className="w-5 h-5" />
+                </div>
+                <div className="min-w-0 flex-1">
+                  <div className="flex items-center justify-between">
+                    <h3 className="font-semibold text-sm text-foreground group-hover:text-brand-ink transition">
+                      {currentLang === "TH" ? "ค้นหาประกาศในตลาดกลาง" : "Explore the marketplace"}
+                    </h3>
+                    <ChevronRight className="w-4 h-4 text-muted-foreground group-hover:text-brand-ink transition" />
+                  </div>
+                  <p className="text-xs text-muted-foreground mt-1 line-clamp-1">
+                    {currentLang === "TH"
+                      ? "กระดานประกาศขาย รับซื้อ และรับจ้างตัดทุเรียน"
+                      : "Sell orders, buy orders, and cutting services"}
+                  </p>
+                </div>
+              </div>
+
+              <div
+                role="button"
+                tabIndex={0}
+                onKeyDown={(event) => { if (event.key === "Enter" || event.key === " ") { event.preventDefault(); fetchMyRoleRequests(); setShowRoleRequestModal(true); } }}
                 onClick={() => {
                   fetchMyRoleRequests();
                   setShowRoleRequestModal(true);
                 }}
-                className="bg-surface p-6 rounded-2xl border border-line/80 shadow-sm hover:border-brand-line transition cursor-pointer group"
+                className="bg-surface p-4.5 rounded-xl border border-line hover:border-brand-line transition cursor-pointer group flex items-start gap-3.5 shadow-2xs"
               >
-                <div className="w-11 h-11 rounded-xl bg-warning-soft text-warning-ink flex items-center justify-center mb-4 group-hover:bg-amber-600 group-hover:text-white transition">
+                <div className="w-10 h-10 rounded-lg bg-brand-soft text-brand-ink flex items-center justify-center shrink-0 group-hover:bg-brand-ink group-hover:text-white transition">
                   <FileCheck2 className="w-5 h-5" />
                 </div>
-                <h3 className="font-semibold text-base text-foreground">
-                  {currentLang === "TH" ? "จัดการบทบาทของคุณ" : "Manage your roles"}
-                </h3>
-                <p className="text-xs text-muted-foreground mt-1.5 leading-relaxed">
-                  {currentLang === "TH"
-                    ? `ตอนสมัครเลือกได้ 1 บทบาท (${ROLE_CONFIG[userProfile.primaryRole].shortTitle}) หากต้องการเพิ่มอีกบทบาท ต้องส่งเอกสารให้คัดกรองก่อน`
-                    : `Currently registered as ${ROLE_CONFIG[userProfile.primaryRole].shortTitle}. Submit verification docs to unlock other roles.`}
-                </p>
-                <div className="mt-4 text-xs font-semibold text-warning-ink flex items-center gap-1">
-                  {currentLang === "TH" ? "ส่งเอกสารขอเพิ่มบทบาท" : "Submit Role Application"} <ChevronRight className="w-4 h-4" />
+                <div className="min-w-0 flex-1">
+                  <div className="flex items-center justify-between">
+                    <h3 className="font-semibold text-sm text-foreground group-hover:text-brand-ink transition">
+                      {currentLang === "TH" ? "จัดการบทบาทของคุณ" : "Manage your roles"}
+                    </h3>
+                    <ChevronRight className="w-4 h-4 text-muted-foreground group-hover:text-brand-ink transition" />
+                  </div>
+                  <p className="text-xs text-muted-foreground mt-1 line-clamp-1">
+                    {currentLang === "TH"
+                      ? `บทบาทปัจจุบัน: ${ROLE_CONFIG[userProfile.primaryRole].shortTitle} (ขอเพิ่มบทบาท)`
+                      : `Active: ${ROLE_CONFIG[userProfile.primaryRole].shortTitle} (apply for more)`}
+                  </p>
                 </div>
               </div>
             </div>
@@ -3035,13 +3037,71 @@ export default function DurianHubApp() {
            =================================================================== */}
         {currentView === "REGIONAL_DASHBOARD" && (
           <div className="space-y-6">
-            <div role="note" className="rounded-xl border border-warning-line bg-warning-soft p-4 text-sm leading-relaxed text-warning-ink">
-              <strong>{currentLang === "TH" ? "ที่มาของราคา" : "Price sources"}</strong>
-              <p>{currentLang === "TH" ? `ใช้ราคาเสนอจากประกาศที่ยังเปิด${marketplaceDays ? `ใน ${marketplaceDays} วันล่าสุด` : "ทั้งหมด"} ไม่ใช่ราคาซื้อขายสำเร็จ; พื้นที่ สายพันธุ์ หรือเกรดที่ไม่มีประกาศใช้ตัวเลขตัวอย่างเพื่อแสดงรูปแบบ ห้ามใช้เป็นราคายืนยัน` : `Asking prices from ${marketplaceDays ? `the last ${marketplaceDays} days` : "all open listings"}, not completed trades. Areas, varieties and grades without listings use illustrative figures, not verified prices.`}</p>
-              <p className="mt-1">{postsError ? (currentLang === "TH" ? "โหลดข้อมูลล่าสุดไม่สำเร็จ" : "Latest data could not be loaded") : postsLoading ? (currentLang === "TH" ? "กำลังโหลดข้อมูลประกาศ…" : "Loading listing data…") : (currentLang === "TH" ? "โหลดประกาศเมื่อ: " : "Listings fetched: ") + (postsUpdatedAt ? new Date(postsUpdatedAt).toLocaleString(currentLang === "TH" ? "th-TH" : "en-GB", { timeZone: "Asia/Bangkok" }) : "—")}</p>
-              {postsError && <Button variant="secondary" className="mt-2" onClick={() => void fetchPosts()}>{currentLang === "TH" ? "ลองใหม่" : "Try again"}</Button>}
-            </div>
-            <PageHeading eyebrow={currentLang === "TH" ? "ข้อมูลตลาด" : "Market insights"} title={t.heroTitle} description={t.heroSub} />
+            {postsError && (
+              <div role="alert" className="rounded-xl border border-danger-line bg-danger-soft p-4 text-sm text-danger-ink flex items-center justify-between gap-3">
+                <div>
+                  <strong>{currentLang === "TH" ? "โหลดข้อมูลล่าสุดไม่สำเร็จ" : "Latest data could not be loaded"}</strong>
+                  <p className="text-xs mt-0.5">{postsError}</p>
+                </div>
+                <Button variant="secondary" onClick={() => void fetchPosts()}>
+                  {currentLang === "TH" ? "ลองใหม่" : "Try again"}
+                </Button>
+              </div>
+            )}
+
+            <PageHeading
+              eyebrow={currentLang === "TH" ? "ข้อมูลตลาด" : "Market insights"}
+              title={t.heroTitle}
+              description={t.heroSub}
+              action={
+                <Button
+                  variant="secondary"
+                  onClick={() => setShowPriceSourceInfo(!showPriceSourceInfo)}
+                  className="flex items-center gap-1.5 text-xs font-semibold"
+                >
+                  <Info className="h-4 w-4 text-brand-ink" />
+                  <span>{currentLang === "TH" ? "ที่มาของราคา" : "Price sources"}</span>
+                </Button>
+              }
+            />
+
+            {showPriceSourceInfo && (
+              <div role="note" className="relative rounded-xl border border-warning-line bg-warning-soft p-4.5 text-sm leading-relaxed text-warning-ink shadow-sm transition">
+                <button
+                  type="button"
+                  onClick={() => setShowPriceSourceInfo(false)}
+                  aria-label={currentLang === "TH" ? "ปิดคำอธิบาย" : "Close description"}
+                  className="absolute top-3.5 right-3.5 text-warning-ink/70 hover:text-warning-ink p-1 rounded-lg hover:bg-warning-line/30 transition cursor-pointer"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+                <div className="pr-6">
+                  <strong className="flex items-center gap-1.5 text-warning-ink text-sm font-semibold">
+                    <Info className="w-4 h-4 shrink-0" />
+                    {currentLang === "TH" ? "ที่มาและการคำนวณราคาในแดชบอร์ด" : "Dashboard Price Sources & Methodology"}
+                  </strong>
+                  <p className="mt-1.5 text-xs sm:text-sm text-warning-ink/90">
+                    {currentLang === "TH"
+                      ? `ใช้ราคาเสนอจากประกาศที่ยังเปิด${marketplaceDays ? `ใน ${marketplaceDays} วันล่าสุด` : "ทั้งหมด"} ไม่ใช่ราคาซื้อขายสำเร็จ; พื้นที่ สายพันธุ์ หรือเกรดที่ไม่มีประกาศใช้ตัวเลขตัวอย่างเพื่อแสดงรูปแบบ ห้ามใช้เป็นราคายืนยัน`
+                      : `Asking prices from ${marketplaceDays ? `the last ${marketplaceDays} days` : "all open listings"}, not completed trades. Areas, varieties and grades without listings use illustrative figures, not verified prices.`}
+                  </p>
+                  <div className="mt-2.5 pt-2 border-t border-warning-line/40 flex flex-wrap items-center justify-between gap-2 text-xs text-warning-ink/80">
+                    <span>
+                      {postsLoading
+                        ? (currentLang === "TH" ? "กำลังโหลดข้อมูลประกาศ…" : "Loading listing data…")
+                        : (currentLang === "TH" ? "โหลดประกาศเมื่อ: " : "Listings fetched: ") + (postsUpdatedAt ? new Date(postsUpdatedAt).toLocaleString(currentLang === "TH" ? "th-TH" : "en-GB", { timeZone: "Asia/Bangkok" }) : "—")}
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => void fetchPosts()}
+                      className="underline hover:text-warning-ink font-medium cursor-pointer"
+                    >
+                      {currentLang === "TH" ? "รีเฟรชข้อมูลประกาศ" : "Refresh listing data"}
+                    </button>
+                  </div>
+                </div>
+              </div>
+            )}
 
             {/* ส่วนที่ 1: แถบเลือก 6 ภูมิภาคด้านบน (Compact Regional Selector Strip - Full Width) */}
             <div className="space-y-2">
@@ -3055,41 +3115,41 @@ export default function DurianHubApp() {
                 </span>
               </div>
 
-              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
+              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2.5">
                 {computedRegionalSeasonsData.map((reg) => {
                   const isSelected = reg.id === selectedRegionalData.id;
                   return (
                     <div
                       key={reg.id}
-                      onClick={() => setSelectedRegionId(reg.id)}
-                      className={`p-3.5 rounded-xl border transition cursor-pointer flex flex-col justify-between gap-2.5 ${
+                      onClick={() => {
+                        setSelectedRegionId(reg.id);
+                        setSelectedDashboardVariety("ALL");
+                        setShowAllProvinces(false);
+                      }}
+                      className={`p-3 rounded-xl border transition cursor-pointer flex flex-col justify-between gap-2 ${
                         isSelected
-                          ? "bg-surface border-brand-line ring-2 ring-emerald-500/20 shadow-md"
-                          : "bg-surface/80 border-line/80 hover:border-line-strong hover:bg-surface shadow-2xs"
+                          ? "bg-brand-soft/70 border-brand-line text-foreground shadow-2xs ring-1 ring-brand-line/50"
+                          : "bg-surface border-line hover:border-line-strong hover:bg-hover/50 text-secondary"
                       }`}
                     >
                       <div className="flex items-center justify-between gap-1">
-                        <span
-                          className={`text-xs font-semibold px-2.5 py-0.5 rounded-full border ${reg.colorClass}`}
-                        >
+                        <span className={`text-xs font-semibold ${isSelected ? "text-brand-ink" : "text-foreground"}`}>
                           {translateRegionName(reg.regionName, currentLang)}
                         </span>
                         {reg.hasLivePosts && (
-                          <span className="text-xs font-semibold text-brand-ink bg-brand-soft/80 px-1.5 py-0.5 rounded-md flex items-center shrink-0">
+                          <span className="text-[10px] font-semibold text-brand-ink bg-brand-soft px-1.5 py-0.2 rounded shrink-0">
                             ⚡ {reg.livePostsCount}
                           </span>
                         )}
                       </div>
 
-                      <div>
-                        <div className="text-xs text-muted-foreground flex items-center gap-1">
-                          <Calendar className="w-3 h-3 text-brand-ink shrink-0" />
-                          <span className="font-semibold text-foreground truncate">
-                            {translateSeasonText(reg.harvestPeriod, currentLang)}
-                          </span>
+                      <div className="space-y-0.5">
+                        <div className="text-[11px] text-muted-foreground truncate">
+                          {reg.provinces.length} {currentLang === "TH" ? "จังหวัด" : "prov."} · {reg.varieties.length} {currentLang === "TH" ? "พันธุ์" : "vars."}
                         </div>
-                        <div className="text-xs font-semibold text-brand-ink mt-1">
-                          ฿{reg.avgBuyPrice}{t.perKg}
+                        <div className="text-xs font-semibold text-foreground num flex items-baseline gap-0.5">
+                          <span className="text-brand-ink">฿{reg.avgBuyPrice}</span>
+                          <span className="text-[10px] font-normal text-muted-foreground">{t.perKg}</span>
                         </div>
                       </div>
                     </div>
@@ -3102,113 +3162,157 @@ export default function DurianHubApp() {
             <div className="bg-surface rounded-2xl p-6 sm:p-8 border border-line/80 shadow-sm space-y-6">
               {/* แถวบน: ข้อมูลทั่วไปของภูมิภาค + การ์ดราคา 3 ใบขนาดใหญ่ */}
               <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 pb-6 border-b border-line">
-                {/* ฝั่งซ้าย: ชื่อภูมิภาค + ไฮไลท์ + รายชื่อจังหวัด (Tag Pills) */}
-                <div className="lg:col-span-7 space-y-3">
-                  <div className="flex flex-wrap items-center gap-2">
-                    <span className="text-xs font-semibold text-brand-ink bg-brand-soft px-3 py-1 rounded-full border border-brand-line/60">
-                      {t.inDepthTitle}
+                {/* ฝั่งซ้าย: ชื่อภูมิภาค + ไฮไลท์ + รายชื่อจังหวัดแบบย่อ (Progressive Disclosure) + ตัวกรองสายพันธุ์ */}
+                <div className="lg:col-span-7 flex flex-col justify-between gap-4">
+                  <div className="space-y-2">
+                    <h3 className="text-2xl sm:text-3xl font-semibold text-foreground tracking-tight">
+                      {translateRegionName(selectedRegionalData.regionName, currentLang)}
+                    </h3>
+
+                    <p className="text-sm text-secondary leading-relaxed max-w-2xl">
+                      {selectedRegionalData.highlightNote}
+                    </p>
+                  </div>
+
+                  {/* รายชื่อจังหวัดในภูมิภาคนั้น (Progressive Disclosure: แสดง 5 จังหวัดแรก + กดขยายดูทั้งหมดได้ ไม่แย่งซีนปุ่มสายพันธุ์) */}
+                  <div className="text-xs text-secondary leading-relaxed">
+                    <strong className="text-foreground font-semibold mr-1.5">
+                      {t.provincesLabel}
+                    </strong>
+                    <span>
+                      {(showAllProvinces
+                        ? selectedRegionalData.provinces
+                        : selectedRegionalData.provinces.slice(0, 5)
+                      )
+                        .map((prov) => translateProvinceName(prov, currentLang))
+                        .join(" · ")}
                     </span>
-                    <span className="text-xs font-semibold text-secondary bg-muted px-3 py-1 rounded-full flex items-center gap-1">
-                      <Calendar className="w-3.5 h-3.5 text-brand-ink" />
-                      {t.harvestPeriodLabel}: {translateSeasonText(selectedRegionalData.harvestPeriod, currentLang)}
-                    </span>
-                    {selectedRegionalData.preSeasonPeriod && (
-                      <span className="text-xs font-semibold text-warning-ink bg-warning-soft px-3 py-1 rounded-full border border-warning-line/60">
-                        {t.preSeasonLabel}: {translateSeasonText(selectedRegionalData.preSeasonPeriod, currentLang)}
-                      </span>
+                    {selectedRegionalData.provinces.length > 5 && (
+                      <button
+                        type="button"
+                        onClick={() => setShowAllProvinces(!showAllProvinces)}
+                        className="ml-2 inline-flex items-center px-2 py-0.5 rounded-md text-xs font-semibold text-brand-ink bg-brand-soft/70 hover:bg-brand-soft transition cursor-pointer"
+                      >
+                        {showAllProvinces
+                          ? (currentLang === "TH" ? "ย่อเก็บ" : "Show less")
+                          : (currentLang === "TH"
+                              ? `+ อีก ${selectedRegionalData.provinces.length - 5} จังหวัด`
+                              : `+ ${selectedRegionalData.provinces.length - 5} more`)}
+                      </button>
                     )}
                   </div>
 
-                  <h3 className="text-2xl sm:text-3xl font-semibold text-foreground tracking-tight">
-                    {translateRegionName(selectedRegionalData.regionName, currentLang)}
-                  </h3>
-
-                  <p className="text-xs sm:text-sm text-secondary leading-relaxed bg-subtle p-4 rounded-xl border border-line">
-                    {selectedRegionalData.highlightNote}
-                  </p>
-
-                  {/* รายชื่อจังหวัดในภูมิภาคนั้น (แสดงเป็น Tag Pills เรียบหรู สะอาดตา) */}
-                  <div className="pt-2">
-                    <div className="text-xs font-semibold text-secondary mb-2">
-                      {t.provincesLabel} ({selectedRegionalData.provinces.length} {currentLang === "TH" ? "จังหวัด" : "provinces"}):
-                    </div>
-                    <div className="flex flex-wrap gap-1.5">
-                      {selectedRegionalData.provinces.map((prov) => (
-                        <span
-                          key={prov}
-                          className="text-xs font-medium text-secondary bg-muted/90 hover:bg-brand-soft hover:text-brand-ink hover:border-brand-line px-2.5 py-1 rounded-lg border border-line/70 transition"
+                  {/* สายพันธุ์หลัก - Interactive Variety Filter Chips */}
+                  <div className="pt-1 flex items-center gap-1.5 text-xs text-secondary flex-wrap">
+                    <strong className="text-foreground shrink-0 mr-1">{t.varietiesLabel}</strong>
+                    <button
+                      type="button"
+                      onClick={() => setSelectedDashboardVariety("ALL")}
+                      className={`px-3 py-1.5 rounded-lg text-xs font-semibold border transition cursor-pointer flex items-center gap-1 ${
+                        validDashboardVariety === "ALL"
+                          ? "bg-brand-soft text-brand-ink border-brand-line shadow-xs font-semibold"
+                          : "bg-surface text-secondary border-line hover:border-line-strong hover:text-foreground"
+                      }`}
+                    >
+                      <span>🌐 {currentLang === "TH" ? "ทุกสายพันธุ์ (ภาพรวม)" : "All Varieties"}</span>
+                    </button>
+                    {selectedRegionalData.varieties.map((v) => {
+                      const isVarSelected = validDashboardVariety === v;
+                      return (
+                        <button
+                          key={v}
+                          type="button"
+                          onClick={() => setSelectedDashboardVariety(isVarSelected ? "ALL" : v)}
+                          className={`px-3 py-1.5 rounded-lg text-xs font-semibold border transition cursor-pointer flex items-center gap-1 ${
+                            isVarSelected
+                              ? "bg-brand-soft text-brand-ink border-brand-line shadow-xs font-semibold ring-1 ring-brand-line/50"
+                              : "bg-surface text-secondary border-line hover:border-line-strong hover:text-foreground"
+                          }`}
                         >
-                          {translateProvinceName(prov, currentLang)}
-                        </span>
-                      ))}
-                    </div>
-                  </div>
-
-                  {/* สายพันธุ์หลัก */}
-                  <div className="pt-1 flex items-center gap-2 text-xs text-secondary flex-wrap">
-                    <strong className="text-foreground">{t.varietiesLabel}:</strong>
-                    {selectedRegionalData.varieties.map((v) => (
-                      <span
-                        key={v}
-                        className="font-semibold text-brand-ink bg-brand-soft px-2.5 py-0.5 rounded-lg border border-brand-line"
-                      >
-                        🍈 {translateVarietyName(v, currentLang)}
-                      </span>
-                    ))}
+                          <span>🍈 {translateVarietyName(v, currentLang)}</span>
+                        </button>
+                      );
+                    })}
                   </div>
                 </div>
 
                 {/* ฝั่งขวา: การ์ด KPI ราคา 3 ใบขนาดใหญ่ + ลิงก์ไปตลาดกลาง */}
-                <div className="lg:col-span-5 flex flex-col justify-between gap-4">
-                  <div className="grid grid-cols-3 gap-3">
-                    <div className="p-4 rounded-xl bg-brand-soft/80 border border-brand-line text-center flex flex-col justify-center">
-                      <div className="text-xs text-brand-ink font-semibold">
+                <div className="lg:col-span-5 flex flex-col justify-between gap-3">
+                  <div className="grid grid-cols-3 gap-2.5">
+                    <div className="p-3.5 rounded-xl bg-surface border border-line flex flex-col justify-between">
+                      <div className="text-[11px] text-muted-foreground font-medium truncate">
                         {t.avgGardenPrice}
+                        <span className="block text-[10px] text-muted-foreground/80 truncate">
+                          {validDashboardVariety === "ALL"
+                            ? (currentLang === "TH" ? "ทุกพันธุ์" : "All")
+                            : translateVarietyName(validDashboardVariety, currentLang)}
+                        </span>
                       </div>
-                      <div className="text-2xl font-semibold text-brand-ink mt-1">
-                        ฿{selectedRegionalData.avgSellPrice}
-                        <span className="mt-1 block text-xs font-normal">{selectedRegionalData.sellSampleCount ? (currentLang === "TH" ? `จาก ${selectedRegionalData.sellSampleCount} ประกาศ` : `${selectedRegionalData.sellSampleCount} listings`) : (currentLang === "TH" ? "ตัวเลขตัวอย่าง" : "Illustrative")}</span>
+                      <div className="mt-2">
+                        <div className="text-xl font-bold text-foreground num tracking-tight">
+                          ฿{currentDashboardSellPrice}
+                          <span className="text-[10px] font-normal text-muted-foreground ml-0.5">{t.perKg}</span>
+                        </div>
+                        <div className="text-[10px] text-muted-foreground mt-0.5 truncate">
+                          {currentDashboardSellSampleCount
+                            ? (currentLang === "TH" ? `${currentDashboardSellSampleCount} ประกาศ` : `${currentDashboardSellSampleCount} posts`)
+                            : (currentLang === "TH" ? "ราคาอ้างอิง" : "Benchmark")}
+                        </div>
                       </div>
-                      <div className="text-xs text-brand-ink mt-0.5">{t.perKg}</div>
                     </div>
 
-                    <div className="p-4 rounded-xl bg-info-soft/80 border border-info-line text-center flex flex-col justify-center">
-                      <div className="text-xs text-info-ink font-semibold">
+                    <div className="p-3.5 rounded-xl bg-surface border border-brand-line/60 bg-brand-soft/20 flex flex-col justify-between">
+                      <div className="text-[11px] text-brand-ink font-semibold truncate">
                         {t.avgLhongPrice}
+                        <span className="block text-[10px] text-brand-ink/80 truncate">
+                          {validDashboardVariety === "ALL"
+                            ? (currentLang === "TH" ? "ทุกพันธุ์" : "All")
+                            : translateVarietyName(validDashboardVariety, currentLang)}
+                        </span>
                       </div>
-                      <div className="text-2xl font-semibold text-info-ink mt-1">
-                        ฿{selectedRegionalData.avgBuyPrice}
-                        <span className="mt-1 block text-xs font-normal">{selectedRegionalData.buySampleCount ? (currentLang === "TH" ? `จาก ${selectedRegionalData.buySampleCount} ประกาศ` : `${selectedRegionalData.buySampleCount} listings`) : (currentLang === "TH" ? "ตัวเลขตัวอย่าง" : "Illustrative")}</span>
+                      <div className="mt-2">
+                        <div className="text-xl font-bold text-brand-ink num tracking-tight">
+                          ฿{currentDashboardBuyPrice}
+                          <span className="text-[10px] font-normal text-muted-foreground ml-0.5">{t.perKg}</span>
+                        </div>
+                        <div className="text-[10px] text-muted-foreground mt-0.5 truncate">
+                          {currentDashboardBuySampleCount
+                            ? (currentLang === "TH" ? `${currentDashboardBuySampleCount} ประกาศ` : `${currentDashboardBuySampleCount} posts`)
+                            : (currentLang === "TH" ? "ราคาอ้างอิง" : "Benchmark")}
+                        </div>
                       </div>
-                      <div className="text-xs text-info-ink mt-0.5">{t.perKg}</div>
                     </div>
 
-                    <div className="p-4 rounded-xl bg-warning-soft/80 border border-warning-line text-center flex flex-col justify-center">
-                      <div className="text-xs text-warning-ink font-semibold">
+                    <div className="p-3.5 rounded-xl bg-surface border border-line flex flex-col justify-between">
+                      <div className="text-[11px] text-muted-foreground font-medium truncate">
                         {t.avgCutWage}
+                        <span className="block text-[10px] text-muted-foreground/80 truncate">
+                          {currentLang === "TH" ? "เหมาพื้นที่" : "Flat"}
+                        </span>
                       </div>
-                      <div className="text-2xl font-semibold text-warning-ink mt-1">
-                        ฿{selectedRegionalData.avgCutWage}
-                        <span className="mt-1 block text-xs font-normal">{selectedRegionalData.cutSampleCount ? (currentLang === "TH" ? `จาก ${selectedRegionalData.cutSampleCount} ประกาศ` : `${selectedRegionalData.cutSampleCount} listings`) : (currentLang === "TH" ? "ตัวเลขตัวอย่าง" : "Illustrative")}</span>
+                      <div className="mt-2">
+                        <div className="text-xl font-bold text-foreground num tracking-tight">
+                          ฿{selectedRegionalData.avgCutWage}
+                          <span className="text-[10px] font-normal text-muted-foreground ml-0.5">{t.perKg}</span>
+                        </div>
+                        <div className="text-[10px] text-muted-foreground mt-0.5 truncate">
+                          {selectedRegionalData.cutSampleCount
+                            ? (currentLang === "TH" ? `${selectedRegionalData.cutSampleCount} ประกาศ` : `${selectedRegionalData.cutSampleCount} posts`)
+                            : (currentLang === "TH" ? "ราคาอ้างอิง" : "Benchmark")}
+                        </div>
                       </div>
-                      <div className="text-xs text-warning-ink mt-0.5">{t.perKg}</div>
                     </div>
                   </div>
 
                   {(selectedRegionalData as any).hasLivePosts && (
-                    <div className="text-xs font-semibold text-brand-ink bg-brand-soft px-4 py-3 rounded-xl border border-brand-line flex items-center gap-2.5">
+                    <div className="text-xs text-brand-ink bg-brand-soft/70 px-3.5 py-2.5 rounded-xl border border-brand-line flex items-center gap-2">
                       <Sparkles className="w-4 h-4 text-brand-ink shrink-0" />
-                      <div>
-                        <span>
-                          {t.liveCalcNotice} {(selectedRegionalData as any).livePostsCount}{" "}
-                          {currentLang === "TH"
-                            ? `รายการใน${selectedRegionalData.regionName}`
-                            : `listings in ${translateRegionName(selectedRegionalData.regionName, currentLang)}`}
-                        </span>
-                        <span className="text-xs font-normal text-brand-ink block mt-0.5">
-                          {t.liveCalcNoticeSub}
-                        </span>
-                      </div>
+                      <span className="truncate">
+                        {t.liveCalcNotice} {(selectedRegionalData as any).livePostsCount}{" "}
+                        {currentLang === "TH"
+                          ? `รายการใน${selectedRegionalData.regionName}`
+                          : `listings in ${translateRegionName(selectedRegionalData.regionName, currentLang)}`}
+                      </span>
                     </div>
                   )}
 
@@ -3217,14 +3321,14 @@ export default function DurianHubApp() {
                       setSelectedRegionFilter(selectedRegionalData.regionName);
                       setCurrentView("MARKETPLACE");
                     }}
-                    className="w-full bg-emerald-700 hover:bg-emerald-800 text-white font-semibold text-sm py-3.5 px-4 rounded-xl transition shadow-sm flex items-center justify-center gap-2 cursor-pointer"
+                    className="w-full inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl text-xs font-semibold text-brand-ink bg-brand-soft hover:bg-brand-line/30 border border-brand-line transition cursor-pointer"
                   >
                     <span>
                       {currentLang === "TH"
                         ? `ดูประกาศซื้อ-ขายของ${selectedRegionalData.regionName}ในตลาดกลาง`
                         : `View All Listings in ${translateRegionName(selectedRegionalData.regionName, currentLang)}`}
                     </span>
-                    <ArrowRight className="w-4 h-4" />
+                    <ArrowRight className="w-3.5 h-3.5" />
                   </button>
                 </div>
               </div>
@@ -3311,38 +3415,54 @@ export default function DurianHubApp() {
                           </tr>
                         </thead>
                         <tbody className="divide-y divide-line text-xs">
-                          {selectedRegionalData.priceByVariety.map((pv, idx) => (
-                            <tr key={idx} className="hover:bg-subtle/70 transition">
-                              <td className="py-3.5 px-4 font-semibold text-foreground whitespace-nowrap text-sm">
-                                🍈 {translateVarietyName(pv.variety, currentLang)}
-                              </td>
-                              {(["GRADE_A", "GRADE_B", "GRADE_C", "GRADE_D"] as DurianGradeKey[]).map((gKey) => {
-                                const p = pv.grades[gKey];
-                                return (
-                                  <td key={gKey} className="py-3 px-3 text-center whitespace-nowrap">
-                                    <div className="inline-flex flex-col items-center gap-1">
-                                      <div className="text-xs font-semibold text-info-ink bg-info-soft px-2.5 py-0.5 rounded-lg border border-info-line">
-                                        ล้ง: ฿{p.buyPrice}
+                          {selectedRegionalData.priceByVariety.map((pv, idx) => {
+                            const isVarSelected = validDashboardVariety === pv.variety;
+                            return (
+                              <tr
+                                key={idx}
+                                onClick={() => setSelectedDashboardVariety(isVarSelected ? "ALL" : pv.variety)}
+                                className={`cursor-pointer transition ${
+                                  isVarSelected
+                                    ? "bg-emerald-500/10 dark:bg-emerald-950/30 font-semibold ring-1 ring-inset ring-emerald-500/30"
+                                    : "hover:bg-subtle/70"
+                                }`}
+                              >
+                                <td className="py-3.5 px-4 font-semibold text-foreground whitespace-nowrap text-sm">
+                                  <div className="flex items-center gap-1.5">
+                                    <span>🍈 {translateVarietyName(pv.variety, currentLang)}</span>
+                                    {isVarSelected && (
+                                      <span className="text-[10px] px-1.5 py-0.5 rounded bg-emerald-700 text-white font-normal">
+                                        {currentLang === "TH" ? "เลือกอยู่" : "Selected"}
+                                      </span>
+                                    )}
+                                  </div>
+                                </td>
+                                {(["GRADE_A", "GRADE_B", "GRADE_C", "GRADE_D"] as DurianGradeKey[]).map((gKey) => {
+                                  const p = pv.grades[gKey];
+                                  return (
+                                    <td key={gKey} className="py-2.5 px-3 text-center whitespace-nowrap">
+                                      <div className="font-semibold text-brand-ink num text-xs">
+                                        ฿{p.buyPrice}
                                       </div>
-                                      <div className="text-xs font-semibold text-brand-ink bg-brand-soft px-2.5 py-0.5 rounded-lg border border-brand-line">
-                                        สวน: ฿{p.sellPrice}
+                                      <div className="text-[11px] text-muted-foreground num mt-0.5">
+                                        {currentLang === "TH" ? "สวน" : "Farm"} ฿{p.sellPrice}
                                       </div>
-                                    </div>
-                                  </td>
-                                );
-                              })}
-                            </tr>
-                          ))}
+                                    </td>
+                                  );
+                                })}
+                              </tr>
+                            );
+                          })}
                         </tbody>
                       </table>
                     </div>
                     <div className="flex flex-wrap items-center justify-between text-xs text-muted-foreground pt-1 gap-2">
                       <div className="flex items-center gap-4">
-                        <span className="flex items-center gap-1.5 text-info-ink font-semibold bg-info-soft px-2 py-0.5 rounded-md border border-info-line">
-                          ● {currentLang === "TH" ? "สีฟ้า: ราคารับซื้อหน้าล้ง" : "Blue: Lhong Buy Price"}
+                        <span className="flex items-center gap-1.5 text-brand-ink font-semibold">
+                          ● {currentLang === "TH" ? "ราคารับซื้อหน้าล้ง (บน)" : "Lhong Buy (Top)"}
                         </span>
-                        <span className="flex items-center gap-1.5 text-brand-ink font-semibold bg-brand-soft px-2 py-0.5 rounded-md border border-brand-line">
-                          ● {currentLang === "TH" ? "สีเขียว: ราคาเสนอขายหน้าสวน" : "Green: Farm-Gate Sell Price"}
+                        <span className="flex items-center gap-1.5 text-secondary font-medium">
+                          ● {currentLang === "TH" ? "ราคาเสนอขายหน้าสวน (ล่าง)" : "Farm Sell (Bottom)"}
                         </span>
                       </div>
                       <span className="text-xs text-muted-foreground">
@@ -3367,6 +3487,7 @@ export default function DurianHubApp() {
 
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       {selectedRegionalData.priceByVariety.map((pv, i) => {
+                        const isVarSelected = validDashboardVariety === pv.variety;
                         const p = pv.grades[selectedGradeFilter];
                         const maxBar = 500;
                         const buyW = Math.min(100, Math.max(15, Math.round((p.buyPrice / maxBar) * 100)));
@@ -3375,12 +3496,22 @@ export default function DurianHubApp() {
                         return (
                           <div
                             key={i}
-                            className="p-4 rounded-xl border border-line/80 bg-subtle/60 hover:bg-surface hover:shadow-xs transition space-y-3"
+                            onClick={() => setSelectedDashboardVariety(isVarSelected ? "ALL" : pv.variety)}
+                            className={`p-4 rounded-xl border cursor-pointer transition space-y-3 ${
+                              isVarSelected
+                                ? "bg-emerald-500/10 dark:bg-emerald-950/30 border-brand-line ring-1 ring-emerald-500/30 shadow-xs"
+                                : "border-line/80 bg-subtle/60 hover:bg-surface hover:shadow-xs"
+                            }`}
                           >
                             <div className="flex items-center justify-between text-xs sm:text-sm">
-                              <span className="font-semibold text-foreground">
-                                🍈 {t.postCardVariety}{translateVarietyName(pv.variety, currentLang)} • {DURIAN_GRADES_CONFIG[selectedGradeFilter].shortName}
-                              </span>
+                              <div className="flex items-center gap-1.5 font-semibold text-foreground">
+                                <span>🍈 {t.postCardVariety}{translateVarietyName(pv.variety, currentLang)} • {DURIAN_GRADES_CONFIG[selectedGradeFilter].shortName}</span>
+                                {isVarSelected && (
+                                  <span className="text-[10px] px-1.5 py-0.5 rounded bg-emerald-700 text-white font-normal">
+                                    {currentLang === "TH" ? "เลือกอยู่" : "Selected"}
+                                  </span>
+                                )}
+                              </div>
                               <span className="text-xs text-muted-foreground font-medium">
                                 {currentLang === "TH" ? `อ้างอิงกลาง ฿${p.refPrice}/กก.` : `Benchmark ฿${p.refPrice}/kg`}
                               </span>
@@ -3458,163 +3589,146 @@ export default function DurianHubApp() {
         )}
 
         {/* ===================================================================
-            VIEW 3: MARKETPLACE 3-COLUMN BOARD (อ้างอิงรูปที่ 2 ในโทนสว่างโมเดิร์น)
+            VIEW 3: MARKETPLACE 3-COLUMN BOARD
            =================================================================== */}
         {currentView === "MARKETPLACE" && (
-          <div className="space-y-5">
-            {/* Top Banner & Variety Item Strip (เหมือนแถบไอเทมด้านบนในรูปที่ 2) */}
-            <div className="bg-surface rounded-2xl p-5 border border-line/80 shadow-sm space-y-4">
-              <PageHeading eyebrow={currentLang === "TH" ? "ซื้อขายและบริการ" : "Trade & services"} title={t.marketTitle} description={t.marketSub} action={<Button onClick={handleOpenCreatePostModal}><Plus className="h-4 w-4" />{t.newPostBtn}</Button>} />
+          <div className="space-y-4">
+            {/* Top Heading & Unified Filter Toolbar */}
+            <div className="bg-surface rounded-xl p-5 border border-line shadow-2xs space-y-3.5">
+              <PageHeading title={t.marketTitle} description={t.marketSub} action={<Button onClick={handleOpenCreatePostModal}><Plus className="h-4 w-4" />{t.newPostBtn}</Button>} />
 
-              <label className="block space-y-1 text-sm font-medium text-secondary md:hidden">
-                {currentLang === "TH" ? "สายพันธุ์ทุเรียน" : "Variety"}
-                <select value={selectedVarietyStrip} onChange={event => setSelectedVarietyStrip(event.target.value)} className="w-full rounded-lg border border-line bg-surface px-3 py-2 text-foreground">
-                  {VARIETY_STRIP_ITEMS.map(item => <option key={item.id} value={item.id}>{item.id === "ALL" ? (currentLang === "TH" ? "ทุกสายพันธุ์" : "All varieties") : translateVarietyName(item.nameTh, currentLang)}</option>)}
-                </select>
-              </label>
-              <div className="hidden flex-wrap items-center gap-2 md:flex" role="group" aria-label={currentLang === "TH" ? "กรองสายพันธุ์" : "Filter by variety"}>
-                {VARIETY_STRIP_ITEMS.map(item => <button key={item.id} type="button" aria-pressed={selectedVarietyStrip === item.id} onClick={() => setSelectedVarietyStrip(item.id)} className={`min-h-11 rounded-lg border px-3 py-2 text-xs font-medium transition-colors ${selectedVarietyStrip === item.id ? "border-brand-line bg-brand-soft text-brand-ink" : "border-line bg-surface text-secondary hover:bg-subtle"}`}>{item.id === "ALL" ? (currentLang === "TH" ? "ทุกสายพันธุ์" : "All varieties") : translateVarietyName(item.nameTh, currentLang)}</button>)}
-              </div>
-
-              {/* Search & Filter Row (อ้างอิงแถบค้นหาและปุ่มขวาในรูปที่ 2) */}
-              <div className="flex flex-wrap items-center justify-between gap-3 pt-2 border-t border-line">
-                <div className="flex flex-wrap items-center gap-2.5 flex-1">
-                  <select
-                    aria-label={currentLang === "TH" ? "ภูมิภาค" : "Region"}
-                    value={selectedRegionFilter}
-                    onChange={(e) => setSelectedRegionFilter(e.target.value)}
-                    className="text-xs font-semibold border border-line rounded-lg px-3.5 py-2.5 bg-subtle text-secondary focus:outline-none"
+              {/* Category Segmented Tabs */}
+              <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 pt-1 border-t border-line">
+                <div className="market-tabs flex-1" aria-label={currentLang === "TH" ? "ประเภทประกาศ" : "Listing categories"}>
+                  {/* Tab 1: SELL */}
+                  <button
+                    type="button"
+                    onClick={() => setSelectedMarketTab("SELL")}
+                    aria-pressed={selectedMarketTab === "SELL"}
+                    className={`px-3.5 py-2 rounded-lg font-semibold text-xs sm:text-sm flex items-center justify-center gap-2 transition cursor-pointer ${
+                      selectedMarketTab === "SELL"
+                        ? "bg-brand-soft text-brand-ink border border-brand-line shadow-2xs"
+                        : "text-secondary hover:text-foreground hover:bg-hover/60"
+                    }`}
                   >
-                    <option value="ALL">{t.allRegions}</option>
-                    <option value="ภาคตะวันออก">{translateRegionName("ภาคตะวันออก", currentLang)}</option>
-                    <option value="ภาคใต้">{translateRegionName("ภาคใต้", currentLang)}</option>
-                    <option value="ภาคเหนือ">{translateRegionName("ภาคเหนือ", currentLang)}</option>
-                    <option value="ภาคกลาง">{translateRegionName("ภาคกลาง", currentLang)}</option>
-                    <option value="ภาคอีสาน">{translateRegionName("ภาคอีสาน", currentLang)}</option>
-                    <option value="3 จังหวัดชายแดนใต้">{translateRegionName("3 จังหวัดชายแดนใต้", currentLang)}</option>
-                  </select>
+                    <span className="w-2 h-2 rounded-full bg-emerald-500 shrink-0" />
+                    <span>{t.colSellTitle}</span>
+                    <span className="px-1.5 py-0.5 rounded text-[11px] font-semibold bg-surface border border-line text-secondary num">
+                      {sellOrders.length}
+                    </span>
+                  </button>
 
-                  <div className="relative flex-1 min-w-[200px] max-w-sm">
-                    <Search className="w-4 h-4 text-muted-foreground absolute left-3.5 top-2.5" />
-                    <input
-                      type="text"
-                      value={searchQuery}
-                      onChange={(e) => setSearchQuery(e.target.value)}
-                      placeholder={t.searchPlaceholder}
-                      className="w-full pl-9 pr-4 py-2 rounded-lg border border-line bg-subtle text-xs focus:bg-surface focus:outline-none focus:ring-2 focus:ring-emerald-500"
-                    />
-                  </div>
+                  {/* Tab 2: BUY */}
+                  <button
+                    type="button"
+                    onClick={() => setSelectedMarketTab("BUY")}
+                    aria-pressed={selectedMarketTab === "BUY"}
+                    className={`px-3.5 py-2 rounded-lg font-semibold text-xs sm:text-sm flex items-center justify-center gap-2 transition cursor-pointer ${
+                      selectedMarketTab === "BUY"
+                        ? "bg-brand-soft text-brand-ink border border-brand-line shadow-2xs"
+                        : "text-secondary hover:text-foreground hover:bg-hover/60"
+                    }`}
+                  >
+                    <span className="w-2 h-2 rounded-full bg-sky-500 shrink-0" />
+                    <span>{t.colBuyTitle}</span>
+                    <span className="px-1.5 py-0.5 rounded text-[11px] font-semibold bg-surface border border-line text-secondary num">
+                      {buyOrders.length}
+                    </span>
+                  </button>
 
-                  {(selectedVarietyStrip !== "ALL" ||
-                    selectedRegionFilter !== "ALL" ||
-                    searchQuery !== "") && (
-                    <button
-                      onClick={() => {
-                        setSelectedVarietyStrip("ALL");
-                        setSelectedRegionFilter("ALL");
-                        setSearchQuery("");
-                      }}
-                      className="text-xs text-muted-foreground hover:text-foreground px-2.5 py-1.5 cursor-pointer"
-                    >
-                      {currentLang === "TH" ? "ล้างตัวกรอง" : "Clear Filter"}
-                    </button>
-                  )}
+                  {/* Tab 3: CUT_SERVICE */}
+                  <button
+                    type="button"
+                    onClick={() => setSelectedMarketTab("CUT_SERVICE")}
+                    aria-pressed={selectedMarketTab === "CUT_SERVICE"}
+                    className={`px-3.5 py-2 rounded-lg font-semibold text-xs sm:text-sm flex items-center justify-center gap-2 transition cursor-pointer ${
+                      selectedMarketTab === "CUT_SERVICE"
+                        ? "bg-brand-soft text-brand-ink border border-brand-line shadow-2xs"
+                        : "text-secondary hover:text-foreground hover:bg-hover/60"
+                    }`}
+                  >
+                    <span className="w-2 h-2 rounded-full bg-amber-500 shrink-0" />
+                    <span>{t.colCutTitle}</span>
+                    <span className="px-1.5 py-0.5 rounded text-[11px] font-semibold bg-surface border border-line text-secondary num">
+                      {cutOrders.length}
+                    </span>
+                  </button>
                 </div>
 
                 <div className="flex items-center gap-2 text-xs">
-                  <label className="flex items-center gap-2 text-sm text-secondary">
-                    <Clock className="h-4 w-4 shrink-0" aria-hidden="true" />
-                    <span className="sr-only">{currentLang === "TH" ? "ช่วงเวลาประกาศ" : "Listing period"}</span>
-                    <select value={marketplaceDays} onChange={event => setMarketplaceDays(Number(event.target.value))} className="rounded-lg border border-line bg-surface px-3 py-2 text-foreground">
+                  <label className="flex items-center gap-1.5 text-xs text-secondary">
+                    <Clock className="h-3.5 w-3.5 shrink-0 text-muted-foreground" aria-hidden="true" />
+                    <select value={marketplaceDays} onChange={event => setMarketplaceDays(Number(event.target.value))} className="rounded-lg border border-line bg-surface px-2.5 py-1.5 text-xs text-foreground">
                       <option value={7}>{currentLang === "TH" ? "7 วันล่าสุด" : "Last 7 days"}</option>
                       <option value={30}>{currentLang === "TH" ? "30 วันล่าสุด" : "Last 30 days"}</option>
                       <option value={0}>{currentLang === "TH" ? "ประกาศที่ยังเปิดทั้งหมด" : "All open listings"}</option>
                     </select>
                   </label>
-                  <span className="px-3 py-1.5 rounded-lg bg-brand-soft text-brand-ink font-semibold border border-brand-line">
-                    {currentLang === "TH" ? "ผลลัพธ์" : "Results"} {filteredMarketplacePosts.length} {currentLang === "TH" ? "โพสต์" : "Posts"}
-                  </span>
                 </div>
               </div>
-            </div>
 
-            {/* Category Segmented Tabs (แยกประเภทชัดเจน ไม่รกสายตา) */}
-            <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 bg-surface p-2.5 rounded-xl border border-line/90 shadow-sm">
-              <div className="market-tabs flex-1" aria-label={currentLang === "TH" ? "ประเภทประกาศ" : "Listing categories"}>
-                {/* Tab 1: SELL */}
-                <button
-                  type="button"
-                  onClick={() => setSelectedMarketTab("SELL")}
-                  aria-pressed={selectedMarketTab === "SELL"}
-                  className={`px-4 py-2.5 rounded-lg font-semibold text-xs sm:text-sm flex items-center justify-center gap-2 transition cursor-pointer ${
-                    selectedMarketTab === "SELL"
-                      ? "bg-emerald-700 text-white shadow-sm"
-                      : "text-secondary hover:text-foreground hover:bg-muted"
-                  }`}
-                >
-                  <span className="w-2.5 h-2.5 rounded-full bg-emerald-400 shrink-0" />
-                  <span>{t.colSellTitle}</span>
-                  <span
-                    className={`px-2 py-0.5 rounded-full text-xs font-semibold ${
-                      selectedMarketTab === "SELL"
-                        ? "bg-emerald-800 text-brand-ink"
-                        : "bg-muted text-secondary"
-                    }`}
-                  >
-                    {sellOrders.length}
-                  </span>
-                </button>
+              {/* Search, Region, and Variety Compact Row */}
+              <div className="flex flex-wrap items-center gap-2 pt-1 border-t border-line">
+                <div className="relative flex-1 min-w-[180px] max-w-sm">
+                  <Search className="w-4 h-4 text-muted-foreground absolute left-3 top-2.5" />
+                  <input
+                    type="text"
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    placeholder={t.searchPlaceholder}
+                    className="w-full pl-9 pr-3 py-1.5 rounded-lg border border-line bg-subtle text-xs focus:bg-surface focus:outline-none focus:ring-1 focus:ring-emerald-500"
+                  />
+                </div>
 
-                {/* Tab 2: BUY */}
-                <button
-                  type="button"
-                  onClick={() => setSelectedMarketTab("BUY")}
-                  aria-pressed={selectedMarketTab === "BUY"}
-                  className={`px-4 py-2.5 rounded-lg font-semibold text-xs sm:text-sm flex items-center justify-center gap-2 transition cursor-pointer ${
-                    selectedMarketTab === "BUY"
-                      ? "bg-sky-700 text-white shadow-sm"
-                      : "text-secondary hover:text-foreground hover:bg-muted"
-                  }`}
+                <select
+                  aria-label={currentLang === "TH" ? "ภูมิภาค" : "Region"}
+                  value={selectedRegionFilter}
+                  onChange={(e) => setSelectedRegionFilter(e.target.value)}
+                  className="text-xs font-medium border border-line rounded-lg px-2.5 py-1.5 bg-surface text-secondary focus:outline-none"
                 >
-                  <span className="w-2.5 h-2.5 rounded-full bg-sky-300 shrink-0" />
-                  <span>{t.colBuyTitle}</span>
-                  <span
-                    className={`px-2 py-0.5 rounded-full text-xs font-semibold ${
-                      selectedMarketTab === "BUY"
-                        ? "bg-sky-700 text-info-ink"
-                        : "bg-muted text-secondary"
-                    }`}
-                  >
-                    {buyOrders.length}
-                  </span>
-                </button>
+                  <option value="ALL">{t.allRegions}</option>
+                  <option value="ภาคตะวันออก">{translateRegionName("ภาคตะวันออก", currentLang)}</option>
+                  <option value="ภาคใต้">{translateRegionName("ภาคใต้", currentLang)}</option>
+                  <option value="ภาคเหนือ">{translateRegionName("ภาคเหนือ", currentLang)}</option>
+                  <option value="ภาคกลาง">{translateRegionName("ภาคกลาง", currentLang)}</option>
+                  <option value="ภาคอีสาน">{translateRegionName("ภาคอีสาน", currentLang)}</option>
+                  <option value="3 จังหวัดชายแดนใต้">{translateRegionName("3 จังหวัดชายแดนใต้", currentLang)}</option>
+                </select>
 
-                {/* Tab 3: CUT_SERVICE */}
-                <button
-                  type="button"
-                  onClick={() => setSelectedMarketTab("CUT_SERVICE")}
-                  aria-pressed={selectedMarketTab === "CUT_SERVICE"}
-                  className={`px-4 py-2.5 rounded-lg font-semibold text-xs sm:text-sm flex items-center justify-center gap-2 transition cursor-pointer ${
-                    selectedMarketTab === "CUT_SERVICE"
-                      ? "bg-amber-500 text-slate-950 shadow-sm"
-                      : "text-secondary hover:text-foreground hover:bg-muted"
-                  }`}
+                <select
+                  aria-label={currentLang === "TH" ? "สายพันธุ์ทุเรียน" : "Variety"}
+                  value={selectedVarietyStrip}
+                  onChange={(e) => setSelectedVarietyStrip(e.target.value)}
+                  className="text-xs font-medium border border-line rounded-lg px-2.5 py-1.5 bg-surface text-secondary focus:outline-none"
                 >
-                  <span className="w-2.5 h-2.5 rounded-full bg-warning-soft shrink-0" />
-                  <span>{t.colCutTitle}</span>
-                  <span
-                    className={`px-2 py-0.5 rounded-full text-xs font-semibold ${
-                      selectedMarketTab === "CUT_SERVICE"
-                        ? "bg-amber-600 text-warning-ink"
-                        : "bg-muted text-secondary"
-                    }`}
+                  {VARIETY_STRIP_ITEMS.map((item) => (
+                    <option key={item.id} value={item.id}>
+                      {item.id === "ALL"
+                        ? (currentLang === "TH" ? "ทุกสายพันธุ์" : "All varieties")
+                        : translateVarietyName(item.nameTh, currentLang)}
+                    </option>
+                  ))}
+                </select>
+
+                {(selectedVarietyStrip !== "ALL" ||
+                  selectedRegionFilter !== "ALL" ||
+                  searchQuery !== "") && (
+                  <button
+                    onClick={() => {
+                      setSelectedVarietyStrip("ALL");
+                      setSelectedRegionFilter("ALL");
+                      setSearchQuery("");
+                    }}
+                    className="text-xs text-muted-foreground hover:text-foreground px-2 py-1 cursor-pointer"
                   >
-                    {cutOrders.length}
-                  </span>
-                </button>
+                    {currentLang === "TH" ? "ล้างตัวกรอง" : "Clear filters"}
+                  </button>
+                )}
+
+                <div className="ml-auto text-xs text-muted-foreground num">
+                  {currentLang === "TH" ? "พบ" : "Found"} {filteredMarketplacePosts.length} {currentLang === "TH" ? "โพสต์" : "posts"}
+                </div>
               </div>
-
-
             </div>
 
             <div className="flex flex-wrap items-center justify-between gap-3 px-1 text-sm text-muted-foreground" role="status"><span>{currentLang === "TH" ? `พบ ${selectedMarketTab === "SELL" ? sellOrders.length : selectedMarketTab === "BUY" ? buyOrders.length : cutOrders.length} ประกาศ` : `${selectedMarketTab === "SELL" ? sellOrders.length : selectedMarketTab === "BUY" ? buyOrders.length : cutOrders.length} listings`}</span>{(searchQuery || selectedRegionFilter !== "ALL" || selectedVarietyStrip !== "ALL") && <Button variant="ghost" onClick={() => { setSearchQuery(""); setSelectedRegionFilter("ALL"); setSelectedVarietyStrip("ALL"); }}>{currentLang === "TH" ? "ล้างตัวกรอง" : "Clear filters"}</Button>}</div>
@@ -3629,8 +3743,8 @@ export default function DurianHubApp() {
               {selectedMarketTab === "SELL" &&
                 (sellOrders.length === 0 ? (
                   <div className="col-span-full bg-surface rounded-2xl border border-line/80 shadow-sm p-12 text-center flex flex-col items-center justify-center">
-                    <div className="w-16 h-16 rounded-xl bg-brand-soft text-brand-ink flex items-center justify-center mb-3 text-3xl">
-                      👑
+                    <div className="w-12 h-12 rounded-xl bg-brand-soft text-brand-ink flex items-center justify-center mb-3">
+                      <Sprout className="w-6 h-6" />
                     </div>
                     <h3 className="text-base font-semibold text-foreground mb-1">
                       {currentLang === "TH" ? "ยังไม่มีโพสต์ขายทุเรียนในหมวดนี้" : "No Orchard Sell Orders Found"}
@@ -3658,8 +3772,8 @@ export default function DurianHubApp() {
               {selectedMarketTab === "BUY" &&
                 (buyOrders.length === 0 ? (
                   <div className="col-span-full bg-surface rounded-2xl border border-line/80 shadow-sm p-12 text-center flex flex-col items-center justify-center">
-                    <div className="w-16 h-16 rounded-xl bg-info-soft text-info-ink flex items-center justify-center mb-3 text-3xl">
-                      🏢
+                    <div className="w-12 h-12 rounded-xl bg-info-soft text-info-ink flex items-center justify-center mb-3">
+                      <Store className="w-6 h-6" />
                     </div>
                     <h3 className="text-base font-semibold text-foreground mb-1">
                       {currentLang === "TH" ? "ยังไม่มีโพสต์รับซื้อหน้าล้งในหมวดนี้" : "No Lhong Buy Orders Found"}
@@ -3687,8 +3801,8 @@ export default function DurianHubApp() {
               {selectedMarketTab === "CUT_SERVICE" &&
                 (cutOrders.length === 0 ? (
                   <div className="col-span-full bg-surface rounded-2xl border border-line/80 shadow-sm p-12 text-center flex flex-col items-center justify-center">
-                    <div className="w-16 h-16 rounded-xl bg-warning-soft text-warning-ink flex items-center justify-center mb-3 text-3xl">
-                      ✂️
+                    <div className="w-12 h-12 rounded-xl bg-warning-soft text-warning-ink flex items-center justify-center mb-3">
+                      <Scissors className="w-6 h-6" />
                     </div>
                     <h3 className="text-base font-semibold text-foreground mb-1">
                       {currentLang === "TH" ? "ยังไม่มีโพสต์รับตัดทุเรียนในหมวดนี้" : "No Cut Service Listings Found"}
